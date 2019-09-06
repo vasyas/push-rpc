@@ -1,4 +1,5 @@
-import {ClientTopic, DataConsumer, getServiceItem, RequestType, Services, TopicImpl, RemoteMethod} from "./rpc"
+import {ClientTopic, DataConsumer, getServiceItem, RemoteMethod, RequestType, Services, TopicImpl} from "./rpc"
+import {log} from "./logger"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -95,18 +96,18 @@ function connect(createWebSocket): Promise<void> {
       try {
         handleData(e)
       } catch (e) {
-        log(`Failed to handle data`, e)
+        log.error(`Failed to handle data`, e)
       }
     }
 
     ws.onerror = e => {
       errorDelay = Math.random() * 15 * 1000
-      log("Connection error", e)
+      log.warn("Connection error", e)
       ws.close()
     }
 
     ws.onopen = () => {
-      log("Connected")
+      log.debug("Connected")
 
       errorDelay = 0
       resubscribeTopics(services)
@@ -114,7 +115,7 @@ function connect(createWebSocket): Promise<void> {
     }
 
     ws.onclose = ({code}) => {
-      log("Disconnected")
+      log.debug("Disconnected")
 
       const delay = errorDelay
 
@@ -187,10 +188,4 @@ function handleData(e) {
 
   const topic = getServiceItem(services, topicName) as ClientTopicImpl<any, any>
   topic.receiveData(params, data)
-}
-
-function log(s, e?) {
-  if (console) {
-    console.log(`RPC Client: ${s}`, e )
-  }
 }
