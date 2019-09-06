@@ -1,0 +1,10 @@
+{
+  "name": "typescript-rpc",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/ws": "^6.0.3",
+    "ws": "^7.1.2"
+  }
+}
