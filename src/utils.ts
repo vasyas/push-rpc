@@ -17,6 +17,5 @@ export function dateReviver(key, val) {
 }
 
 export const ISO8601 =      /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ$/
-export const ecofactor =      /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d\d\d\d$/
 export const ISO8601_secs = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$/
 export const ISO8601_date = /^\d\d\d\d-\d\d-\d\d$/

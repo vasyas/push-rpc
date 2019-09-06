@@ -1,6 +1,6 @@
 import * as WebSocket from "ws"
 import {DataSupplier, getServiceItem, RemoteMethod, RequestType, Services, Topic, TopicImpl} from "./rpc"
-import {log} from "../server/log"
+import {log} from "./logger"
 import {dateReviver} from "./utils"
 
 export class ServerTopic<P, D> extends TopicImpl<P, D> implements Topic<P, D> {
@@ -104,7 +104,7 @@ const sessions: RpcSession[] = []
 class RpcSession {
   constructor(private ws: WebSocket, public context) {
     ws.on("pong", () => {
-      // log.debug("Got pong")
+      log.debug("Got pong")
 
       this.alive = true
     })
@@ -132,10 +132,10 @@ class RpcSession {
       this.alive = false
 
       try {
-        // log.debug("Send ping")
+        log.debug("Send ping")
         this.ws.ping()
       } catch (e) {
-        // log.debug("Send ping failed", e)
+        log.debug("Send ping failed", e)
       }
     }
   }

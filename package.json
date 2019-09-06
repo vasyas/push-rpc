@@ -1,10 +1,15 @@
 {
   "name": "typescript-rpc",
   "version": "0.0.1",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublish": "tsc"
+  },
   "license": "MIT",
   "devDependencies": {
     "@types/ws": "^6.0.3",
+    "typescript": "^3.6.2",
     "ws": "^7.1.2"
   }
 }
