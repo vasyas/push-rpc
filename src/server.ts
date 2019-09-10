@@ -3,7 +3,7 @@ import {DataSupplier, getServiceItem, RemoteMethod, RequestType, Services, Topic
 import {log} from "./logger"
 import {dateReviver} from "./utils"
 
-export class ServerTopic<P, D> extends TopicImpl<P, D> implements Topic<P, D> {
+export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D> {
   constructor(private supplier: DataSupplier<P, D>) {
     super()
   }
@@ -226,7 +226,7 @@ function prepareServiceImpl(services, prefix = "") {
     if (typeof i == "object") {
       const name = prefix + "/" + key
 
-      if (i instanceof ServerTopic) {
+      if (i instanceof ServerTopicImpl) {
         i.name = name
         return
       }
