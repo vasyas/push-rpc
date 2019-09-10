@@ -186,6 +186,6 @@ function createServiceItems(level, createServiceItem: (name) => ServiceItemClien
 function handleData(e) {
   const [topicName, params, data] = JSON.parse(e.data)
 
-  const topic = getServiceItem(services, topicName) as ClientTopicImpl<any, any>
+  const topic: ClientTopicImpl<any, any> = getServiceItem(services, topicName) as any
   topic.receiveData(params, data)
 }

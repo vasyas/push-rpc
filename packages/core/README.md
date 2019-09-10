@@ -47,7 +47,7 @@ export interface Todo {
 
 server.ts:
 ```
-import {createRpcServer, ServerTopic} from "../src/index"
+import {createRpcServer, ServerTopicImpl} from "../src/index"
 import {Services, TodoService, Todo} from "./shared"
 import * as WebSocket from "ws"
 
@@ -66,7 +66,7 @@ class TodoServiceImpl implements TodoService {
     this.todos.trigger({})
   }
 
-  todos = new ServerTopic(async () => storage)
+  todos = new ServerTopicImpl(async () => storage)
 }
 
 const services: Services = {

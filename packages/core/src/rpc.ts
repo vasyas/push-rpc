@@ -4,6 +4,7 @@
  *
  * NOTE Do not extends this method, it is for reference only
  */
+
 export interface Service {
   [name: string]: ServiceItem
 }
@@ -32,8 +33,12 @@ export interface ServerTopicOld<P, D> {
 
 export type DataSupplier<P, D> = (p: P, ctx) => Promise<D>
 
+export interface ServerTopic<P, D> {
+  trigger(p: P, data?: D): void
+}
+
 // common
-export interface Topic<P, D> extends ClientTopic<P, D> {
+export interface Topic<P, D> extends ClientTopic<P, D>, ServerTopic<P, D> {
 }
 
 export enum RequestType {
@@ -42,9 +47,7 @@ export enum RequestType {
   Call
 }
 
-export abstract class TopicImpl<P, D> implements Topic<P, D> {
-  abstract subscribe(params: P, consumer: DataConsumer<D>): void
-  abstract unsubscribe(params: P, subscriptionKey?: any)
+export class TopicImpl<P, D> {
 }
 
 // Walk Serices object
@@ -55,7 +58,7 @@ export function getServiceItem(services: Services, name: string): ServiceItem {
     const i = services[names[0]]
 
     if (typeof i == "object") {
-      if (i instanceof TopicImpl) return i
+      if (i instanceof TopicImpl) return i as any
 
       return getServiceItem(i as Services, "/" + names.slice(1).join("/"))
     }
