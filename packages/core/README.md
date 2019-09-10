@@ -13,7 +13,7 @@ Uses WebSockets as transport.
 ### Installation
 
 ```
-yarn add typescript-rest-rpc
+yarn add typescript-push-rpc
 ```
 
 For the server, you will also need
@@ -27,7 +27,7 @@ You can use standard browser WebSockets on the client, or also use `ws` npm pack
 
 shared.ts:
 ```
-import {Topic} from "typescript-push-rpc"
+import {Topic} from "../src/index"
 
 export interface Services {
   todo: TodoService
@@ -47,19 +47,26 @@ export interface Todo {
 
 server.ts:
 ```
-import {createRpcServer} from "typescript-rpc"
-import {TodoService, Todo} from "./shared.ts"
+import {createRpcServer, ServerTopic} from "../src/index"
+import {Services, TodoService, Todo} from "./shared"
+import * as WebSocket from "ws"
 
-let todos: Todo[] = []
+let storage: Todo[] = []
 
 class TodoServiceImpl implements TodoService {
   async addTodo({text}) {
-    todos.push({
+    storage.push({
       id: "" + Math.random(),
       text,
       status: "open",
     })
+
+    console.log("New todo item added")
+
+    this.todos.trigger({})
   }
+
+  todos = new ServerTopic(async () => storage)
 }
 
 const services: Services = {
@@ -75,19 +82,40 @@ console.log("RPC Server started at ws://localhost:5555")
 client.ts:
 
 ```
-import { createClient } from "typescript-rest-rpc/lib/client"
+import * as WebSocket from "ws"
+import {Services} from "./shared"
+import {createRpcClient} from "../src"
 
-const client: Backend = createClient("http://localhost:9090/api")
-console.log(await client.login({ username: "admin", password: "123456" }))
+(async () => {
+  const services: Services = await createRpcClient({
+    level: 1,
+    createWebSocket: () => new WebSocket("ws://localhost:5555")
+  })
+
+  console.log("Client connected")
+
+  services.todo.todos.subscribe({}, (todos) => {
+    console.log("Got todo items", todos)
+  })
+
+  await services.todo.addTodo({text: "Buy groceries"})
+})()
 ```
 
-With this code you can even Ctrl-Click from your client code to your backend 
-implementation to quick find how API is implemented!
+Run `server.ts` and then `client.ts`. 
+
+Server will send empty todo list on client connecting and then will send updated list on change.
+
+## API
+
+TBD
 
 ## WS protocol details
 
-You can use this information to implement Typescrip-Push-Rpc protocol in different languages. 
+You can use this information to implement Typescrip-Push-Rpc protocol in different languages.
 
+TBD
+ 
 ## Features
 - Generating client and server RPC proxies based on zero-config TS interface.
 - JSON bodies auto-parsing with Date revival. 
@@ -123,3 +151,5 @@ export let backend: Backend = createClient(url, { ... },
 ## FAQ
 
 ### How to add path to websockets (routing)
+
+### Importance of naming service methods
