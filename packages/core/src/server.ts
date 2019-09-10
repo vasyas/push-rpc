@@ -10,7 +10,7 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
 
   name: string
 
-  trigger(params: P, suppliedData?: D) {
+  trigger(params: P = {} as P, suppliedData?: D) {
     const key = JSON.stringify(params)
 
     const subscribed: RpcSession[] = this.subscribedSessions[key] || []

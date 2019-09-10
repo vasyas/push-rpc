@@ -34,7 +34,7 @@ export interface ServerTopicOld<P, D> {
 export type DataSupplier<P, D> = (p: P, ctx) => Promise<D>
 
 export interface ServerTopic<P, D> {
-  trigger(p: P, data?: D): void
+  trigger(p?: P, data?: D): void
 }
 
 // common
