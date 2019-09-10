@@ -64,7 +64,7 @@ let services: Services = {}
 export function createRpcServer(
   servicesImpl: any,
   server: WebSocket.Server,
-  createContext: (req) => any
+  createContext: (req) => any = () => {},
 ): WebSocket.Server {
   services = servicesImpl
   prepareServiceImpl(services)
