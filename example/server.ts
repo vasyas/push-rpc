@@ -1,6 +1,6 @@
 import {createRpcServer, ServerTopic} from "../src/index"
 import {Services, TodoService, Todo} from "./shared"
-import WebSocket = require("ws")
+import * as WebSocket from "ws"
 
 let storage: Todo[] = []
 
