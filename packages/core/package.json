@@ -9,6 +9,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/ws": "^6.0.3",
+    "ts-node": "^8.3.0",
     "typescript": "^3.6.2",
     "ws": "^7.1.2"
   }
