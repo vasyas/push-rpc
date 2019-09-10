@@ -1,10 +1,10 @@
 {
   "name": "typescript-push-rpc",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublish": "tsc"
+    "prepublishOnly": "tsc"
   },
   "license": "MIT",
   "devDependencies": {
