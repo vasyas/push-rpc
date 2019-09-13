@@ -20,14 +20,14 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
       {consumer, subscriptionKey},
     ]
 
-    ws.send(message(MessageType.Subscribe, createMessageId(), this.name, params))
+    send(MessageType.Subscribe, createMessageId(), this.name, params)
   }
 
   resubscribe() {
     Object.keys(this.consumers).forEach(paramsKey => {
       const params = JSON.parse(paramsKey)
 
-      ws.send(message(MessageType.Subscribe, createMessageId(), this.name, params))
+      send(MessageType.Subscribe, createMessageId(), this.name, params)
     })
   }
 
@@ -37,7 +37,7 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
     if (!this.consumers[paramsKey]) return
 
     // only if all unsubscribed?
-    ws.send(message(MessageType.Unsubscribe, createMessageId(), this.name, params))
+    send(MessageType.Unsubscribe, createMessageId(), this.name, params)
 
     // unsubscribe all
     if (subscriptionKey == undefined) {
@@ -69,7 +69,7 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
     const id = createMessageId()
     return new Promise((resolve, reject) => {
       calls[id] = {resolve, reject}
-      ws.send(message(MessageType.Get, id, this.name, params))
+      send(MessageType.Get, id, this.name, params)
     })
   }
 
@@ -81,7 +81,7 @@ function callRemoteMethod(name) {
     return new Promise((resolve, reject) => {
       const id = createMessageId()
       calls[id] = {resolve, reject}
-      ws.send(message(MessageType.Call, id, name, params))
+      send(MessageType.Call, id, name, params)
     })
   }
 }
@@ -91,6 +91,12 @@ let ws
 // both remote method calls and topics get
 // TODO reject on timeout, expire calls cache
 let calls: {[id: string]: {resolve, reject}} = {}
+
+function send(type: MessageType, id: string, ...params) {
+  const m = message(type, id, ...params)
+  log.debug("Client out", m)
+  ws.send(m)
+}
 
 function resubscribeTopics(topics) {
   Object.getOwnPropertyNames(topics).forEach(key => {
@@ -196,6 +202,8 @@ function createServiceItems(level, createServiceItem: (name) => ServiceItemClien
 }
 
 function handleIncomingMessage(e) {
+  log.debug("Client in", e.data)
+
   const [type, id, ...other] = JSON.parse(e.data)
 
   if (type == MessageType.Data) {

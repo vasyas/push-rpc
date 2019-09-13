@@ -147,6 +147,8 @@ class RpcSession {
 
   async handleMessage(data) {
     try {
+      log.debug("Server in", data)
+
       const [type, id, name, params] = JSON.parse(data, dateReviver)
 
       const item = getServiceItem(services, name)
@@ -178,7 +180,9 @@ class RpcSession {
   }
 
   send(type: MessageType, id: string, ...params) {
-    this.ws.send(message(type, id, ...params))
+    const m = message(type, id, ...params)
+    log.debug("Server out", m)
+    this.ws.send(m)
   }
 
   private async call(id, remoteMethod, params) {
