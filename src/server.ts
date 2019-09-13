@@ -1,7 +1,7 @@
 import * as WebSocket from "ws"
-import {DataSupplier, getServiceItem, RemoteMethod, RequestType, Services, Topic, TopicImpl} from "./rpc"
+import {DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
 import {log} from "./logger"
-import {dateReviver} from "./utils"
+import {createMessageId, dateReviver, message} from "./utils"
 
 export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D> {
   constructor(private supplier: DataSupplier<P, D>) {
@@ -20,7 +20,7 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
         ? suppliedData
         : await this.supplier(params, session.context)
 
-      session.send(this.name, params, data)
+      session.send(MessageType.Data, createMessageId(), this.name, params, data)
     })
   }
 
@@ -142,26 +142,26 @@ class RpcSession {
 
   async handleMessage(data) {
     try {
-      const [type, topicName, params] = JSON.parse(data, dateReviver)
+      const [type, id, name, params] = JSON.parse(data, dateReviver)
 
-      const item = getServiceItem(services, topicName)
+      const item = getServiceItem(services, name)
 
       if (!item) {
-        throw new Error(`Can't find item with name ${topicName}`)
+        throw new Error(`Can't find item with name ${name}`)
       }
 
       switch (type) {
-        case RequestType.Subscribe:
+        case MessageType.Subscribe:
           await this.subscribe(item, params)
           break
 
-        case RequestType.Unsubscribe:
+        case MessageType.Unsubscribe:
           await this.unsubscribe(item, params)
           break
 
-        case RequestType.Call:
+        case MessageType.Call:
           const remoteMethod = item as RemoteMethod
-          await remoteMethod(params)
+          this.call(id, remoteMethod, params)
           break
       }
     } catch (e) {
@@ -169,9 +169,17 @@ class RpcSession {
     }
   }
 
-  send(topicName, params, data) {
-    const message = JSON.stringify([topicName, params, data])
-    this.ws.send(message)
+  send(type: MessageType, id: string, ...params) {
+    this.ws.send(message(type, id, ...params))
+  }
+
+  private async call(id, remoteMethod, params) {
+    try {
+      const r = await remoteMethod(params)
+      this.send(MessageType.Result, id, r)
+    } catch (e) {
+      this.send(MessageType.Error, id, e)
+    }
   }
 
   private async subscribe(topic, params) {
@@ -204,8 +212,8 @@ function rpcMetrics() {
     .reduce((r, count) => r + count, 0)
 
   log.debug("\n", [
-    {name: "data.websockets", value: sessions.length, unit: "Count"},
-    {name: "data.subscriptions", value: subscriptions, unit: "Count"},
+    {name: "rpc.websockets", value: sessions.length, unit: "Count"},
+    {name: "rpc.subscriptions", value: subscriptions, unit: "Count"},
   ])
 }
 
