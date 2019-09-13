@@ -144,7 +144,7 @@ export async function createRpcClient({level, createWebSocket, isTopic = guessTo
 function guessTopic(name) {
   const names = name.split("/")
 
-  const methods = ["get", "set", "create", "make", "remove", "delete", "find", "add"]
+  const methods = ["get", "set", "create", "make", "remove", "delete", "find", "add", "save", "process"]
 
   for (const method of methods) {
     if (names[names.length - 1].startsWith(method)) {

@@ -4,11 +4,16 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "tsc"
+    "prepublishOnly": "tsc",
+    "test": "mocha -r ts-node/register tests/**/*.ts"
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/chai": "^4.2.2",
+    "@types/mocha": "^5.2.7",
     "@types/ws": "^6.0.3",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.0",
     "ts-node": "^8.3.0",
     "typescript": "^3.6.2",
     "ws": "^7.1.2"
