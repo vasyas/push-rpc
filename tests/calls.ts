@@ -10,12 +10,13 @@ describe("Calls", () => {
     rpcWebsocketServer.addListener("listening", resolve)
   }))
 
-  afterEach((cb) => {
-    rpcWebsocketServer.close(cb)
-    process.exit(0)
-  })
+  afterEach(() => new Promise(resolve => {
+    rpcWebsocketServer.close(resolve)
+  }))
 
-  it("call void method", async () => {
+  it("call method method", async () => {
+    const resp = {r: "asf"}
+
     const invocation = {
       req: null,
       ctx: null,
@@ -23,9 +24,10 @@ describe("Calls", () => {
 
     createRpcServer({
       test: {
-        async saveObject(req, ctx) {
+        async getSomething(req, ctx) {
           invocation.req = req
           invocation.ctx = ctx
+          return resp
         }
       }
     }, rpcWebsocketServer)
@@ -36,10 +38,9 @@ describe("Calls", () => {
     })
 
     const req = {key: "value"}
-    await client.test.saveObject(req)
-
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const r = await client.test.getSomething(req)
 
     assert.deepEqual(invocation.req, req)
+    assert.deepEqual(r, resp)
   })
 })
