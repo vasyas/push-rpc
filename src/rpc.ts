@@ -20,16 +20,12 @@ export type RemoteMethod = (req?, ctx?) => Promise<any>
 export interface ClientTopic<P, D> {
   subscribe(params: P, consumer: DataConsumer<D>, subscriptionKey?: any): void
   unsubscribe(params: P, subscriptionKey?: any)
+  get(params: P, ctx?): Promise<D>
 }
 
 export type DataConsumer<D> = (d: D) => void
 
 // server interfaces
-export interface ServerTopicOld<P, D> {
-  supply(supplier: DataSupplier<P, D>): void
-  trigger(p: P, data?: D): void
-}
-
 export type DataSupplier<P, D> = (p: P, ctx) => Promise<D>
 
 export interface ServerTopic<P, D> {
