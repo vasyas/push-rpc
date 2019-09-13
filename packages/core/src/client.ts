@@ -65,7 +65,7 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
     subscriptions.forEach(subscription => subscription.consumer(data))
   }
 
-  get(params: P) {
+  get(params: P): Promise<D> {
     const id = createMessageId()
     return new Promise((resolve, reject) => {
       calls[id] = {resolve, reject}
