@@ -42,7 +42,7 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
 
     if (this.supplier) {
       const data = await this.supplier(params, session.context)
-      session.send(this.name, params, data)
+      session.send(MessageType.Data, createMessageId(), this.name, params, data)
     }
   }
 
