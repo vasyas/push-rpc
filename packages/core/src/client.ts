@@ -7,74 +7,83 @@ interface Subscription<D> {
   subscriptionKey: any
 }
 
-class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D> {
-  constructor(private name) {
-    super()
-  }
-
-  subscribe(params: P, consumer: DataConsumer<D>, subscriptionKey: any = consumer) {
-    const paramsKey = JSON.stringify(params)
-
-    this.consumers[paramsKey] = [
-      ...(this.consumers[paramsKey] || []),
-      {consumer, subscriptionKey},
-    ]
-
-    send(MessageType.Subscribe, createMessageId(), this.name, params)
-  }
-
-  resubscribe() {
-    Object.keys(this.consumers).forEach(paramsKey => {
-      const params = JSON.parse(paramsKey)
-
-      send(MessageType.Subscribe, createMessageId(), this.name, params)
-    })
-  }
-
-  unsubscribe(params: P, subscriptionKey = undefined) {
-    const paramsKey = JSON.stringify(params)
-
-    if (!this.consumers[paramsKey]) return
-
-    // only if all unsubscribed?
-    send(MessageType.Unsubscribe, createMessageId(), this.name, params)
-
-    // unsubscribe all
-    if (subscriptionKey == undefined) {
-      delete this.consumers[paramsKey]
-      return
-    }
-
-    const subscriptions = this.consumers[paramsKey]
-
-    const idx = subscriptions.findIndex(s => s.subscriptionKey == subscriptionKey)
-    if (idx >= 0) {
-      if (subscriptions.length > 1) {
-        subscriptions.splice(idx, 1)
-      } else {
-        delete this.consumers[paramsKey]
-      }
-    }
-  }
-
-  receiveData(params: P, data: D) {
-    const paramsKey = JSON.stringify(params)
-
-    const subscriptions = this.consumers[paramsKey] || []
-
-    subscriptions.forEach(subscription => subscription.consumer(data))
-  }
-
-  get(params: P): Promise<D> {
-    const id = createMessageId()
-    return new Promise((resolve, reject) => {
-      calls[id] = {resolve, reject}
-      send(MessageType.Get, id, this.name, params)
-    })
-  }
-
-  private consumers: {[key: string]: Subscription<D>[]} = {}
+interface ClientTopicImpl<P, D> extends ClientTopic<P, D> {
+  resubscribe(): void
+  receiveData(params: P, data: D): void
 }
+
+
+function clientTopic<P, D>(topicName): ClientTopicImpl<P, D> {
+  const consumers: {[key: string]: Subscription<D>[]} = {}
+
+  const r: any = new TopicImpl()
+
+  Object.assign(r, {
+    subscribe(params: P, consumer: DataConsumer<D>, subscriptionKey: any = consumer) {
+      const paramsKey = JSON.stringify(params)
+
+      consumers[paramsKey] = [
+        ...(consumers[paramsKey] || []),
+        {consumer, subscriptionKey},
+      ]
+
+      send(MessageType.Subscribe, createMessageId(), topicName, params)
+    },
+
+    resubscribe() {
+      Object.keys(consumers).forEach(paramsKey => {
+        const params = JSON.parse(paramsKey)
+
+        send(MessageType.Subscribe, createMessageId(), topicName, params)
+      })
+    },
+
+    unsubscribe(params: P, subscriptionKey = undefined) {
+      const paramsKey = JSON.stringify(params)
+
+      if (!consumers[paramsKey]) return
+
+      // only if all unsubscribed?
+      send(MessageType.Unsubscribe, createMessageId(), topicName, params)
+
+      // unsubscribe all
+      if (subscriptionKey == undefined) {
+        delete consumers[paramsKey]
+        return
+      }
+
+      const subscriptions = consumers[paramsKey]
+
+      const idx = subscriptions.findIndex(s => s.subscriptionKey == subscriptionKey)
+      if (idx >= 0) {
+        if (subscriptions.length > 1) {
+          subscriptions.splice(idx, 1)
+        } else {
+          delete consumers[paramsKey]
+        }
+      }
+    },
+
+    receiveData(params: P, data: D) {
+      const paramsKey = JSON.stringify(params)
+
+      const subscriptions = consumers[paramsKey] || []
+
+      subscriptions.forEach(subscription => subscription.consumer(data))
+    },
+
+    get(params: P): Promise<D> {
+      const id = createMessageId()
+      return new Promise((resolve, reject) => {
+        calls[id] = {resolve, reject}
+        send(MessageType.Get, id, topicName, params)
+      })
+    },
+  })
+
+  return r
+}
+
 
 function callRemoteMethod(name) {
   return (params) => {
@@ -100,7 +109,7 @@ function send(type: MessageType, id: string, ...params) {
 
 function resubscribeTopics(topics) {
   Object.getOwnPropertyNames(topics).forEach(key => {
-    if (topics[key] instanceof ClientTopicImpl) {
+    if (topics[key] instanceof TopicImpl) {
       topics[key].resubscribe()
     } else if (topics[key] && typeof topics[key] == "object") {
       resubscribeTopics(topics[key])
@@ -146,12 +155,13 @@ function connect(createWebSocket): Promise<void> {
   })
 }
 
-export async function createRpcClient({level, createWebSocket, isTopic = guessTopic}): Promise<any> {
+export async function createRpcClient({level, createWebSocket}): Promise<any> {
   services = createServiceItems(level, (name) => {
-    if (isTopic(name))
-      return new ClientTopicImpl(name)
+    const remoteMethod = callRemoteMethod(name)
 
-    return callRemoteMethod(name)
+    Object.assign(remoteMethod, clientTopic(name))
+
+    return remoteMethod
   })
 
   // TODO reconnecting cycle
@@ -159,23 +169,7 @@ export async function createRpcClient({level, createWebSocket, isTopic = guessTo
   return services
 }
 
-function guessTopic(name) {
-  const names = name.split("/")
-
-  const methods = ["get", "set", "create", "make", "remove", "delete", "find", "add", "save", "process"]
-
-  for (const method of methods) {
-    if (names[names.length - 1].startsWith(method)) {
-      return false
-    }
-  }
-
-  return true
-}
-
-type ServiceItemClient = ClientTopic<any, any> | RemoteMethod
-
-function createServiceItems(level, createServiceItem: (name) => ServiceItemClient, prefix = ""): any {
+function createServiceItems(level, createServiceItem: (name) => ClientTopic<any, any> | RemoteMethod, prefix = ""): any {
   const cachedItems = {}
 
   return new Proxy({}, {
