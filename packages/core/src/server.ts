@@ -190,6 +190,8 @@ class RpcSession {
       const r = await remoteMethod(params)
       this.send(MessageType.Result, id, r)
     } catch (e) {
+      log.error("Unable to call RPC. ", e)
+
       const err = Object.getOwnPropertyNames(e)
         .filter(e => e != "stack")
         .reduce((r, key) => ({...r, [key]: e[key]}), {})
