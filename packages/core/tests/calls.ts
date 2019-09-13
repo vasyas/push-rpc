@@ -14,7 +14,7 @@ describe("Calls", () => {
     rpcWebsocketServer.close(resolve)
   }))
 
-  it("call method method", async () => {
+  it("success", async () => {
     const resp = {r: "asf"}
 
     const invocation = {
@@ -42,5 +42,29 @@ describe("Calls", () => {
 
     assert.deepEqual(invocation.req, req)
     assert.deepEqual(r, resp)
+  })
+
+  it("error", async () => {
+    const message = "bla"
+
+    createRpcServer({
+      test: {
+        async getSomething() {
+          throw new Error(message)
+        }
+      }
+    }, rpcWebsocketServer)
+
+    const client = await createRpcClient({
+      level: 1,
+      createWebSocket: () => new WebSocket("ws://localhost:5555")
+    })
+
+    try {
+      await client.test.getSomething({})
+      assert.fail()
+    } catch (e) {
+      assert.equal(e.message, message)
+    }
   })
 })
