@@ -1,5 +1,5 @@
 import * as WebSocket from "ws"
-import {DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
+import {DataSupplier, getServiceItem, MessageType, RemoteMethod, ServerTopic, Services, Topic, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 
@@ -10,11 +10,12 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
 
   name: string
 
-  trigger(params: P = {} as P, suppliedData?: D) {
+  trigger(params: P = {} as P, suppliedData?: D): void {
     const key = JSON.stringify(params)
 
     const subscribed: RpcSession[] = this.subscribedSessions[key] || []
 
+    // data cannot be cached between subscribers, b/c for dfferent subscriber there could be a different context
     subscribed.forEach(async session => {
       const data: D = suppliedData != undefined
         ? suppliedData
@@ -22,6 +23,10 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
 
       session.send(MessageType.Data, createMessageId(), this.name, params, data)
     })
+  }
+
+  async get(params: P = {} as P, ctx): Promise<D> {
+    return await this.supplier(params, ctx)
   }
 
   async subscribe(params, session) {
@@ -159,9 +164,12 @@ class RpcSession {
           await this.unsubscribe(item, params)
           break
 
+        case MessageType.Get:
+          await this.get(id, item as ServerTopicImpl<any, any>, params)
+          break
+
         case MessageType.Call:
-          const remoteMethod = item as RemoteMethod
-          this.call(id, remoteMethod, params)
+          this.call(id, item as RemoteMethod, params)
           break
       }
     } catch (e) {
@@ -186,13 +194,26 @@ class RpcSession {
     }
   }
 
+  private async get(id, topic: ServerTopicImpl<any, any>, params) {
+    try {
+      const d = await topic.get(params, this.context)
+      this.send(MessageType.Result, id, d)
+    } catch (e) {
+      const err = Object.getOwnPropertyNames(e)
+        .filter(e => e != "stack")
+        .reduce((r, key) => ({...r, [key]: e[key]}), {})
+
+      this.send(MessageType.Error, id, err)
+    }
+  }
+
   private async subscribe(topic, params) {
     await topic.subscribe(params, this)
     this.subscriptions.push({topic, params})
     rpcMetrics()
   }
 
-  private async unsubscribe(topic, params) {9
+  private async unsubscribe(topic, params) {
     await topic.unsubscribe(params, this)
 
     const paramsKey = JSON.stringify(params)

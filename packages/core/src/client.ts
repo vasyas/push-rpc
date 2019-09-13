@@ -65,22 +65,31 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
     subscriptions.forEach(subscription => subscription.consumer(data))
   }
 
+  get(params: P) {
+    const id = createMessageId()
+    return new Promise((resolve, reject) => {
+      calls[id] = {resolve, reject}
+      ws.send(message(MessageType.Get, id, this.name, params))
+    })
+  }
+
   private consumers: {[key: string]: Subscription<D>[]} = {}
 }
 
 function callRemoteMethod(name) {
-  return (req) => {
+  return (params) => {
     return new Promise((resolve, reject) => {
       const id = createMessageId()
-      // TODO reject on timeout, expire calls cache
       calls[id] = {resolve, reject}
-      ws.send(message(MessageType.Call, id, name, req))
+      ws.send(message(MessageType.Call, id, name, params))
     })
   }
 }
 
 let services: Services
 let ws
+// both remote method calls and topics get
+// TODO reject on timeout, expire calls cache
 let calls: {[id: string]: {resolve, reject}} = {}
 
 function resubscribeTopics(topics) {
