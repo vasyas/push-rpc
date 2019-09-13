@@ -4,7 +4,6 @@
  *
  * NOTE Do not extends this method, it is for reference only
  */
-
 export interface Service {
   [name: string]: ServiceItem
 }
@@ -41,16 +40,22 @@ export interface ServerTopic<P, D> {
 export interface Topic<P, D> extends ClientTopic<P, D>, ServerTopic<P, D> {
 }
 
-export enum RequestType {
-  Subscribe = 1,
-  Unsubscribe,
-  Call
+export enum MessageType {
+  // to server
+  Subscribe = 1,       // [1, id, name, params]
+  Unsubscribe,    // [2, id, name, params]
+  Get,            // [3, id, name, params]
+  Call,           // [4, id, name, params]
+  // to client
+  Data,           // [5, id, name, params, data]
+  Result,         // [6, id, res]
+  Error,          // [7, id, err]
 }
 
 export class TopicImpl<P, D> {
 }
 
-// Walk Serices object
+// Walk Services object
 export function getServiceItem(services: Services, name: string): ServiceItem {
   if (name.startsWith("/")) {
     const names = name.substring(1).split("/")

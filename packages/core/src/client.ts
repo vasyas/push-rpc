@@ -1,5 +1,6 @@
-import {ClientTopic, DataConsumer, getServiceItem, RemoteMethod, RequestType, Services, TopicImpl} from "./rpc"
+import {ClientTopic, DataConsumer, getServiceItem, RemoteMethod, MessageType, Services, TopicImpl} from "./rpc"
 import {log} from "./logger"
+import {createMessageId, message} from "./utils"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -7,7 +8,7 @@ interface Subscription<D> {
 }
 
 class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D> {
-  constructor(private name, private send: (message: string) => void) {
+  constructor(private name) {
     super()
   }
 
@@ -19,14 +20,14 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
       {consumer, subscriptionKey},
     ]
 
-    this.send(JSON.stringify([RequestType.Subscribe, this.name, params]))
+    ws.send(message(MessageType.Subscribe, createMessageId(), this.name, params))
   }
 
   resubscribe() {
     Object.keys(this.consumers).forEach(paramsKey => {
       const params = JSON.parse(paramsKey)
 
-      this.send(JSON.stringify([RequestType.Subscribe, this.name, params]))
+      ws.send(message(MessageType.Subscribe, createMessageId(), this.name, params))
     })
   }
 
@@ -35,7 +36,8 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
 
     if (!this.consumers[paramsKey]) return
 
-    this.send(JSON.stringify([RequestType.Unsubscribe, this.name, params]))
+    // only if all unsubscribed?
+    ws.send(message(MessageType.Unsubscribe, createMessageId(), this.name, params))
 
     // unsubscribe all
     if (subscriptionKey == undefined) {
@@ -67,14 +69,19 @@ class ClientTopicImpl<P, D> extends TopicImpl<P, D> implements ClientTopic<P, D>
 }
 
 function callRemoteMethod(name) {
-  return async (req) => {
-    ws.send(JSON.stringify([RequestType.Call, name, req]))
-    // TODO save promise; wait for results come from WS
+  return (req) => {
+    return new Promise((resolve, reject) => {
+      const id = createMessageId()
+      // TODO reject on timeout, expire calls cache
+      calls[id] = {resolve, reject}
+      ws.send(message(MessageType.Call, id, name, req))
+    })
   }
 }
 
 let services: Services
 let ws
+let calls: {[id: string]: {resolve, reject}} = {}
 
 function resubscribeTopics(topics) {
   Object.getOwnPropertyNames(topics).forEach(key => {
@@ -94,7 +101,7 @@ function connect(createWebSocket): Promise<void> {
 
     ws.onmessage = (e) => {
       try {
-        handleData(e)
+        handleIncomingMessage(e)
       } catch (e) {
         log.error(`Failed to handle data`, e)
       }
@@ -125,13 +132,9 @@ function connect(createWebSocket): Promise<void> {
 }
 
 export async function createRpcClient({level, createWebSocket, isTopic = guessTopic}): Promise<any> {
-  function send(message) {
-    ws.send(message)
-  }
-
   services = createServiceItems(level, (name) => {
     if (isTopic(name))
-      return new ClientTopicImpl(name, send)
+      return new ClientTopicImpl(name)
 
     return callRemoteMethod(name)
   })
@@ -183,9 +186,26 @@ function createServiceItems(level, createServiceItem: (name) => ServiceItemClien
   })
 }
 
-function handleData(e) {
-  const [topicName, params, data] = JSON.parse(e.data)
+function handleIncomingMessage(e) {
+  const [type, id, ...other] = JSON.parse(e.data)
 
-  const topic: ClientTopicImpl<any, any> = getServiceItem(services, topicName) as any
-  topic.receiveData(params, data)
+  if (type == MessageType.Data) {
+    const [name, params, data] = other
+
+    const topic: ClientTopicImpl<any, any> = getServiceItem(services, name) as any
+    topic.receiveData(params, data)
+  }
+
+  if (type == MessageType.Result || type == MessageType.Error) {
+    if (calls[id]) {
+      const {resolve, reject} = calls[id]
+      delete calls[id]
+
+      if (type == MessageType.Result) {
+        resolve(other[0])
+      } else {
+        reject(other[0])
+      }
+    }
+  }
 }
