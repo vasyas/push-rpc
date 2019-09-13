@@ -75,7 +75,7 @@ export function createRpcServer(
 
   setInterval(() => {
     sessions.forEach(session => session.checkAlive())
-  }, 15 * 1000)
+  }, 15 * 1000).unref()
 
   server.on("connection", (ws, req) => {
     const session = new RpcSession(ws, createContext(req))

@@ -119,7 +119,7 @@ function connect(createWebSocket): Promise<void> {
 
       const delay = errorDelay
 
-      setTimeout(() => connect(createWebSocket), delay)
+      setTimeout(() => connect(createWebSocket), delay).unref()
     }
   })
 }
