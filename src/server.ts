@@ -187,7 +187,7 @@ class RpcSession {
 
   private async call(id, remoteMethod, params) {
     try {
-      const r = await remoteMethod(params)
+      const r = await remoteMethod(params, this.context)
       this.send(MessageType.Result, id, r)
     } catch (e) {
       log.error("Unable to call RPC. ", e)
