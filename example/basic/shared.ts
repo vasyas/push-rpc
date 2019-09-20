@@ -1,11 +1,11 @@
-import {Topic} from "../src/index"
+import {Topic} from "../../src"
 
 export interface Services {
   todo: TodoService
 }
 
 export interface TodoService {
-  addTodo({text}): Promise<void>
+  addTodo({text}, ctx?): Promise<void>
   todos: Topic<{}, Todo[]>
 }
 
