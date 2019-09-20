@@ -1,4 +1,4 @@
-import {createRpcServer, ServerTopicImpl} from "../src/index"
+import {createRpcServer, ServerTopicImpl} from "../../src/index"
 import {Services, TodoService, Todo} from "./shared"
 import * as WebSocket from "ws"
 

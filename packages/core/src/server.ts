@@ -1,5 +1,5 @@
 import * as WebSocket from "ws"
-import {DataSupplier, getServiceItem, MessageType, RemoteMethod, ServerTopic, Services, Topic, TopicImpl} from "./rpc"
+import {DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 
@@ -70,6 +70,7 @@ export function createRpcServer(
   servicesImpl: any,
   server: WebSocket.Server,
   createContext: (req) => any = () => {},
+  caller: (ctx, next) => Promise<any> = (ctx, next) => next(),
 ): WebSocket.Server {
   services = servicesImpl
   prepareServiceImpl(services)
@@ -83,7 +84,7 @@ export function createRpcServer(
   }, 15 * 1000).unref()
 
   server.on("connection", (ws, req) => {
-    const session = new RpcSession(ws, createContext(req))
+    const session = new RpcSession(ws, createContext(req), caller)
 
     sessions.push(session)
     rpcMetrics()
@@ -107,7 +108,7 @@ export function createRpcServer(
 const sessions: RpcSession[] = []
 
 class RpcSession {
-  constructor(private ws: WebSocket, public context) {
+  constructor(private ws: WebSocket, public context, private caller: (ctx, next) => Promise<any>) {
     ws.on("pong", () => {
       log.debug("Got pong")
 
@@ -145,7 +146,7 @@ class RpcSession {
     }
   }
 
-  async handleMessage(data) {
+  handleMessage(data) {
     try {
       log.debug("Server in", data)
 
@@ -159,15 +160,15 @@ class RpcSession {
 
       switch (type) {
         case MessageType.Subscribe:
-          await this.subscribe(item, params)
+          this.subscribe(item, params)
           break
 
         case MessageType.Unsubscribe:
-          await this.unsubscribe(item, params)
+          this.unsubscribe(item, params)
           break
 
         case MessageType.Get:
-          await this.get(id, item as ServerTopicImpl<any, any>, params)
+          this.get(id, item as ServerTopicImpl<any, any>, params)
           break
 
         case MessageType.Call:
@@ -187,7 +188,9 @@ class RpcSession {
 
   private async call(id, remoteMethod, params) {
     try {
-      const r = await remoteMethod(params, this.context)
+      const callContext = {...this.context}
+      const r = await this.caller(callContext, () => remoteMethod(params, callContext))
+
       this.send(MessageType.Result, id, r)
     } catch (e) {
       log.error("Unable to call RPC. ", e)
