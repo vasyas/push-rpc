@@ -1,6 +1,6 @@
 import {ClientTopic, DataConsumer, getServiceItem, MessageType, RemoteMethod, Services, TopicImpl} from "./rpc"
 import {log} from "./logger"
-import {createMessageId, message} from "./utils"
+import {createMessageId, dateReviver, message} from "./utils"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -200,7 +200,7 @@ function createServiceItems(level, createServiceItem: (name) => ClientTopic<any,
 function handleIncomingMessage(e) {
   log.debug("Client in", e.data)
 
-  const [type, id, ...other] = JSON.parse(e.data)
+  const [type, id, ...other] = JSON.parse(e.data, dateReviver)
 
   if (type == MessageType.Data) {
     const [name, params, data] = other
