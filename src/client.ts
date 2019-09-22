@@ -1,4 +1,4 @@
-import {ClientTopic, DataConsumer, getServiceItem, RemoteMethod, MessageType, Services, TopicImpl} from "./rpc"
+import {ClientTopic, DataConsumer, getServiceItem, MessageType, RemoteMethod, Services, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, message} from "./utils"
 
@@ -148,9 +148,11 @@ function connect(createWebSocket): Promise<void> {
     ws.onclose = ({code}) => {
       log.debug("Disconnected")
 
-      const delay = errorDelay
+      const timer = setTimeout(() => connect(createWebSocket), errorDelay)
 
-      setTimeout(() => connect(createWebSocket), delay).unref()
+      if (timer.unref) {
+        timer.unref()
+      }
     }
   })
 }
