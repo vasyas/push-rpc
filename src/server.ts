@@ -1,16 +1,17 @@
 import * as WebSocket from "ws"
-import {DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
+import {DataConsumer, DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 
-export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D> {
-  constructor(private supplier: DataSupplier<P, D>) {
+/** ServerTopicImpl should implement Topic (and ClientTopic) so it could be used in ServiceImpl */
+export class ServerTopicImpl<D, P = void> extends TopicImpl implements Topic<D, P> {
+  constructor(private supplier: DataSupplier<D, P>) {
     super()
   }
 
   name: string
 
-  trigger(params: P = {} as P, suppliedData?: D): void {
+  trigger(params: P = null, suppliedData?: D): void {
     const key = JSON.stringify(params)
 
     const subscribed: RpcSession[] = this.subscribedSessions[key] || []
@@ -25,11 +26,11 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
     })
   }
 
-  async get(params: P = {} as P, ctx): Promise<D> {
+  async getData(params: P, ctx: any): Promise<D> {
     return await this.supplier(params, ctx)
   }
 
-  async subscribe(params, session) {
+  async subscribeSession(session: RpcSession, params: P) {
     const key = JSON.stringify(params)
 
     const sessions = this.subscribedSessions[key] || []
@@ -46,7 +47,7 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
     }
   }
 
-  unsubscribe(params, session) {
+  unsubscribeSession(session: RpcSession, params: P) {
     const key = JSON.stringify(params)
 
     const sessions = this.subscribedSessions[key]
@@ -62,6 +63,12 @@ export class ServerTopicImpl<P, D> extends TopicImpl<P, D> implements Topic<P, D
   }
 
   private subscribedSessions: {[key: string]: RpcSession[]} = {}
+
+  // dummy implementations, see class comment
+
+  get(params?: P): Promise<D> { return undefined; }
+  subscribe(consumer: DataConsumer<D>, params: P, subscriptionKey: any): void {}
+  unsubscribe(params?: P, subscriptionKey?: any) {}
 }
 
 let services: Services = {}
@@ -158,21 +165,24 @@ class RpcSession {
         throw new Error(`Can't find item with name ${name}`)
       }
 
+      const topic = item as any as ServerTopicImpl<any, any>
+      const method = item as RemoteMethod
+
       switch (type) {
         case MessageType.Subscribe:
-          this.subscribe(item, params)
+          this.subscribe(topic, params)
           break
 
         case MessageType.Unsubscribe:
-          this.unsubscribe(item, params)
+          this.unsubscribe(topic, params)
           break
 
         case MessageType.Get:
-          this.get(id, item as ServerTopicImpl<any, any>, params)
+          this.get(id, topic, params)
           break
 
         case MessageType.Call:
-          this.call(id, item as RemoteMethod, params)
+          this.call(id, method, params)
           break
       }
     } catch (e) {
@@ -205,7 +215,7 @@ class RpcSession {
 
   private async get(id, topic: ServerTopicImpl<any, any>, params) {
     try {
-      const d = await topic.get(params, this.context)
+      const d = await topic.getData(params, this.context)
       this.send(MessageType.Result, id, d)
     } catch (e) {
       const err = Object.getOwnPropertyNames(e)
@@ -216,14 +226,14 @@ class RpcSession {
     }
   }
 
-  private async subscribe(topic, params) {
-    await topic.subscribe(params, this)
+  private async subscribe(topic: ServerTopicImpl<any, any>, params) {
+    await topic.subscribeSession(this, params)
     this.subscriptions.push({topic, params})
     rpcMetrics()
   }
 
-  private async unsubscribe(topic, params) {
-    await topic.unsubscribe(params, this)
+  private async unsubscribe(topic: ServerTopicImpl<any, any>, params) {
+    await topic.unsubscribeSession(this, params)
 
     const paramsKey = JSON.stringify(params)
 
@@ -232,7 +242,7 @@ class RpcSession {
   }
 
   private async unsubscribeAll() {
-    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribe(s.params, this)))
+    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
     this.subscriptions = []
     rpcMetrics()
   }

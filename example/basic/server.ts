@@ -14,7 +14,7 @@ class TodoServiceImpl implements TodoService {
 
     console.log("New todo item added")
 
-    this.todos.trigger({})
+    this.todos.trigger()
   }
 
   todos = new ServerTopicImpl(async () => storage)

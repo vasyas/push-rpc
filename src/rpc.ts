@@ -17,23 +17,23 @@ export type RemoteMethod = (req?, ctx?) => Promise<any>
 
 // client interfaces
 
-export interface ClientTopic<P, D> {
-  subscribe(params: P, consumer: DataConsumer<D>, subscriptionKey?: any): void
-  unsubscribe(params: P, subscriptionKey?: any)
-  get(params: P, ctx?): Promise<D>
+export interface ClientTopic<D, P> {
+  subscribe(consumer: DataConsumer<D>, params?: P, subscriptionKey?: any): void
+  unsubscribe(params?: P, subscriptionKey?: any)
+  get(params?: P): Promise<D>
 }
 
 export type DataConsumer<D> = (d: D) => void
 
 // server interfaces
-export type DataSupplier<P, D> = (p: P, ctx) => Promise<D>
+export type DataSupplier<D, P> = (p: P, ctx) => Promise<D>
 
-export interface ServerTopic<P, D> {
+export interface ServerTopic<D, P> {
   trigger(p?: P, data?: D): void
 }
 
 // common
-export interface Topic<P, D> extends ClientTopic<P, D>, ServerTopic<P, D> {
+export interface Topic<D, P = void> extends ClientTopic<D, P>, ServerTopic<D, P> {
 }
 
 export enum MessageType {
@@ -48,7 +48,7 @@ export enum MessageType {
   Error,          // [7, id, err]
 }
 
-export class TopicImpl<P, D> {
+export class TopicImpl {
 }
 
 // Walk Services object

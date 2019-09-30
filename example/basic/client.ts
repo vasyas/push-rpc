@@ -10,7 +10,7 @@ import {createRpcClient} from "../../src"
 
   console.log("Client connected")
 
-  services.todo.todos.subscribe({}, (todos) => {
+  services.todo.todos.subscribe((todos) => {
     console.log("Got todo items", todos)
   })
 

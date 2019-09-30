@@ -6,7 +6,7 @@ export interface Services {
 
 export interface TodoService {
   addTodo({text}, ctx?): Promise<void>
-  todos: Topic<{}, Todo[]>
+  todos: Topic<Todo[]>
 }
 
 export interface Todo {
