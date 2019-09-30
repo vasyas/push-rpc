@@ -30,3 +30,10 @@ export function createMessageId() {
 export function message(type: MessageType, id: string, ...params) {
   return JSON.stringify([type, id, ...params])
 }
+
+export function getClassMethodNames(obj) {
+  return Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
+    .filter(m => obj[m] instanceof Function)
+    .filter(m => obj[m].name != "constructor")
+
+}
