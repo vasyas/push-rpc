@@ -4,7 +4,7 @@ import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 
 /** ServerTopicImpl should implement Topic (and ClientTopic) so it could be used in ServiceImpl */
-export class ServerTopicImpl<D, P = void> extends TopicImpl implements Topic<D, P> {
+export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
   constructor(private supplier: DataSupplier<D, P>) {
     super()
   }
