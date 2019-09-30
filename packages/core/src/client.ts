@@ -157,7 +157,7 @@ export async function createRpcClient({level, createWebSocket}): Promise<any> {
 
     // make serviceItem both topic and remoteMethod
     getClassMethodNames(topic).forEach(methodName => {
-      remoteMethod[methodName] = () => topic[methodName].call(topic)
+      remoteMethod[methodName] = (...args) => topic[methodName].apply(topic, args)
     })
 
     return remoteMethod
