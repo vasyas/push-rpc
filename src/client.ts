@@ -99,12 +99,12 @@ function send(type: MessageType, id: string, ...params) {
   ws.send(m)
 }
 
-function resubscribeTopics(topics) {
-  Object.getOwnPropertyNames(topics).forEach(key => {
-    if (topics[key] instanceof TopicImpl) {
-      topics[key].resubscribe()
-    } else if (topics[key] && typeof topics[key] == "object") {
-      resubscribeTopics(topics[key])
+function resubscribeTopics(services) {
+  Object.getOwnPropertyNames(services).forEach(key => {
+    if (typeof services[key] == "object") {
+      resubscribeTopics(services[key])
+    } else {
+      services[key].resubscribe()
     }
   })
 }
@@ -163,7 +163,6 @@ export async function createRpcClient({level, createWebSocket}): Promise<any> {
     return remoteMethod
   })
 
-  // TODO reconnecting cycle
   await connect(createWebSocket)
   return services
 }
@@ -188,6 +187,7 @@ function createServiceItems(level, createServiceItem: (name) => ClientTopic<any,
       return cachedItems[name]
     },
 
+    // Used in resubscribe
     ownKeys() {
       return Object.keys(cachedItems)
     }
