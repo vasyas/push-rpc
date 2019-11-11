@@ -1,4 +1,11 @@
-# TypeScript-first RPC library with data push capabilities
+Inspired by WAMP, but not strictly confirms to IT. Instead, it is a superset of with OCPP-J protocol, and could be used 
+for creating OCPP-J client and servers.
+
+# Applications
+
+# OCPP-J Client/Server
+
+## TypeScript-first RPC library with data push capabilities 
 
 This library allows you to define and consume your API using TypeScript interface.
 The interface definition could be share between your server and client code bases, providing you with type-safe 
