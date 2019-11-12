@@ -1,11 +1,30 @@
-Inspired by WAMP, but not strictly confirms to IT. Instead, it is a superset of with OCPP-J protocol, and could be used 
-for creating OCPP-J client and servers.
+A framework for organizing bidirectional client-server communication based on JSON and Websockets.
 
-# Applications
+Client establishes Websocket connection to server and then client and server exchange JSON-encoded packets. 
 
-# OCPP-J Client/Server
+JSON-packets forms high-level protocol, based on [WAMP](https://wamp-proto.org/). Being based on WAMP, Push-RPC protocol 
+doesn't conforms to it. Instead it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
+More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, that adds Server PUSH capabilities to OCPP-J RPC.     
 
-## TypeScript-first RPC library with data push capabilities 
+Push-RPC allows you to:
+- create client-initiated connections between client and server
+- bi-directionally invoke remote methods on server and client
+- subscribe client for server-side events
+- auto-reconnect with subscription refresh.
+- helpers for wrapping communications into handy JS (or TypeScript) objects.
+
+# Possible Applications
+
+- Data-driven apps with or without server-initiated updates
+- OCPP-J clients and servers
+- IoT devices connecting to servers 
+- General client/server apps using Websockets for communications
+
+# Getting Started
+
+# Goodies
+
+## Using TypeScript to define contract between client and server 
 
 This library allows you to define and consume your API using TypeScript interface.
 The interface definition could be share between your server and client code bases, providing you with type-safe 
