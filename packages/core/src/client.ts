@@ -86,7 +86,7 @@ function callRemoteMethod(name) {
   }
 }
 
-let services: Services
+let services: any
 let ws
 
 // both remote method calls and topics get
@@ -149,7 +149,7 @@ function connect(createWebSocket): Promise<void> {
   })
 }
 
-export async function createRpcClient({level, createWebSocket}): Promise<any> {
+export function createRpcClient<T>({level, createWebSocket}): Promise<T> {
   services = createServiceItems(level, (name) => {
     const remoteMethod = callRemoteMethod(name)
 
@@ -163,8 +163,9 @@ export async function createRpcClient({level, createWebSocket}): Promise<any> {
     return remoteMethod
   })
 
-  await connect(createWebSocket)
-  return services
+  return connect(createWebSocket).then(() => {
+    return services
+  })
 }
 
 function createServiceItems(level, createServiceItem: (name) => ClientTopic<any, any> | RemoteMethod, prefix = ""): any {
@@ -174,6 +175,9 @@ function createServiceItems(level, createServiceItem: (name) => ClientTopic<any,
     get(target, name) {
       // skip internal props
       if (typeof name != "string") return target[name]
+
+      // and promise-alike
+      if (name == "then") return undefined
 
       if (!cachedItems[name]) {
         const childName = prefix + "/" + name
