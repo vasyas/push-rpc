@@ -1,3 +1,4 @@
+import * as UUID from "uuid-js"
 import * as WebSocket from "ws"
 import {
   DataConsumer,
@@ -85,12 +86,14 @@ interface Options {
   wss?: any
   createContext?: (req, ctx: RpcContext) => any
   caller?: (ctx, next) => Promise<any>
+  getClientId?: (req) => string
 }
 
 const defaultOptions: Partial<Options> = {
   wss: {noServer: true},
   createContext: (req, ctx) => ctx,
-  caller: (ctx, next) => next()
+  caller: (ctx, next) => next(),
+  getClientId: () => UUID.create().toString()
 }
 
 export function createRpcServer(local: any, opts: Options = {}) {
@@ -100,7 +103,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
   }
 
   const wss = new WebSocket.Server(opts.wss)
-  const sessions: RpcSession[] = []
+  const sessions: {[clientId: string]: RpcSession} = {}
 
   prepareLocal(local)
 
@@ -109,33 +112,46 @@ export function createRpcServer(local: any, opts: Options = {}) {
   })
 
   setInterval(() => {
-    sessions.forEach(session => session.checkAlive())
+    Object.values(sessions).forEach(session => session.checkAlive())
   }, 15 * 1000).unref()
 
   wss.on("connection", (ws, req) => {
+    const clientId = opts.getClientId(req)
+
     const ctx: RpcContext = {}
     const session = new RpcSession(ws, local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
 
-    sessions.push(session)
+    // const protocol = req.headers["sec-websocket-protocol"]
+    // log.debug(`Client ${clientId} connected, protocol ${protocol}`)
+
+    if (sessions[clientId]) {
+      log.warn("Prev session active, discarding", clientId)
+      sessions[clientId].terminate()
+    }
+    sessions[clientId] = session
+
     rpcMetrics(sessions)
 
     ws.on("message", message => {
       session.handleMessage(message)
     })
 
-    ws.on("close", async () => {
+    ws.on("close", async (code, reason) => {
       await session.remove()
 
-      const index = sessions.indexOf(session)
+      if (sessions[clientId] == session) {
+        delete sessions[clientId]
 
-      if (index >= 0) {
-        sessions.splice(index, 1)
-        rpcMetrics(session)
+        log.debug(`Client disconnected, ${clientId}`, {code, reason})
+      } else {
+        log.debug(`Disconnected prev session, ${clientId}`, {code, reason})
       }
+
+      rpcMetrics(sessions)
     })
 
     ws.on("error", e => {
-      log.error("Data WS error", e)
+      log.warn(`Communication error, client ${clientId}`, e)
     })
   })
 }
@@ -154,6 +170,10 @@ class RpcSession {
   }
 
   private alive = true
+
+  terminate() {
+    this.ws.terminate()
+  }
 
   checkAlive() {
     if (!this.alive) {
@@ -269,8 +289,8 @@ class RpcSession {
   subscriptions: {topic, params}[] = []
 }
 
-function rpcMetrics(sessions) {
-  const subscriptions = sessions
+function rpcMetrics(sessions: {[id: string]: RpcSession}) {
+  const subscriptions = Object.values(sessions)
     .map(session => session.subscriptions.length)
     .reduce((r, count) => r + count, 0)
 
