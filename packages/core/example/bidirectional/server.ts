@@ -5,7 +5,7 @@ import * as WebSocket from "ws"
 setLogger(console);
 
 class ServerImpl implements Server {
-  getServerHello(): string {
+  async getServerHello(): Promise<string> {
     return "Hello from server"
   }
 }

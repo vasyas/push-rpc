@@ -1,7 +1,7 @@
 export interface Server {
-  getServerHello(): string
+  getServerHello(): Promise<string>
 }
 
 export interface Client {
-  getClientHello(): string
+  getClientHello(): Promise<string>
 }
