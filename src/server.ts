@@ -117,7 +117,8 @@ export function createRpcServer(local: any, opts: Options = {}) {
     const clientId = opts.getClientId(req)
 
     const ctx: RpcContext = {}
-    const session = new RpcSession(ws, local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
+    const session = new RpcSession(local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
+    session.open(ws)
 
     // const protocol = req.headers["sec-websocket-protocol"]
     // log.debug(`Client ${clientId} connected, protocol ${protocol}`)

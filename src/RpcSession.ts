@@ -1,11 +1,18 @@
 import * as WebSocket from "ws"
 import {log} from "./logger"
-import {dateReviver, message} from "./utils"
+import {createMessageId, dateReviver, message} from "./utils"
 import {getServiceItem, MessageType, RemoteMethod} from "./rpc"
 import {ServerTopicImpl} from "./server"
+import {ClientTopicImpl} from "./client"
 
 export class RpcSession {
-  constructor(private ws: WebSocket, private local: any, private updateMetrics, public context, private caller: (ctx, next) => Promise<any>) {
+  constructor(private local: any, private updateMetrics, public context, private caller: (ctx, next) => Promise<any>) {
+  }
+
+  open(ws) {
+    this.ws = ws
+    // TODO close previous?
+
     ws.on("pong", () => {
       log.debug("Got pong")
 
@@ -42,9 +49,9 @@ export class RpcSession {
 
   handleMessage(data) {
     try {
-      log.debug("Server in", data)
+      log.debug("In", data)
 
-      const [type, id, name, params] = JSON.parse(data, dateReviver)
+      const [type, id, name, ...other] = JSON.parse(data, dateReviver)
 
       const item = getServiceItem(this.local, name)
 
@@ -52,25 +59,44 @@ export class RpcSession {
         throw new Error(`Can't find item with name ${name}`)
       }
 
-      const topic = item as any as ServerTopicImpl<any, any>
+      const serverTopic = item as any as ServerTopicImpl<any, any>
+      const clientTopic = item as any as ClientTopicImpl<any, any>
       const method = item as RemoteMethod
 
       switch (type) {
         case MessageType.Subscribe:
-          this.subscribe(topic, params)
+          this.subscribe(serverTopic, other[0])
           break
 
         case MessageType.Unsubscribe:
-          this.unsubscribe(topic, params)
+          this.unsubscribe(serverTopic, other[0])
           break
 
         case MessageType.Get:
-          this.get(id, topic, params)
+          this.get(id, serverTopic, other[0])
           break
 
         case MessageType.Call:
-          this.call(id, method, params)
+          this.callLocal(id, method, other[0])
           break
+
+        case MessageType.Data:
+          clientTopic.receiveData(other[0], other[1])
+          break
+
+        case MessageType.Result:
+        case MessageType.Error:
+          if (this.calls[id]) {
+            const {resolve, reject} = this.calls[id]
+            delete this.calls[id]
+
+            if (type == MessageType.Result) {
+              resolve(other[0])
+            } else {
+              reject(other[0])
+            }
+          }
+          break;
       }
     } catch (e) {
       log.error(`Failed to handle RPC message ${data}\n`, e)
@@ -79,11 +105,19 @@ export class RpcSession {
 
   send(type: MessageType, id: string, ...params) {
     const m = message(type, id, ...params)
-    log.debug("Server out", m)
+    log.debug("Out", m)
     this.ws.send(m)
   }
 
-  private async call(id, remoteMethod, params) {
+  callRemote(name, params, type) {
+    return new Promise((resolve, reject) => {
+      const id = createMessageId()
+      this.calls[id] = {resolve, reject}
+      this.send(type, id, name, params)
+    })
+  }
+
+  private async callLocal(id, remoteMethod, params) {
     try {
       const callContext = {...this.context}
       const r = await this.caller(callContext, () => remoteMethod(params, callContext))
@@ -134,5 +168,11 @@ export class RpcSession {
     this.updateMetrics()
   }
 
-  subscriptions: {topic, params}[] = []
+  private ws: WebSocket = null
+
+  public subscriptions: {topic, params}[] = []
+
+  // both remote method calls and topics get
+  // TODO reject on timeout, expire calls cache
+  private calls: {[id: string]: {resolve, reject}} = {}
 }
