@@ -86,7 +86,7 @@ function callRemoteMethod(name) {
   }
 }
 
-let services: any
+let remoteServices: any
 let ws
 
 // both remote method calls and topics get
@@ -133,7 +133,7 @@ function connect(createWebSocket): Promise<void> {
       log.debug("Connected")
 
       errorDelay = 0
-      resubscribeTopics(services)
+      resubscribeTopics(remoteServices)
       resolve()
     }
 
@@ -149,8 +149,8 @@ function connect(createWebSocket): Promise<void> {
   })
 }
 
-export function createRpcClient<T>({level, createWebSocket}): Promise<T> {
-  services = createServiceItems(level, (name) => {
+export function createRpcClient<R>({level, createWebSocket, local}): Promise<R> {
+  remoteServices = createServiceItems(level, (name) => {
     const remoteMethod = callRemoteMethod(name)
 
     const topic = new ClientTopicImpl(name)
@@ -164,7 +164,7 @@ export function createRpcClient<T>({level, createWebSocket}): Promise<T> {
   })
 
   return connect(createWebSocket).then(() => {
-    return services
+    return remoteServices
   })
 }
 
@@ -206,7 +206,7 @@ function handleIncomingMessage(e) {
   if (type == MessageType.Data) {
     const [name, params, data] = other
 
-    const topic: ClientTopicImpl<any, any> = getServiceItem(services, name) as any
+    const topic: ClientTopicImpl<any, any> = getServiceItem(remoteServices, name) as any
     topic.receiveData(params, data)
   }
 

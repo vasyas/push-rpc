@@ -1,17 +1,22 @@
 import * as WebSocket from "ws"
 import {createRpcClient, setLogger} from "../../src"
-import {Server} from "./shared"
+import {Client, Server} from "./shared"
 
 setLogger(console);
 
 (async () => {
-  const server: Server = await createRpcClient({
+  const local: Client = {
+    getClientHello: async () => "Hello from client"
+  }
+
+  const remote: Server = await createRpcClient({
     level: 0,
-    createWebSocket: () => new WebSocket("ws://localhost:5555")
+    createWebSocket: () => new WebSocket("ws://localhost:5555"),
+    local
   })
 
   console.log("Client connected")
 
-  // const s = await server.getServerHello()
-  // console.log(s)
+  const s = await remote.getServerHello()
+  console.log(s)
 })()
