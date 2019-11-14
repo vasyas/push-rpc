@@ -93,58 +93,51 @@ const defaultOptions: Partial<Options> = {
   caller: (ctx, next) => next()
 }
 
-export class RpcServer {
-  constructor(
-    private local: any,
-    opts: Options = {},
-  ) {
-    opts = {
-      ...defaultOptions,
-      ...opts
-    }
-
-    prepareLocal(local)
-
-    this.wss = new WebSocket.Server(opts.wss)
-
-    this.wss.on("error", e => {
-      log.error("RPC WS server error", e)
-    })
-
-    setInterval(() => {
-      this.sessions.forEach(session => session.checkAlive())
-    }, 15 * 1000).unref()
-
-    this.wss.on("connection", (ws, req) => {
-      const ctx: RpcContext = {}
-      const session = new RpcSession(ws, () => rpcMetrics(this.sessions), this.local, opts.createContext(req, ctx), opts.caller)
-
-      this.sessions.push(session)
-      rpcMetrics(this.sessions)
-
-      ws.on("message", message => {
-        session.handleMessage(message)
-      })
-
-      ws.on("close", async () => {
-        await session.remove()
-
-        const index = this.sessions.indexOf(session)
-
-        if (index >= 0) {
-          this.sessions.splice(index, 1)
-          rpcMetrics(session)
-        }
-      })
-
-      ws.on("error", e => {
-        log.error("Data WS error", e)
-      })
-    })
+export function createRpcServer(local: any, opts: Options = {}) {
+  opts = {
+    ...defaultOptions,
+    ...opts
   }
 
-  private wss: WebSocket.Server = null
-  private sessions: RpcSession[] = []
+  const wss = new WebSocket.Server(opts.wss)
+  const sessions: RpcSession[] = []
+
+  prepareLocal(local)
+
+  wss.on("error", e => {
+    log.error("RPC WS server error", e)
+  })
+
+  setInterval(() => {
+    sessions.forEach(session => session.checkAlive())
+  }, 15 * 1000).unref()
+
+  wss.on("connection", (ws, req) => {
+    const ctx: RpcContext = {}
+    const session = new RpcSession(ws, local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
+
+    sessions.push(session)
+    rpcMetrics(sessions)
+
+    ws.on("message", message => {
+      session.handleMessage(message)
+    })
+
+    ws.on("close", async () => {
+      await session.remove()
+
+      const index = sessions.indexOf(session)
+
+      if (index >= 0) {
+        sessions.splice(index, 1)
+        rpcMetrics(session)
+      }
+    })
+
+    ws.on("error", e => {
+      log.error("Data WS error", e)
+    })
+  })
 }
 
 class RpcSession {
@@ -298,19 +291,19 @@ function prepareLocal(services, prefix = "") {
   ]
 
   keys.forEach(key => {
-    const i = services[key]
+    const item = services[key]
 
-    if (typeof i == "object") {
+    if (typeof item == "object") {
       const name = prefix + "/" + key
 
-      if (i instanceof ServerTopicImpl) {
-        i.name = name
+      if (item instanceof ServerTopicImpl) {
+        item.name = name
         return
       }
 
-      return prepareLocal(i, name)
-    } else if (typeof i == "function") {
-      services[key] = services[key].bind(services)
+      return prepareLocal(item, name)
+    } else if (typeof item == "function") {
+      services[key] = item.bind(services)
     }
   })
 }

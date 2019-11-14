@@ -1,4 +1,4 @@
-import {RpcServer, ServerTopicImpl, setLogger} from "../../src/index"
+import {createRpcServer, ServerTopicImpl, setLogger} from "../../src/index"
 import {Services, Todo, TodoService} from "./shared"
 
 setLogger(console)
@@ -25,6 +25,6 @@ const services: Services = {
   todo: new TodoServiceImpl(),
 }
 
-const server = new RpcServer(services, {wss: {port: 5555}})
+const server = createRpcServer(services, {wss: {port: 5555}})
 
 console.log("RPC Server started at ws://localhost:5555")
