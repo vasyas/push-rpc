@@ -51,7 +51,13 @@ export class RpcSession {
     try {
       log.debug("In", data)
 
-      const [type, id, name, ...other] = JSON.parse(data, dateReviver)
+      const message = JSON.parse(data, dateReviver)
+
+      if (message[0] == MessageType.Result || message[0] == MessageType.Error) {
+        return this.callRemoteResponse(message)
+      }
+
+      const [type, id, name, ...other] = message
 
       const item = getServiceItem(this.local, name)
 
@@ -83,20 +89,6 @@ export class RpcSession {
         case MessageType.Data:
           clientTopic.receiveData(other[0], other[1])
           break
-
-        case MessageType.Result:
-        case MessageType.Error:
-          if (this.calls[id]) {
-            const {resolve, reject} = this.calls[id]
-            delete this.calls[id]
-
-            if (type == MessageType.Result) {
-              resolve(other[0])
-            } else {
-              reject(other[0])
-            }
-          }
-          break;
       }
     } catch (e) {
       log.error(`Failed to handle RPC message ${data}\n`, e)
@@ -115,6 +107,21 @@ export class RpcSession {
       this.calls[id] = {resolve, reject}
       this.send(type, id, name, params)
     })
+  }
+
+  private callRemoteResponse(data) {
+    const [_, id, res] = data
+
+    if (this.calls[id]) {
+      const {resolve, reject} = this.calls[id]
+      delete this.calls[id]
+
+      if (data[0] == MessageType.Result) {
+        resolve(res)
+      } else {
+        reject(res)
+      }
+    }
   }
 
   private async callLocal(id, remoteMethod, params) {
