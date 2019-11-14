@@ -1,5 +1,15 @@
 import * as WebSocket from "ws"
-import {DataConsumer, DataSupplier, getServiceItem, MessageType, RemoteMethod, Services, Topic, TopicImpl} from "./rpc"
+import {
+  DataConsumer,
+  DataSupplier,
+  getServiceItem,
+  MessageType,
+  RemoteMethod,
+  RpcContext,
+  Services,
+  Topic,
+  TopicImpl
+} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 
@@ -71,51 +81,74 @@ export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
   unsubscribe(params?: P, subscriptionKey?: any) {}
 }
 
-let services: Services = {}
-
-export function createRpcServer(
-  servicesImpl: any,
-  server: WebSocket.Server,
-  createContext: (req) => any = () => {},
-  caller: (ctx, next) => Promise<any> = (ctx, next) => next(),
-): WebSocket.Server {
-  services = servicesImpl
-  prepareServiceImpl(services)
-
-  server.on("error", e => {
-    log.error("RPC WS server error", e)
-  })
-
-  setInterval(() => {
-    sessions.forEach(session => session.checkAlive())
-  }, 15 * 1000).unref()
-
-  server.on("connection", (ws, req) => {
-    const session = new RpcSession(ws, createContext(req), caller)
-
-    sessions.push(session)
-    rpcMetrics()
-
-    ws.on("message", message => {
-      session.handleMessage(message)
-    })
-
-    ws.on("close", async () => {
-      await session.remove()
-    })
-
-    ws.on("error", e => {
-      log.error("Data WS error", e)
-    })
-  })
-
-  return server
+interface Options {
+  wss?: any
+  createContext?: (req, ctx: RpcContext) => any
+  caller?: (ctx, next) => Promise<any>
 }
 
-const sessions: RpcSession[] = []
+const defaultOptions: Partial<Options> = {
+  wss: {noServer: true},
+  createContext: (req, ctx) => ctx,
+  caller: (ctx, next) => next()
+}
+
+export class RpcServer {
+  constructor(
+    private local: any,
+    opts: Options = {},
+  ) {
+    opts = {
+      ...defaultOptions,
+      ...opts
+    }
+
+    prepareLocal(local)
+
+    this.wss = new WebSocket.Server(opts.wss)
+
+    this.wss.on("error", e => {
+      log.error("RPC WS server error", e)
+    })
+
+    setInterval(() => {
+      this.sessions.forEach(session => session.checkAlive())
+    }, 15 * 1000).unref()
+
+    this.wss.on("connection", (ws, req) => {
+      const ctx: RpcContext = {}
+      const session = new RpcSession(ws, () => rpcMetrics(this.sessions), this.local, opts.createContext(req, ctx), opts.caller)
+
+      this.sessions.push(session)
+      rpcMetrics(this.sessions)
+
+      ws.on("message", message => {
+        session.handleMessage(message)
+      })
+
+      ws.on("close", async () => {
+        await session.remove()
+
+        const index = this.sessions.indexOf(session)
+
+        if (index >= 0) {
+          this.sessions.splice(index, 1)
+          rpcMetrics(session)
+        }
+      })
+
+      ws.on("error", e => {
+        log.error("Data WS error", e)
+      })
+    })
+  }
+
+  private wss: WebSocket.Server = null
+  private sessions: RpcSession[] = []
+}
 
 class RpcSession {
-  constructor(private ws: WebSocket, public context, private caller: (ctx, next) => Promise<any>) {
+  constructor(private ws: WebSocket, private local: any, private updateMetrics, public context, private caller: (ctx, next) => Promise<any>) {
     ws.on("pong", () => {
       log.debug("Got pong")
 
@@ -125,13 +158,6 @@ class RpcSession {
 
   async remove() {
     await this.unsubscribeAll()
-
-    const index = sessions.indexOf(this)
-
-    if (index >= 0) {
-      sessions.splice(index, 1)
-      rpcMetrics()
-    }
   }
 
   private alive = true
@@ -159,7 +185,7 @@ class RpcSession {
 
       const [type, id, name, params] = JSON.parse(data, dateReviver)
 
-      const item = getServiceItem(services, name)
+      const item = getServiceItem(this.local, name)
 
       if (!item) {
         throw new Error(`Can't find item with name ${name}`)
@@ -229,7 +255,7 @@ class RpcSession {
   private async subscribe(topic: ServerTopicImpl<any, any>, params) {
     await topic.subscribeSession(this, params)
     this.subscriptions.push({topic, params})
-    rpcMetrics()
+    this.updateMetrics()
   }
 
   private async unsubscribe(topic: ServerTopicImpl<any, any>, params) {
@@ -238,19 +264,19 @@ class RpcSession {
     const paramsKey = JSON.stringify(params)
 
     this.subscriptions = this.subscriptions.filter(s => s.topic != topic || JSON.stringify(s.params) != paramsKey)
-    rpcMetrics()
+    this.updateMetrics()
   }
 
   private async unsubscribeAll() {
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
     this.subscriptions = []
-    rpcMetrics()
+    this.updateMetrics()
   }
 
   subscriptions: {topic, params}[] = []
 }
 
-function rpcMetrics() {
+function rpcMetrics(sessions) {
   const subscriptions = sessions
     .map(session => session.subscriptions.length)
     .reduce((r, count) => r + count, 0)
@@ -265,8 +291,7 @@ function rpcMetrics() {
  * 1. Set name on topics
  * 2. Bind this to remote methods
  */
-function prepareServiceImpl(services, prefix = "") {
-  // TODO walk down proto chain to get methods from superclasses
+function prepareLocal(services, prefix = "") {
   const keys = [
     ...Object.keys(services),
     ...(Object.getPrototypeOf(services) && Object.keys(Object.getPrototypeOf(services)) || []),
@@ -283,7 +308,7 @@ function prepareServiceImpl(services, prefix = "") {
         return
       }
 
-      return prepareServiceImpl(i, name)
+      return prepareLocal(i, name)
     } else if (typeof i == "function") {
       services[key] = services[key].bind(services)
     }
