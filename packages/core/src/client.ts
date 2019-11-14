@@ -1,14 +1,15 @@
-import {ClientTopic, DataConsumer, getServiceItem, MessageType, RemoteMethod, Services, TopicImpl} from "./rpc"
+import {ClientTopic, DataConsumer, MessageType, RemoteMethod, TopicImpl} from "./rpc"
 import {log} from "./logger"
-import {createMessageId, dateReviver, getClassMethodNames, message} from "./utils"
+import {createMessageId, getClassMethodNames} from "./utils"
+import {RpcSession} from "./RpcSession"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
   subscriptionKey: string
 }
 
-class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
-  constructor(private topicName: string) {
+export class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
+  constructor(private topicName: string, private session: RpcSession) {
     super()
   }
 
@@ -20,7 +21,7 @@ class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
       {consumer, subscriptionKey},
     ]
 
-    send(MessageType.Subscribe, createMessageId(), this.topicName, params)
+    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
   }
 
   unsubscribe(params: P = null, subscriptionKey = undefined) {
@@ -29,7 +30,7 @@ class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
     if (!this.consumers[paramsKey]) return
 
     // only if all unsubscribed?
-    send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
+    this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
 
     // unsubscribe all
     if (subscriptionKey == undefined) {
@@ -50,74 +51,45 @@ class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
   }
 
   get(params: P = null): Promise<D> {
-    const id = createMessageId()
-    return new Promise((resolve, reject) => {
-      calls[id] = {resolve, reject}
-      send(MessageType.Get, id, this.topicName, params)
-    })
+    return this.session.callRemote(this.topicName, params, MessageType.Get) as Promise<D>
   }
 
   resubscribe() {
     Object.keys(this.consumers).forEach(paramsKey => {
       const params = JSON.parse(paramsKey)
-
-      send(MessageType.Subscribe, createMessageId(), this.topicName, params)
+      this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
     })
   }
 
   receiveData(params: P, data: D) {
     const paramsKey = JSON.stringify(params)
-
     const subscriptions = this.consumers[paramsKey] || []
-
     subscriptions.forEach(subscription => subscription.consumer(data))
   }
 
   private consumers: {[key: string]: Subscription<D>[]} = {}
 }
 
-function callRemoteMethod(name) {
-  return (params) => {
-    return new Promise((resolve, reject) => {
-      const id = createMessageId()
-      calls[id] = {resolve, reject}
-      send(MessageType.Call, id, name, params)
-    })
-  }
-}
-
-let remoteServices: any
-let ws
-
-// both remote method calls and topics get
-// TODO reject on timeout, expire calls cache
-let calls: {[id: string]: {resolve, reject}} = {}
-
-function send(type: MessageType, id: string, ...params) {
-  const m = message(type, id, ...params)
-  log.debug("Client out", m)
-  ws.send(m)
-}
-
-function resubscribeTopics(services) {
-  Object.getOwnPropertyNames(services).forEach(key => {
-    if (typeof services[key] == "object") {
-      resubscribeTopics(services[key])
+function resubscribeTopics(remote) {
+  Object.getOwnPropertyNames(remote).forEach(key => {
+    if (typeof remote[key] == "object") {
+      resubscribeTopics(remote[key])
     } else {
-      services[key].resubscribe()
+      remote[key].resubscribe()
     }
   })
 }
 
+// TODO should be connection-specific
 let errorDelay = 0
 
-function connect(createWebSocket): Promise<void> {
-  return new Promise((resolve, reject) => {
-    ws = createWebSocket()
+function connectionLoop(session: RpcSession, createWebSocket, remote): Promise<void> {
+  return new Promise((resolve) => {
+    const ws = createWebSocket()
 
-    ws.onmessage = (e) => {
+    ws.onmessage = (evt) => {
       try {
-        handleIncomingMessage(e)
+        session.handleMessage(evt.data)
       } catch (e) {
         log.error(`Failed to handle data`, e)
       }
@@ -132,15 +104,18 @@ function connect(createWebSocket): Promise<void> {
     ws.onopen = () => {
       log.debug("Connected")
 
+      // should trigger resubscribe, see below
+      session.open(ws)
+
       errorDelay = 0
-      resubscribeTopics(remoteServices)
-      resolve()
+      resubscribeTopics(remote)
+      resolve(ws)
     }
 
     ws.onclose = ({code}) => {
       log.debug("Disconnected")
 
-      const timer = setTimeout(() => connect(createWebSocket), errorDelay)
+      const timer = setTimeout(() => connectionLoop(session, createWebSocket, remote), errorDelay)
 
       if (timer.unref) {
         timer.unref()
@@ -150,21 +125,26 @@ function connect(createWebSocket): Promise<void> {
 }
 
 export function createRpcClient<R>({level, createWebSocket, local = {}}): Promise<R> {
-  remoteServices = createServiceItems(level, (name) => {
-    const remoteMethod = callRemoteMethod(name)
+  const session = new RpcSession(local, () => {}, () => {}, (ctx, next) => next())
 
-    const topic = new ClientTopicImpl(name)
+  const remote = createServiceItems(level, (name) => {
+    // start with method
+    const remoteItem = (params) => {
+      return session.callRemote(name, params, MessageType.Call)
+    }
 
-    // make serviceItem both topic and remoteMethod
-    getClassMethodNames(topic).forEach(methodName => {
-      remoteMethod[methodName] = (...args) => topic[methodName].apply(topic, args)
+    const remoteTopic = new ClientTopicImpl(name, session)
+
+    // make remoteItem both topic and remoteMethod
+    getClassMethodNames(remoteTopic).forEach(methodName => {
+      remoteItem[methodName] = (...args) => remoteTopic[methodName].apply(remoteTopic, args)
     })
 
-    return remoteMethod
+    return remoteItem
   })
 
-  return connect(createWebSocket).then(() => {
-    return remoteServices
+  return connectionLoop(session, createWebSocket, remote).then(() => {
+    return remote
   })
 }
 
@@ -196,30 +176,4 @@ function createServiceItems(level, createServiceItem: (name) => ClientTopic<any,
       return Object.keys(cachedItems)
     }
   })
-}
-
-function handleIncomingMessage(e) {
-  log.debug("Client in", e.data)
-
-  const [type, id, ...other] = JSON.parse(e.data, dateReviver)
-
-  if (type == MessageType.Data) {
-    const [name, params, data] = other
-
-    const topic: ClientTopicImpl<any, any> = getServiceItem(remoteServices, name) as any
-    topic.receiveData(params, data)
-  }
-
-  if (type == MessageType.Result || type == MessageType.Error) {
-    if (calls[id]) {
-      const {resolve, reject} = calls[id]
-      delete calls[id]
-
-      if (type == MessageType.Result) {
-        resolve(other[0])
-      } else {
-        reject(other[0])
-      }
-    }
-  }
 }
