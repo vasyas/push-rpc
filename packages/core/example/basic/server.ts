@@ -1,6 +1,7 @@
-import {createRpcServer, ServerTopicImpl} from "../../src/index"
-import {Services, TodoService, Todo} from "./shared"
-import * as WebSocket from "ws"
+import {RpcServer, ServerTopicImpl, setLogger} from "../../src/index"
+import {Services, Todo, TodoService} from "./shared"
+
+setLogger(console)
 
 let storage: Todo[] = []
 
@@ -24,7 +25,6 @@ const services: Services = {
   todo: new TodoServiceImpl(),
 }
 
-const rpcWebsocketServer = new WebSocket.Server({port: 5555})
-createRpcServer(services, rpcWebsocketServer)
+const server = new RpcServer(services, {wss: {port: 5555}})
 
 console.log("RPC Server started at ws://localhost:5555")

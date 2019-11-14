@@ -1,6 +1,8 @@
 import * as WebSocket from "ws"
 import {Services} from "./shared"
-import {createRpcClient} from "../../src"
+import {createRpcClient, setLogger} from "../../src"
+
+setLogger(console);
 
 (async () => {
   const services: Services = await createRpcClient({

@@ -149,7 +149,7 @@ function connect(createWebSocket): Promise<void> {
   })
 }
 
-export function createRpcClient<R>({level, createWebSocket, local}): Promise<R> {
+export function createRpcClient<R>({level, createWebSocket, local = {}}): Promise<R> {
   remoteServices = createServiceItems(level, (name) => {
     const remoteMethod = callRemoteMethod(name)
 
