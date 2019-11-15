@@ -1,9 +1,9 @@
 import * as WebSocket from "ws"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
-import {getServiceItem, MessageType, RemoteMethod, RpcContext} from "./rpc"
-import {ServerTopicImpl} from "./server"
-import {ClientTopicImpl, createRemote} from "./client"
+import {getServiceItem, MessageType, Method} from "./rpc"
+import {LocalTopicImpl} from "./local"
+import {RemoteTopicImpl, createRemote} from "./remote"
 
 export class RpcSession {
   constructor(
@@ -73,9 +73,9 @@ export class RpcSession {
         throw new Error(`Can't find item with name ${name}`)
       }
 
-      const serverTopic = item as any as ServerTopicImpl<any, any>
-      const clientTopic = item as any as ClientTopicImpl<any, any>
-      const method = item as RemoteMethod
+      const serverTopic = item as any as LocalTopicImpl<any, any>
+      const clientTopic = item as any as RemoteTopicImpl<any, any>
+      const method = item as Method
 
       switch (type) {
         case MessageType.Subscribe:
@@ -157,7 +157,7 @@ export class RpcSession {
     }
   }
 
-  private async get(id, topic: ServerTopicImpl<any, any>, params) {
+  private async get(id, topic: LocalTopicImpl<any, any>, params) {
     try {
       const d = await topic.getData(params, this.createContext())
       this.send(MessageType.Result, id, d)
@@ -170,13 +170,13 @@ export class RpcSession {
     }
   }
 
-  private async subscribe(topic: ServerTopicImpl<any, any>, params) {
+  private async subscribe(topic: LocalTopicImpl<any, any>, params) {
     await topic.subscribeSession(this, params)
     this.subscriptions.push({topic, params})
     this.updateMetrics()
   }
 
-  private async unsubscribe(topic: ServerTopicImpl<any, any>, params) {
+  private async unsubscribe(topic: LocalTopicImpl<any, any>, params) {
     await topic.unsubscribeSession(this, params)
 
     const paramsKey = JSON.stringify(params)

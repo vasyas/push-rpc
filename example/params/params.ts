@@ -1,4 +1,4 @@
-import {createRpcClient, createRpcServer, ServerTopicImpl, Topic} from "../../src"
+import {createRpcClient, createRpcServer, LocalTopicImpl, Topic} from "../../src"
 import * as WebSocket from "ws"
 
 // shared
@@ -39,7 +39,7 @@ async function createServer() {
   let storage: Todo[] = []
 
   class TodoServiceImpl implements TodoService {
-    todo = new ServerTopicImpl(async ({id}) => storage.find(t => t.id == id))
+    todo = new LocalTopicImpl(async ({id}) => storage.find(t => t.id == id))
 
     async update(todo: Partial<Todo>) {
       const t = storage.find(t => t.id == todo.id)

@@ -1,4 +1,4 @@
-import {createRpcServer, ServerTopicImpl, setLogger} from "../../src/index"
+import {createRpcServer, LocalTopicImpl, setLogger} from "../../src/index"
 import {Services, Todo, TodoService} from "./shared"
 
 setLogger(console)
@@ -18,7 +18,7 @@ class TodoServiceImpl implements TodoService {
     this.todos.trigger()
   }
 
-  todos = new ServerTopicImpl(async () => storage)
+  todos = new LocalTopicImpl(async () => storage)
 }
 
 const services: Services = {

@@ -1,4 +1,4 @@
-import {ClientTopic, DataConsumer, MessageType, RemoteMethod, TopicImpl} from "./rpc"
+import {RemoteTopic, DataConsumer, MessageType, Method, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, getClassMethodNames} from "./utils"
 import {RpcSession} from "./RpcSession"
@@ -8,7 +8,7 @@ interface Subscription<D> {
   subscriptionKey: string
 }
 
-export class ClientTopicImpl<D, P> extends TopicImpl implements ClientTopic<D, P> {
+export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P> {
   constructor(private topicName: string, private session: RpcSession) {
     super()
   }
@@ -135,13 +135,13 @@ export function createRpcClient<R>({level, createWebSocket, local = {}}): Promis
 }
 
 export function createRemote(level: number, session: RpcSession) {
-  return createServiceItems(level, (name) => {
+  return createRemoteServiceItems(level, (name) => {
     // start with method
     const remoteItem = (params) => {
       return session.callRemote(name, params, MessageType.Call)
     }
 
-    const remoteTopic = new ClientTopicImpl(name, session)
+    const remoteTopic = new RemoteTopicImpl(name, session)
 
     // make remoteItem both topic and remoteMethod
     getClassMethodNames(remoteTopic).forEach(methodName => {
@@ -152,7 +152,7 @@ export function createRemote(level: number, session: RpcSession) {
   })
 }
 
-function createServiceItems(level, createServiceItem: (name) => ClientTopic<any, any> | RemoteMethod, prefix = ""): any {
+function createRemoteServiceItems(level, createServiceItem: (name) => RemoteTopic<any, any> | Method, prefix = ""): any {
   const cachedItems = {}
 
   return new Proxy({}, {
@@ -167,7 +167,7 @@ function createServiceItems(level, createServiceItem: (name) => ClientTopic<any,
         const childName = prefix + "/" + name
 
         if (level > 0)
-          cachedItems[name] = createServiceItems(level - 1, createServiceItem, childName)
+          cachedItems[name] = createRemoteServiceItems(level - 1, createServiceItem, childName)
         else
           cachedItems[name] = createServiceItem(childName)
       }

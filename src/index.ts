@@ -1,4 +1,4 @@
-export {createRpcClient} from "./client"
-export {createRpcServer, ServerTopicImpl} from "./server"
+export {createRpcClient} from "./remote"
+export {createRpcServer, LocalTopicImpl} from "./local"
 export {setLogger} from "./logger"
 export {Topic} from "./rpc"
