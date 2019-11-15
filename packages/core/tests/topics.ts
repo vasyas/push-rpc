@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import * as WebSocket from "ws"
-import {createRpcClient, createRpcServer, ServerTopicImpl} from "../src"
+import {createRpcClient, createRpcServer, LocalTopicImpl} from "../src"
 
 describe("Topics", () => {
   let rpcWebsocketServer: WebSocket.Server
@@ -19,7 +19,7 @@ describe("Topics", () => {
 
     createRpcServer({
       test: {
-        item: new ServerTopicImpl<{}, any>(async () => item)
+        item: new LocalTopicImpl<{}, any>(async () => item)
       }
     }, rpcWebsocketServer)
 
@@ -38,7 +38,7 @@ describe("Topics", () => {
 
     const server = {
       test: {
-        item: new ServerTopicImpl<typeof item, {}>(async () => item)
+        item: new LocalTopicImpl<typeof item, {}>(async () => item)
       }
     }
 

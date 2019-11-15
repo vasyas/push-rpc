@@ -1,4 +1,4 @@
-import {createRpcServer, ServerTopicImpl} from "../../src"
+import {createRpcServer, LocalTopicImpl} from "../../src"
 import {Services, Todo, TodoService} from "../basic/shared"
 import {RpcContext} from "../../src/rpc"
 
@@ -22,7 +22,7 @@ class TodoServiceImpl implements TodoService {
     this.todos.trigger()
   }
 
-  todos = new ServerTopicImpl(async (_, ctx: ServiceContext) => storage)
+  todos = new LocalTopicImpl(async (_, ctx: ServiceContext) => storage)
 }
 
 const services: Services = {

@@ -1,13 +1,13 @@
 import * as UUID from "uuid-js"
 import * as WebSocket from "ws"
-import {DataConsumer, DataSupplier, MessageType, RpcContext, Topic, TopicImpl} from "./rpc"
+import {DataConsumer, DataSupplier, MessageType, Topic, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
-import {createRemote} from "./client"
+import {createRemote} from "./remote"
 
-/** ServerTopicImpl should implement Topic (and ClientTopic) so it could be used in ServiceImpl */
-export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
+/** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
+export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
   constructor(private supplier: DataSupplier<D, P>) {
     super()
   }
@@ -103,7 +103,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
     if (!sessions[clientId])
       throw new Error(`Client ${clientId} is not connected`)
 
-    // create client for sessions[clientId]
+    return createRemote(opts.clientLevel, sessions[clientId])
   }
 
   prepareLocal(local)
@@ -157,7 +157,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
   })
 
   return {
-    createRemote
+    getRemote
   }
 }
 
@@ -188,7 +188,7 @@ function prepareLocal(services, prefix = "") {
     if (typeof item == "object") {
       const name = prefix + "/" + key
 
-      if (item instanceof ServerTopicImpl) {
+      if (item instanceof LocalTopicImpl) {
         item.name = name
         return
       }
