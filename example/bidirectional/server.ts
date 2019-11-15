@@ -1,14 +1,17 @@
 import {createRpcServer, setLogger} from "../../src/index"
-import {Server} from "./shared"
+import {Client, Server} from "./shared"
+import {RpcContext} from "../../src/rpc"
 
-setLogger(console);
+setLogger(console)
+
+let server
 
 class ServerImpl implements Server {
-  async getServerHello(): Promise<string> {
-    return "Hello from server"
+  async getServerHello(_, ctx: RpcContext<Client>): Promise<string> {
+    return "Hello from server and " + await ctx.remote.getClientHello()
   }
 }
 
-createRpcServer(new ServerImpl(), {wss: {port: 5555}})
+server = createRpcServer(new ServerImpl(), {wss: {port: 5555}})
 
 console.log("RPC Server started at ws://localhost:5555")

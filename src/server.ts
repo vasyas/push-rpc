@@ -4,6 +4,7 @@ import {DataConsumer, DataSupplier, MessageType, RpcContext, Topic, TopicImpl} f
 import {log} from "./logger"
 import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
+import {createRemote} from "./client"
 
 /** ServerTopicImpl should implement Topic (and ClientTopic) so it could be used in ServiceImpl */
 export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
@@ -22,7 +23,7 @@ export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
     subscribed.forEach(async session => {
       const data: D = suppliedData != undefined
         ? suppliedData
-        : await this.supplier(params, session.context)
+        : await this.supplier(params, session.createContext())
 
       session.send(MessageType.Data, createMessageId(), this.name, params, data)
     })
@@ -44,7 +45,7 @@ export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
     this.subscribedSessions[key] = sessions
 
     if (this.supplier) {
-      const data = await this.supplier(params, session.context)
+      const data = await this.supplier(params, session.createContext())
       session.send(MessageType.Data, createMessageId(), this.name, params, data)
     }
   }
@@ -75,16 +76,18 @@ export class ServerTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
 
 interface Options {
   wss?: any
-  createContext?: (req, ctx: RpcContext) => any
+  createContext?: (req, protocol: string, remoteId: string) => any
   caller?: (ctx, next) => Promise<any>
   getClientId?: (req) => string
+  clientLevel?: number
 }
 
 const defaultOptions: Partial<Options> = {
   wss: {noServer: true},
-  createContext: (req, ctx) => ctx,
+  createContext: (req, protocol, remoteId) => ({protocol, remoteId}),
   caller: (ctx, next) => next(),
-  getClientId: () => UUID.create().toString()
+  getClientId: () => UUID.create().toString(),
+  clientLevel: 0,
 }
 
 export function createRpcServer(local: any, opts: Options = {}) {
@@ -96,7 +99,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
   const wss = new WebSocket.Server(opts.wss)
   const sessions: {[clientId: string]: RpcSession} = {}
 
-  function createRemote(clientId) {
+  function getRemote(clientId) {
     if (!sessions[clientId])
       throw new Error(`Client ${clientId} is not connected`)
 
@@ -114,22 +117,19 @@ export function createRpcServer(local: any, opts: Options = {}) {
   }, 15 * 1000).unref()
 
   wss.on("connection", (ws, req) => {
-    const clientId = opts.getClientId(req)
-    const protocol = req.headers["sec-websocket-protocol"][0]
+    const remoteId = opts.getClientId(req)
+    const protocol = req.headers["sec-websocket-protocol"] ? req.headers["sec-websocket-protocol"][0] : null
     // log.debug(`Client ${clientId} connected, protocol ${protocol}`)
 
-    const ctx: RpcContext = {
-      protocol,
-      clientId
-    }
-    const session = new RpcSession(local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
+    const connectionContext = opts.createContext(req, protocol, remoteId)
+    const session = new RpcSession(local, opts.clientLevel, () => rpcMetrics(sessions), connectionContext, opts.caller)
     session.open(ws)
 
-    if (sessions[clientId]) {
-      log.warn("Prev session active, discarding", clientId)
-      sessions[clientId].terminate()
+    if (sessions[remoteId]) {
+      log.warn("Prev session active, discarding", remoteId)
+      sessions[remoteId].terminate()
     }
-    sessions[clientId] = session
+    sessions[remoteId] = session
 
     rpcMetrics(sessions)
 
@@ -140,19 +140,19 @@ export function createRpcServer(local: any, opts: Options = {}) {
     ws.on("close", async (code, reason) => {
       await session.remove()
 
-      if (sessions[clientId] == session) {
-        delete sessions[clientId]
+      if (sessions[remoteId] == session) {
+        delete sessions[remoteId]
 
-        log.debug(`Client disconnected, ${clientId}`, {code, reason})
+        log.debug(`Client disconnected, ${remoteId}`, {code, reason})
       } else {
-        log.debug(`Disconnected prev session, ${clientId}`, {code, reason})
+        log.debug(`Disconnected prev session, ${remoteId}`, {code, reason})
       }
 
       rpcMetrics(sessions)
     })
 
     ws.on("error", e => {
-      log.warn(`Communication error, client ${clientId}`, e)
+      log.warn(`Communication error, client ${remoteId}`, e)
     })
   })
 

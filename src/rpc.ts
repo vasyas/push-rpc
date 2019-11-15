@@ -33,9 +33,10 @@ export interface ServerTopic<D, P> {
 }
 
 // common
-export interface RpcContext {
+export interface RpcContext<Remote = any> {
   protocol: string
-  clientId: string
+  remoteId: string
+  remote: Remote
 }
 
 export interface Topic<D, P = void> extends ClientTopic<D, P>, ServerTopic<D, P> {

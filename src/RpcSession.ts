@@ -1,13 +1,21 @@
 import * as WebSocket from "ws"
 import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
-import {getServiceItem, MessageType, RemoteMethod} from "./rpc"
+import {getServiceItem, MessageType, RemoteMethod, RpcContext} from "./rpc"
 import {ServerTopicImpl} from "./server"
-import {ClientTopicImpl} from "./client"
+import {ClientTopicImpl, createRemote} from "./client"
 
 export class RpcSession {
-  constructor(private local: any, private updateMetrics, public context, private caller: (ctx, next) => Promise<any>) {
+  constructor(
+    private local: any,
+    private remoteLevel: number,
+    private updateMetrics,
+    private connectionContext: any,
+    private caller: (ctx, next) => Promise<any>
+  ) {
   }
+
+
 
   open(ws) {
     this.ws = ws
@@ -109,6 +117,14 @@ export class RpcSession {
     })
   }
 
+  /** Creates call context - context to be used in calls */
+  public createContext() {
+    return {
+      ...this.connectionContext,
+      remote: createRemote(this.remoteLevel, this)
+    }
+  }
+
   private callRemoteResponse(data) {
     const [_, id, res] = data
 
@@ -126,7 +142,7 @@ export class RpcSession {
 
   private async callLocal(id, remoteMethod, params) {
     try {
-      const callContext = {...this.context}
+      const callContext = this.createContext()
       const r = await this.caller(callContext, () => remoteMethod(params, callContext))
 
       this.send(MessageType.Result, id, r)
@@ -143,7 +159,7 @@ export class RpcSession {
 
   private async get(id, topic: ServerTopicImpl<any, any>, params) {
     try {
-      const d = await topic.getData(params, this.context)
+      const d = await topic.getData(params, this.createContext())
       this.send(MessageType.Result, id, d)
     } catch (e) {
       const err = Object.getOwnPropertyNames(e)
