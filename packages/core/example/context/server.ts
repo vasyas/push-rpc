@@ -1,8 +1,8 @@
 import {createRpcServer, ServerTopicImpl} from "../../src"
 import {Services, Todo, TodoService} from "../basic/shared"
-import * as WebSocket from "ws"
+import {RpcContext} from "../../src/rpc"
 
-interface ServiceContext {
+interface ServiceContext extends RpcContext {
   sql(): Promise<any>
   userId: string
 }
@@ -34,7 +34,8 @@ function decodeToken(token) {
 }
 
 // TODO throw error if auth failed
-const createContext = (req): ServiceContext => ({
+const createContext = (req, ctx): ServiceContext => ({
+  ...ctx,
   sql: null,
   userId: decodeToken(req.headers["Authentication"])
 })
@@ -55,7 +56,6 @@ export async function startTransaction(ctx, next) {
   }
 }
 
-const rpcWebsocketServer = new WebSocket.Server({port: 5555})
-createRpcServer(services, rpcWebsocketServer, createContext, startTransaction)
+createRpcServer(services, {wss: {port: 5555}, createContext, caller: startTransaction})
 
 console.log("RPC Server started at ws://localhost:5555")

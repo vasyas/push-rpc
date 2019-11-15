@@ -115,13 +115,15 @@ export function createRpcServer(local: any, opts: Options = {}) {
 
   wss.on("connection", (ws, req) => {
     const clientId = opts.getClientId(req)
+    const protocol = req.headers["sec-websocket-protocol"][0]
+    // log.debug(`Client ${clientId} connected, protocol ${protocol}`)
 
-    const ctx: RpcContext = {}
+    const ctx: RpcContext = {
+      protocol,
+      clientId
+    }
     const session = new RpcSession(local, () => rpcMetrics(sessions), opts.createContext(req, ctx), opts.caller)
     session.open(ws)
-
-    // const protocol = req.headers["sec-websocket-protocol"]
-    // log.debug(`Client ${clientId} connected, protocol ${protocol}`)
 
     if (sessions[clientId]) {
       log.warn("Prev session active, discarding", clientId)
