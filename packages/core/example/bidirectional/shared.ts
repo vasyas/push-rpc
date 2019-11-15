@@ -1,5 +1,7 @@
+import {RpcContext} from "../../src/rpc"
+
 export interface Server {
-  getServerHello(): Promise<string>
+  getServerHello(_?, ctx?: RpcContext): Promise<string>
 }
 
 export interface Client {

@@ -125,9 +125,17 @@ function connectionLoop(session: RpcSession, createWebSocket, remote): Promise<v
 }
 
 export function createRpcClient<R>({level, createWebSocket, local = {}}): Promise<R> {
-  const session = new RpcSession(local, () => {}, () => {}, (ctx, next) => next())
+  const session = new RpcSession(local, level, () => {}, () => {}, (ctx, next) => next())
 
-  const remote = createServiceItems(level, (name) => {
+  const remote = createRemote(level, session)
+
+  return connectionLoop(session, createWebSocket, remote).then(() => {
+    return remote
+  })
+}
+
+export function createRemote(level: number, session: RpcSession) {
+  return createServiceItems(level, (name) => {
     // start with method
     const remoteItem = (params) => {
       return session.callRemote(name, params, MessageType.Call)
@@ -141,10 +149,6 @@ export function createRpcClient<R>({level, createWebSocket, local = {}}): Promis
     })
 
     return remoteItem
-  })
-
-  return connectionLoop(session, createWebSocket, remote).then(() => {
-    return remote
   })
 }
 
