@@ -25,6 +25,6 @@ const services: Services = {
   todo: new TodoServiceImpl(),
 }
 
-const server = createRpcServer(services, {wss: {port: 5555}})
+createRpcServer(services, {wss: {port: 5555}})
 
 console.log("RPC Server started at ws://localhost:5555")
