@@ -5,6 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "tsc",
+    "build": "tsc",
     "test": "mocha -r ts-node/register tests/**/*.ts"
   },
   "license": "MIT",

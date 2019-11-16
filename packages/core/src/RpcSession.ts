@@ -69,32 +69,50 @@ export class RpcSession {
 
       const item = getServiceItem(this.local, name)
 
-      if (!item) {
-        throw new Error(`Can't find item with name ${name}`)
-      }
-
       const serverTopic = item as any as LocalTopicImpl<any, any>
       const clientTopic = item as any as RemoteTopicImpl<any, any>
       const method = item as Method
 
       switch (type) {
         case MessageType.Subscribe:
+          if (!serverTopic) {
+            throw new Error(`Can't find topic with name ${name}`)
+          }
+
           this.subscribe(serverTopic, other[0])
           break
 
         case MessageType.Unsubscribe:
+          if (!serverTopic) {
+            throw new Error(`Can't find topic with name ${name}`)
+          }
+
           this.unsubscribe(serverTopic, other[0])
           break
 
         case MessageType.Get:
+          if (!serverTopic) {
+            this.send(MessageType.Error, id, `Topic ${name} not implemented`, {})
+            break
+          }
+
           this.get(id, serverTopic, other[0])
           break
 
         case MessageType.Call:
+          if (!method) {
+            this.send(MessageType.Error, id, `Item ${name} not implemented`, {})
+            break
+          }
+
           this.callLocal(id, method, other[0])
           break
 
         case MessageType.Data:
+          if (!clientTopic) {
+            throw new Error(`Can't find topic with name ${name}`)
+          }
+
           clientTopic.receiveData(other[0], other[1])
           break
       }
@@ -147,7 +165,7 @@ export class RpcSession {
 
       this.send(MessageType.Result, id, r)
     } catch (e) {
-      log.error("Unable to call RPC. ", e)
+      log.error("Unable to call method ", e)
 
       const err = Object.getOwnPropertyNames(e)
         .filter(e => e != "stack")
