@@ -76,10 +76,12 @@ export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
 
 interface Options {
   wss?: any
-  createContext?: (req, protocol: string, remoteId: string) => any
+  createContext?(req, protocol: string, remoteId: string): any
   caller?: (ctx, next) => Promise<any>
   getClientId?: (req) => string
   clientLevel?: number
+  onConnected?(remoteId): void
+  onDisconnected?(remoteId): void
 }
 
 const defaultOptions: Partial<Options> = {
@@ -88,6 +90,8 @@ const defaultOptions: Partial<Options> = {
   caller: (ctx, next) => next(),
   getClientId: () => UUID.create().toString(),
   clientLevel: 0,
+  onConnected() {},
+  onDisconnected() {},
 }
 
 export function createRpcServer(local: any, opts: Options = {}) {
@@ -98,13 +102,6 @@ export function createRpcServer(local: any, opts: Options = {}) {
 
   const wss = new WebSocket.Server(opts.wss)
   const sessions: {[clientId: string]: RpcSession} = {}
-
-  function getRemote(clientId) {
-    if (!sessions[clientId])
-      throw new Error(`Client ${clientId} is not connected`)
-
-    return createRemote(opts.clientLevel, sessions[clientId])
-  }
 
   prepareLocal(local)
 
@@ -119,11 +116,12 @@ export function createRpcServer(local: any, opts: Options = {}) {
   wss.on("connection", (ws, req) => {
     const remoteId = opts.getClientId(req)
     const protocol = req.headers["sec-websocket-protocol"] ? req.headers["sec-websocket-protocol"][0] : null
-    // log.debug(`Client ${clientId} connected, protocol ${protocol}`)
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
     const session = new RpcSession(local, opts.clientLevel, () => rpcMetrics(sessions), connectionContext, opts.caller)
     session.open(ws)
+
+    opts.onConnected(remoteId)
 
     if (sessions[remoteId]) {
       log.warn("Prev session active, discarding", remoteId)
@@ -148,6 +146,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
         log.debug(`Disconnected prev session, ${remoteId}`, {code, reason})
       }
 
+      opts.onDisconnected(remoteId)
       rpcMetrics(sessions)
     })
 
@@ -157,7 +156,16 @@ export function createRpcServer(local: any, opts: Options = {}) {
   })
 
   return {
-    getRemote
+    wss,
+    getRemote: (clientId) => {
+      if (!sessions[clientId])
+        throw new Error(`Client ${clientId} is not connected`)
+
+      return createRemote(opts.clientLevel, sessions[clientId])
+    },
+    isConnected: (remoteId) => {
+      return !!sessions[remoteId]
+    }
   }
 }
 
