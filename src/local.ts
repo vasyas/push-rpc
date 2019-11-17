@@ -77,7 +77,7 @@ export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
 interface Options {
   wss?: any
   createContext?(req, protocol: string, remoteId: string): any
-  localeMiddleware?: (ctx, next) => Promise<any>
+  localMiddleware?: (ctx, next) => Promise<any>
   getClientId?: (req) => string
   clientLevel?: number
   onConnected?(remoteId): void
@@ -87,7 +87,7 @@ interface Options {
 const defaultOptions: Partial<Options> = {
   wss: {noServer: true},
   createContext: (req, protocol, remoteId) => ({protocol, remoteId}),
-  localeMiddleware: (ctx, next) => next(),
+  localMiddleware: (ctx, next) => next(),
   getClientId: () => UUID.create().toString(),
   clientLevel: 0,
   onConnected() {},
@@ -118,7 +118,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
     const protocol = req.headers["sec-websocket-protocol"] ? req.headers["sec-websocket-protocol"][0] : null
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
-    const session = new RpcSession(local, opts.clientLevel, () => rpcMetrics(sessions), connectionContext, opts.localeMiddleware)
+    const session = new RpcSession(local, opts.clientLevel, () => rpcMetrics(sessions), connectionContext, opts.localMiddleware)
     session.open(ws)
 
     opts.onConnected(remoteId)
