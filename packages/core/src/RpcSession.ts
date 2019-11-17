@@ -5,11 +5,18 @@ import {getServiceItem, MessageType, Method} from "./rpc"
 import {LocalTopicImpl} from "./local"
 import {RemoteTopicImpl, createRemote} from "./remote"
 
+export interface RpcSessionListeners {
+  messageIn(data: string): void
+  messageOut(data: string): void
+  subscribed(subscriptions: number): void
+  unsubscribed(subscriptions: number): void
+}
+
 export class RpcSession {
   constructor(
     private local: any,
     private remoteLevel: number,
-    private updateMetrics,
+    private listeners: RpcSessionListeners,
     private connectionContext: any,
     private localMiddleware: (ctx, next) => Promise<any>
   ) {
@@ -27,7 +34,10 @@ export class RpcSession {
   }
 
   async remove() {
-    await this.unsubscribeAll()
+    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
+    this.subscriptions = []
+
+    this.listeners.unsubscribed(0)
   }
 
   private alive = true
@@ -55,7 +65,7 @@ export class RpcSession {
 
   handleMessage(data) {
     try {
-      log.debug("In", data)
+      this.listeners.messageIn(data)
 
       const message = JSON.parse(data, dateReviver)
 
@@ -120,9 +130,9 @@ export class RpcSession {
   }
 
   send(type: MessageType, id: string, ...params) {
-    const m = message(type, id, ...params)
-    log.debug("Out", m)
-    this.ws.send(m)
+    const data = message(type, id, ...params)
+    this.listeners.messageOut(data)
+    this.ws.send(data)
   }
 
   callRemote(name, params, type) {
@@ -189,7 +199,7 @@ export class RpcSession {
   private async subscribe(topic: LocalTopicImpl<any, any>, params) {
     await topic.subscribeSession(this, params)
     this.subscriptions.push({topic, params})
-    this.updateMetrics()
+    this.listeners.subscribed(this.subscriptions.length)
   }
 
   private async unsubscribe(topic: LocalTopicImpl<any, any>, params) {
@@ -198,13 +208,7 @@ export class RpcSession {
     const paramsKey = JSON.stringify(params)
 
     this.subscriptions = this.subscriptions.filter(s => s.topic != topic || JSON.stringify(s.params) != paramsKey)
-    this.updateMetrics()
-  }
-
-  private async unsubscribeAll() {
-    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
-    this.subscriptions = []
-    this.updateMetrics()
+    this.listeners.unsubscribed(this.subscriptions.length)
   }
 
   private ws: WebSocket = null
