@@ -80,9 +80,17 @@ interface Options {
   localMiddleware?: (ctx, next) => Promise<any>
   getClientId?: (req) => string
   clientLevel?: number
-  onConnected?(remoteId): void
-  onDisconnected?(remoteId): void
+
+  listeners?: {
+    connected?(remoteId: string, connections: number): void
+    disconnected?(remoteId: string, connections: number): void
+    messageIn(remoteId: string, data: string)
+    messageOut(remoteId: string, data: string)
+    subscribed(subscriptions: number)
+    unsubscribed(subscriptions: number)
+  }
 }
+
 
 const defaultOptions: Partial<Options> = {
   wss: {noServer: true},
@@ -90,8 +98,14 @@ const defaultOptions: Partial<Options> = {
   localMiddleware: (ctx, next) => next(),
   getClientId: () => UUID.create().toString(),
   clientLevel: 0,
-  onConnected() {},
-  onDisconnected() {},
+  listeners: {
+    connected: () => {},
+    disconnected: () => {},
+    subscribed: () => {},
+    unsubscribed: () => {},
+    messageIn: () => {},
+    messageOut: () => {},
+  },
 }
 
 export function createRpcServer(local: any, opts: Options = {}) {
@@ -113,15 +127,23 @@ export function createRpcServer(local: any, opts: Options = {}) {
     Object.values(sessions).forEach(session => session.checkAlive())
   }, 15 * 1000).unref()
 
+  function getTotalSubscriptions() {
+    return Object.values(sessions).map(s => s.subscriptions.length).reduce(((p, c) => p + c), 0)
+  }
+
   wss.on("connection", (ws, req) => {
     const remoteId = opts.getClientId(req)
     const protocol = req.headers["sec-websocket-protocol"] ? req.headers["sec-websocket-protocol"][0] : null
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
-    const session = new RpcSession(local, opts.clientLevel, () => rpcMetrics(sessions), connectionContext, opts.localMiddleware)
-    session.open(ws)
+    const session = new RpcSession(local, opts.clientLevel, {
+      messageIn: data => this.listeners.messageIn(remoteId, data),
+      messageOut: data => this.listeners.messageOut(remoteId, data),
+      subscribed: () => this.listeners.subscribed(getTotalSubscriptions()),
+      unsubscribed: () => this.listeners.unsubscribed(getTotalSubscriptions()),
+    }, connectionContext, opts.localMiddleware)
 
-    opts.onConnected(remoteId)
+    session.open(ws)
 
     if (sessions[remoteId]) {
       log.warn("Prev session active, discarding", remoteId)
@@ -129,7 +151,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
     }
     sessions[remoteId] = session
 
-    rpcMetrics(sessions)
+    opts.listeners.connected(remoteId, Object.keys(sessions).length)
 
     ws.on("message", message => {
       session.handleMessage(message)
@@ -146,8 +168,7 @@ export function createRpcServer(local: any, opts: Options = {}) {
         log.debug(`Disconnected prev session, ${remoteId}`, {code, reason})
       }
 
-      opts.onDisconnected(remoteId)
-      rpcMetrics(sessions)
+      opts.listeners.disconnected(remoteId, Object.keys(sessions).length)
     })
 
     ws.on("error", e => {
@@ -167,17 +188,6 @@ export function createRpcServer(local: any, opts: Options = {}) {
       return !!sessions[remoteId]
     }
   }
-}
-
-function rpcMetrics(sessions: {[id: string]: RpcSession}) {
-  const subscriptions = Object.values(sessions)
-    .map(session => session.subscriptions.length)
-    .reduce((r, count) => r + count, 0)
-
-  log.debug("\n", [
-    {name: "rpc.websockets", value: sessions.length, unit: "Count"},
-    {name: "rpc.subscriptions", value: subscriptions, unit: "Count"},
-  ])
 }
 
 /**

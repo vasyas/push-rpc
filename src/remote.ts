@@ -1,7 +1,7 @@
 import {RemoteTopic, DataConsumer, MessageType, Method, TopicImpl} from "./rpc"
 import {log} from "./logger"
 import {createMessageId, getClassMethodNames} from "./utils"
-import {RpcSession} from "./RpcSession"
+import {RpcSession, RpcSessionListeners} from "./RpcSession"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -124,8 +124,15 @@ function connectionLoop(session: RpcSession, createWebSocket, remote): Promise<v
   })
 }
 
-export function createRpcClient<R>({level, createWebSocket, local = {}}): Promise<R> {
-  const session = new RpcSession(local, level, () => {}, () => {}, (ctx, next) => next())
+const defaultListeners: RpcSessionListeners = {
+  subscribed: () => {},
+  unsubscribed: () => {},
+  messageIn: () => {},
+  messageOut: () => {},
+}
+
+export function createRpcClient<R>({level, createWebSocket, local = {}, listeners = {} }): Promise<R> {
+  const session = new RpcSession(local, level, {...defaultListeners, ...listeners}, {}, (ctx, next) => next())
 
   const remote = createRemote(level, session)
 
