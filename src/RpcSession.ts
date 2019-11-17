@@ -11,11 +11,9 @@ export class RpcSession {
     private remoteLevel: number,
     private updateMetrics,
     private connectionContext: any,
-    private caller: (ctx, next) => Promise<any>
+    private localMiddleware: (ctx, next) => Promise<any>
   ) {
   }
-
-
 
   open(ws) {
     this.ws = ws
@@ -161,7 +159,7 @@ export class RpcSession {
   private async callLocal(id, remoteMethod, params) {
     try {
       const callContext = this.createContext()
-      const r = await this.caller(callContext, () => remoteMethod(params, callContext))
+      const r = await this.localMiddleware(callContext, () => remoteMethod(params, callContext))
 
       this.send(MessageType.Result, id, r)
     } catch (e) {
