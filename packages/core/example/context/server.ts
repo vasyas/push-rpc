@@ -56,6 +56,6 @@ export async function startTransaction(ctx, next) {
   }
 }
 
-createRpcServer(services, {wss: {port: 5555}, createContext, caller: startTransaction})
+createRpcServer(services, {wss: {port: 5555}, createContext, localeMiddleware: startTransaction})
 
 console.log("RPC Server started at ws://localhost:5555")
