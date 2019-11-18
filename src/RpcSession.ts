@@ -27,13 +27,6 @@ export class RpcSession {
 
   open(ws) {
     this.ws = ws
-
-    ws.on("pong", () => {
-      log.debug("Got pong")
-
-      this.alive = true
-    })
-
     resubscribeTopics(this.remote)
   }
 
@@ -65,6 +58,10 @@ export class RpcSession {
         log.debug("Send ping failed", e)
       }
     }
+  }
+
+  markAlive() {
+    this.alive = true
   }
 
   handleMessage(data) {
