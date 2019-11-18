@@ -5,12 +5,7 @@ export interface Logger {
   debug(s, ...params)
 }
 
-export let log: Logger = {
-  info: () => {},
-  error: () => {},
-  warn: () => {},
-  debug: () => {},
-}
+export let log: Logger = console
 
 export function setLogger(l: Logger) {
   log = l

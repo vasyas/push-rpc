@@ -1,32 +1,19 @@
 import {assert} from "chai"
 import * as WebSocket from "ws"
-import {createRpcClient, createRpcServer, LocalTopicImpl} from "../src"
+import {createRpcClient, LocalTopicImpl} from "../src"
+import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 
 describe("Topics", () => {
-  let rpcWebsocketServer: WebSocket.Server
-
-  beforeEach(() => new Promise(resolve => {
-    rpcWebsocketServer = new WebSocket.Server({port: 5555})
-    rpcWebsocketServer.addListener("listening", resolve)
-  }))
-
-  afterEach(() => new Promise(resolve => {
-    rpcWebsocketServer.close(resolve)
-  }))
-
   it("get", async () => {
     const item = {r: "asf"}
 
-    createRpcServer({
+    await startTestServer({
       test: {
         item: new LocalTopicImpl<{}, any>(async () => item)
       }
-    }, rpcWebsocketServer)
-
-    const client = await createRpcClient({
-      level: 1,
-      createWebSocket: () => new WebSocket("ws://localhost:5555")
     })
+
+    const client = await createTestClient()
 
     const r = await client.test.item.get({})
 
@@ -42,14 +29,13 @@ describe("Topics", () => {
       }
     }
 
-    createRpcServer(server, rpcWebsocketServer)
+    await startTestServer(server)
 
     let clientSocket: WebSocket
-
     const client = await createRpcClient({
       level: 1,
       createWebSocket: () => {
-        clientSocket = new WebSocket("ws://localhost:5555")
+        clientSocket = new WebSocket(`ws://localhost:${TEST_PORT}`)
         return clientSocket
       }
     })
