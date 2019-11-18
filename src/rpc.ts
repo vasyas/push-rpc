@@ -66,14 +66,14 @@ export interface Topic<D, P = void> extends RemoteTopic<D, P>, LocalTopic<D, P> 
 
 export enum MessageType {
   // to server
-  Subscribe = 1,       // [1, id, name, params]
-  Unsubscribe,    // [2, id, name, params]
-  Get,            // [3, id, name, params]
-  Call,           // [4, id, name, params]
+  Subscribe = 11,       // [11, id, name, params]
+  Unsubscribe = 12,     // [22, id, name, params]
+  Get = 14,             // [14, id, name, params]
+  Call = 2,             // [2, id, name, params]
   // to client
-  Data,           // [5, id, name, params, data]
-  Result,         // [6, id, res]
-  Error,          // [7, id, err]
+  Data = 13,            // [13, id, name, params, data]
+  Result = 3,           // [3, id, res]
+  Error = 4,            // [4, id, code, description, details]
 }
 
 export class TopicImpl {
