@@ -153,6 +153,12 @@ export function createRpcServer(local: any, opts: Options = {}) {
 
     opts.listeners.connected(remoteId, Object.keys(sessions).length)
 
+    ws.on("pong", () => {
+      log.debug("Got pong " + remoteId)
+
+      session.markAlive()
+    })
+
     ws.on("message", message => {
       session.handleMessage(message)
     })
