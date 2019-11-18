@@ -131,7 +131,7 @@ const defaultListeners: RpcSessionListeners = {
   messageOut: () => {},
 }
 
-export function createRpcClient<R>({level, createWebSocket, local = {}, listeners = {} }): Promise<R> {
+export function createRpcClient<R = any>({level, createWebSocket, local = {}, listeners = {} }): Promise<R> {
   const session = new RpcSession(local, level, {...defaultListeners, ...listeners}, {}, (ctx, next) => next())
 
   const remote = createRemote(level, session)

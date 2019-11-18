@@ -74,7 +74,7 @@ export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
   unsubscribe(params?: P, subscriptionKey?: any) {}
 }
 
-interface Options {
+export interface Options {
   wss?: any
   createContext?(req, protocol: string, remoteId: string): any
   localMiddleware?: (ctx, next) => Promise<any>
@@ -137,10 +137,10 @@ export function createRpcServer(local: any, opts: Options = {}) {
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
     const session = new RpcSession(local, opts.clientLevel, {
-      messageIn: data => this.listeners.messageIn(remoteId, data),
-      messageOut: data => this.listeners.messageOut(remoteId, data),
-      subscribed: () => this.listeners.subscribed(getTotalSubscriptions()),
-      unsubscribed: () => this.listeners.unsubscribed(getTotalSubscriptions()),
+      messageIn: data => opts.listeners.messageIn(remoteId, data),
+      messageOut: data => opts.listeners.messageOut(remoteId, data),
+      subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
+      unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
     }, connectionContext, opts.localMiddleware)
 
     session.open(ws)

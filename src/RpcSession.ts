@@ -77,34 +77,34 @@ export class RpcSession {
 
       const item = getServiceItem(this.local, name)
 
-      const serverTopic = item as any as LocalTopicImpl<any, any>
-      const clientTopic = item as any as RemoteTopicImpl<any, any>
+      const localTopic = item as any as LocalTopicImpl<any, any>
+      const remoteTopic = item as any as RemoteTopicImpl<any, any>
       const method = item as Method
 
       switch (type) {
         case MessageType.Subscribe:
-          if (!serverTopic) {
+          if (!localTopic) {
             throw new Error(`Can't find topic with name ${name}`)
           }
 
-          this.subscribe(serverTopic, other[0])
+          this.subscribe(localTopic, other[0])
           break
 
         case MessageType.Unsubscribe:
-          if (!serverTopic) {
+          if (!localTopic) {
             throw new Error(`Can't find topic with name ${name}`)
           }
 
-          this.unsubscribe(serverTopic, other[0])
+          this.unsubscribe(localTopic, other[0])
           break
 
         case MessageType.Get:
-          if (!serverTopic) {
+          if (!localTopic) {
             this.send(MessageType.Error, id, `Topic ${name} not implemented`, {})
             break
           }
 
-          this.get(id, serverTopic, other[0])
+          this.get(id, localTopic, other[0])
           break
 
         case MessageType.Call:
@@ -117,11 +117,11 @@ export class RpcSession {
           break
 
         case MessageType.Data:
-          if (!clientTopic) {
+          if (!remoteTopic) {
             throw new Error(`Can't find topic with name ${name}`)
           }
 
-          clientTopic.receiveData(other[0], other[1])
+          remoteTopic.receiveData(other[0], other[1])
           break
       }
     } catch (e) {

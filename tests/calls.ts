@@ -1,19 +1,7 @@
 import {assert} from "chai"
-import * as WebSocket from "ws"
-import {createRpcClient, createRpcServer} from "../src"
+import {createTestClient, startTestServer} from "./testUtils"
 
 describe("Calls", () => {
-  let rpcWebsocketServer: WebSocket.Server
-
-  beforeEach(() => new Promise(resolve => {
-    rpcWebsocketServer = new WebSocket.Server({port: 5555})
-    rpcWebsocketServer.addListener("listening", resolve)
-  }))
-
-  afterEach(() => new Promise(resolve => {
-    rpcWebsocketServer.close(resolve)
-  }))
-
   it("success", async () => {
     const resp = {r: "asf"}
 
@@ -22,7 +10,7 @@ describe("Calls", () => {
       ctx: null,
     }
 
-    createRpcServer({
+    await startTestServer({
       test: {
         async getSomething(req, ctx) {
           invocation.req = req
@@ -30,12 +18,9 @@ describe("Calls", () => {
           return resp
         }
       }
-    }, rpcWebsocketServer)
-
-    const client = await createRpcClient({
-      level: 1,
-      createWebSocket: () => new WebSocket("ws://localhost:5555")
     })
+
+    const client = await createTestClient()
 
     const req = {key: "value"}
     const r = await client.test.getSomething(req)
@@ -47,18 +32,15 @@ describe("Calls", () => {
   it("error", async () => {
     const message = "bla"
 
-    createRpcServer({
+    await startTestServer({
       test: {
         async getSomething() {
           throw new Error(message)
         }
       }
-    }, rpcWebsocketServer)
-
-    const client = await createRpcClient({
-      level: 1,
-      createWebSocket: () => new WebSocket("ws://localhost:5555")
     })
+
+    const client = await createTestClient()
 
     try {
       await client.test.getSomething({})

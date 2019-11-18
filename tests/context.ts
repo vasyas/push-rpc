@@ -1,20 +1,9 @@
 import {assert} from "chai"
-import * as WebSocket from "ws"
-import {createRpcClient, createRpcServer} from "../src"
+import {createTestClient, startTestServer} from "./testUtils"
 
 describe("Context", () => {
-  let rpcWebsocketServer: WebSocket.Server
   const sessionId = "5"
   const callId = "6"
-
-  beforeEach(() => new Promise(resolve => {
-    rpcWebsocketServer = new WebSocket.Server({port: 5555})
-    rpcWebsocketServer.addListener("listening", resolve)
-  }))
-
-  afterEach(() => new Promise(resolve => {
-    rpcWebsocketServer.close(resolve)
-  }))
 
   it("pass session and call", async () => {
     const resp = {r: "asf"}
@@ -24,7 +13,7 @@ describe("Context", () => {
       ctx: null,
     }
 
-    createRpcServer({
+    await startTestServer({
       test: {
         async getSomething(req, ctx) {
           invocation.req = req
@@ -32,25 +21,21 @@ describe("Context", () => {
           return resp
         }
       }
-    }, rpcWebsocketServer, () => ({
-      sessionId,
-    }), (ctx, next) => {
-      ctx.callId = callId
-      return next()
-    })
+    }, {
+      createContext: () => ({sessionId}),
+      localMiddleware: (ctx, next) => {
+        ctx.callId = callId
+        return next()
+      }}
+    )
 
-    const client = await createRpcClient({
-      level: 1,
-      createWebSocket: () => new WebSocket("ws://localhost:5555")
-    })
+    const client = await createTestClient()
 
     const req = {key: "value"}
     const r = await client.test.getSomething(req)
 
-    assert.deepEqual(invocation.ctx, {
-      sessionId,
-      callId,
-    })
+    assert.equal(invocation.ctx.sessionId, sessionId)
+    assert.equal(invocation.ctx.callId, callId)
 
     assert.deepEqual(r, resp)
   })
