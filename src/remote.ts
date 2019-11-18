@@ -155,12 +155,12 @@ function createRemoteServiceItems(level, createServiceItem: (name) => RemoteTopi
       if (name == "then") return undefined
 
       if (!cachedItems[name]) {
-        const childName = prefix + "/" + name
+        const itemName = prefix + name
 
         if (level > 0)
-          cachedItems[name] = createRemoteServiceItems(level - 1, createServiceItem, childName)
+          cachedItems[name] = createRemoteServiceItems(level - 1, createServiceItem, itemName + "/")
         else
-          cachedItems[name] = createServiceItem(childName)
+          cachedItems[name] = createServiceItem(itemName)
       }
 
       return cachedItems[name]
