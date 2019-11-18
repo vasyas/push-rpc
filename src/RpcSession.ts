@@ -15,22 +15,26 @@ export interface RpcSessionListeners {
 export class RpcSession {
   constructor(
     private local: any,
-    private remoteLevel: number,
+    remoteLevel: number,
     private listeners: RpcSessionListeners,
     private connectionContext: any,
     private localMiddleware: (ctx, next) => Promise<any>
   ) {
+    this.remote = createRemote(remoteLevel, this)
   }
+
+  remote: any
 
   open(ws) {
     this.ws = ws
-    // TODO close previous?
 
     ws.on("pong", () => {
       log.debug("Got pong")
 
       this.alive = true
     })
+
+    resubscribeTopics(this.remote)
   }
 
   async remove() {
@@ -78,13 +82,12 @@ export class RpcSession {
       const item = getServiceItem(this.local, name)
 
       const localTopic = item as any as LocalTopicImpl<any, any>
-      const remoteTopic = item as any as RemoteTopicImpl<any, any>
       const method = item as Method
 
       switch (type) {
         case MessageType.Subscribe:
           if (!localTopic) {
-            throw new Error(`Can't find topic with name ${name}`)
+            throw new Error(`Can't find local topic with name ${name}`)
           }
 
           this.subscribe(localTopic, other[0])
@@ -92,7 +95,7 @@ export class RpcSession {
 
         case MessageType.Unsubscribe:
           if (!localTopic) {
-            throw new Error(`Can't find topic with name ${name}`)
+            throw new Error(`Can't find local topic with name ${name}`)
           }
 
           this.unsubscribe(localTopic, other[0])
@@ -117,8 +120,10 @@ export class RpcSession {
           break
 
         case MessageType.Data:
+          const remoteTopic = getServiceItem(this.remote, name) as any as RemoteTopicImpl<any, any>
+
           if (!remoteTopic) {
-            throw new Error(`Can't find topic with name ${name}`)
+            throw new Error(`Can't find remote topic with name ${name}`)
           }
 
           remoteTopic.receiveData(other[0], other[1])
@@ -147,7 +152,7 @@ export class RpcSession {
   public createContext() {
     return {
       ...this.connectionContext,
-      remote: createRemote(this.remoteLevel, this)
+      remote: this.remote,
     }
   }
 
@@ -218,4 +223,14 @@ export class RpcSession {
   // both remote method calls and topics get
   // TODO reject on timeout, expire calls cache
   private calls: {[id: string]: {resolve, reject}} = {}
+}
+
+function resubscribeTopics(remote) {
+  Object.getOwnPropertyNames(remote).forEach(key => {
+    if (typeof remote[key] == "object") {
+      resubscribeTopics(remote[key])
+    } else {
+      remote[key].resubscribe()
+    }
+  })
 }

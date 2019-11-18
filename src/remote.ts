@@ -70,20 +70,10 @@ export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P
   private consumers: {[key: string]: Subscription<D>[]} = {}
 }
 
-function resubscribeTopics(remote) {
-  Object.getOwnPropertyNames(remote).forEach(key => {
-    if (typeof remote[key] == "object") {
-      resubscribeTopics(remote[key])
-    } else {
-      remote[key].resubscribe()
-    }
-  })
-}
-
 // TODO should be connection-specific
 let errorDelay = 0
 
-function connectionLoop(session: RpcSession, createWebSocket, remote): Promise<void> {
+function connectionLoop(session: RpcSession, createWebSocket): Promise<void> {
   return new Promise((resolve) => {
     const ws = createWebSocket()
 
@@ -104,18 +94,16 @@ function connectionLoop(session: RpcSession, createWebSocket, remote): Promise<v
     ws.onopen = () => {
       log.debug("Connected")
 
-      // should trigger resubscribe, see below
       session.open(ws)
 
       errorDelay = 0
-      resubscribeTopics(remote)
       resolve(ws)
     }
 
     ws.onclose = ({code}) => {
       log.debug("Disconnected")
 
-      const timer = setTimeout(() => connectionLoop(session, createWebSocket, remote), errorDelay)
+      const timer = setTimeout(() => connectionLoop(session, createWebSocket), errorDelay)
 
       if (timer.unref) {
         timer.unref()
@@ -134,11 +122,7 @@ const defaultListeners: RpcSessionListeners = {
 export function createRpcClient<R = any>({level, createWebSocket, local = {}, listeners = {} }): Promise<R> {
   const session = new RpcSession(local, level, {...defaultListeners, ...listeners}, {}, (ctx, next) => next())
 
-  const remote = createRemote(level, session)
-
-  return connectionLoop(session, createWebSocket, remote).then(() => {
-    return remote
-  })
+  return connectionLoop(session, createWebSocket).then(() => session.remote)
 }
 
 export function createRemote(level: number, session: RpcSession) {
