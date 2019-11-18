@@ -16,21 +16,25 @@ export type ServiceItem = Topic<any, any> | Method
 export type Method = (req?, ctx?) => Promise<any>
 
 export function getServiceItem(services: Services, name: string): ServiceItem {
-  if (name.startsWith("/")) {
-    const names = name.substring(1).split("/")
-
-    const i = services[names[0]]
-
-    if (typeof i == "object") {
-      if (i instanceof TopicImpl) return i as any
-
-      return getServiceItem(i as Services, "/" + names.slice(1).join("/"))
-    }
-
-    return i
+  if (!name) {
+    throw new Error(`Can't lookup service item ${ name }`)
   }
 
-  throw new Error(`Can't lookup topic name ${ name }`)
+  const names = name.split("/")
+
+  const i = services[names[0]]
+
+  if (typeof i == "object") {
+    if (i instanceof TopicImpl) return i as any
+
+    if (!i) {
+      throw new Error(`Can't lookup service item ${ name }`)
+    }
+
+    return getServiceItem(i as Services, names.slice(1).join("/"))
+  }
+
+  return i
 }
 
 // remote interfaces

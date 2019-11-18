@@ -210,14 +210,14 @@ function prepareLocal(services, prefix = "") {
     const item = services[key]
 
     if (typeof item == "object") {
-      const name = prefix + "/" + key
+      const name = prefix + key
 
       if (item instanceof LocalTopicImpl) {
         item.name = name
         return
       }
 
-      return prepareLocal(item, name)
+      return prepareLocal(item, name + "/")
     } else if (typeof item == "function") {
       services[key] = item.bind(services)
     }
