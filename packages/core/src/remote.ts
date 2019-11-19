@@ -1,7 +1,6 @@
-import {RemoteTopic, DataConsumer, MessageType, Method, TopicImpl} from "./rpc"
-import {log} from "./logger"
+import {DataConsumer, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
 import {createMessageId, getClassMethodNames} from "./utils"
-import {RpcSession, RpcSessionListeners} from "./RpcSession"
+import {RpcSession} from "./RpcSession"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -68,61 +67,6 @@ export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P
   }
 
   private consumers: {[key: string]: Subscription<D>[]} = {}
-}
-
-// TODO should be connection-specific
-let errorDelay = 0
-
-function connectionLoop(session: RpcSession, createWebSocket): Promise<void> {
-  return new Promise((resolve) => {
-    const ws = createWebSocket()
-
-    ws.onmessage = (evt) => {
-      try {
-        session.handleMessage(evt.data)
-      } catch (e) {
-        log.error(`Failed to handle data`, e)
-      }
-    }
-
-    ws.onerror = e => {
-      errorDelay = Math.random() * 15 * 1000
-      log.warn("Connection error", e)
-      ws.close()
-    }
-
-    ws.onopen = () => {
-      log.debug("Connected")
-
-      session.open(ws)
-
-      errorDelay = 0
-      resolve(ws)
-    }
-
-    ws.onclose = ({code}) => {
-      log.debug("Disconnected")
-
-      const timer = setTimeout(() => connectionLoop(session, createWebSocket), errorDelay)
-
-      if (timer.unref) {
-        timer.unref()
-      }
-    }
-  })
-}
-
-const defaultListeners: RpcSessionListeners = {
-  subscribed: () => {},
-  unsubscribed: () => {},
-  messageIn: () => {},
-  messageOut: () => {},
-}
-
-export function createRpcClient<R = any>({level, createWebSocket, local = {}, listeners = {} }): Promise<R> {
-  const session = new RpcSession(local, level, {...defaultListeners, ...listeners}, {}, (ctx, next) => next())
-
-  return connectionLoop(session, createWebSocket).then(() => session.remote)
 }
 
 export function createRemote(level: number, session: RpcSession) {

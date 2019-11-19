@@ -23,7 +23,7 @@ export class RpcSession {
     this.remote = createRemote(remoteLevel, this)
   }
 
-  remote: any
+  public remote: any
 
   open(ws) {
     this.ws = ws
