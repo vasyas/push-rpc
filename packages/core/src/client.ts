@@ -53,22 +53,31 @@ export function createRpcClient<R = any>(level, createWebSocket, options: Partia
 function startConnectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners): Promise<void> {
   return new Promise(resolve => {
     let onFirstConnection = resolve
+    const errorDelay = {value: 0}
 
-    connectionLoop(session, createWebSocket, listeners, () => {
+    const l = {
+      ...listeners,
+      connected: () => {
+        // first reconnect after succesfull connection is immediate
+        errorDelay.value = 0
+      }
+    }
+
+    connectionLoop(session, createWebSocket, l, () => {
       onFirstConnection()
       onFirstConnection = () => {}
-    })
+    }, errorDelay)
   })
 }
 
-function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners, resolve): void {
+function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners, resolve, errorDelay): void {
   connect(session, createWebSocket, listeners)
     .then(resolve)
     .catch(() => {
-      // could also be progressive increase
-      const errorDelay = Math.random() * 15 * 1000
+      const timer = setTimeout(() => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay), errorDelay.value)
 
-      const timer = setTimeout(() => connectionLoop(session, createWebSocket, listeners, resolve), errorDelay)
+      // 2nd and further reconnects are with random delays
+      errorDelay.value = Math.random() * 15 * 1000
 
       if (timer.unref) {
         timer.unref()
