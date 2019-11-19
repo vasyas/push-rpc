@@ -110,6 +110,11 @@ function createRemoteServiceItems(level, createServiceItem: (name) => RemoteTopi
       return cachedItems[name]
     },
 
+    set(target, name, value) {
+      cachedItems[name] = value
+      return true
+    },
+
     // Used in resubscribe
     ownKeys() {
       return Object.keys(cachedItems)
