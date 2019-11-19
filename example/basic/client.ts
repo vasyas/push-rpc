@@ -5,10 +5,7 @@ import {createRpcClient, setLogger} from "../../src"
 setLogger(console);
 
 (async () => {
-  const services: Services = await createRpcClient({
-    level: 1,
-    createWebSocket: () => new WebSocket("ws://localhost:5555")
-  })
+  const services: Services = await createRpcClient(1, () => new WebSocket("ws://localhost:5555"))
 
   console.log("Client connected")
 

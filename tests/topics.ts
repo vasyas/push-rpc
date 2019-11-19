@@ -31,14 +31,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    let clientSocket: WebSocket
-    const client = await createRpcClient({
-      level: 1,
-      createWebSocket: () => {
-        clientSocket = new WebSocket(`ws://localhost:${TEST_PORT}`)
-        return clientSocket
-      }
-    })
+    const {remote: client, disconnect} = await createRpcClient(1, () => new WebSocket(`ws://localhost:${TEST_PORT}`), {reconnect: true})
 
     let receivedItem
 
@@ -57,7 +50,7 @@ describe("Topics", () => {
     assert.deepEqual(receivedItem, item)
 
     // resubscribe
-    clientSocket.close()
+    disconnect()
     await new Promise(resolve => setTimeout(resolve, 50))
 
     // session should be re-subscribed, trigger should continue to send items
