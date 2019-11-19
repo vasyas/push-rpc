@@ -60,6 +60,7 @@ function startConnectionLoop(session: RpcSession, createWebSocket, listeners: Rp
       connected: () => {
         // first reconnect after succesfull connection is immediate
         errorDelay.value = 0
+        listeners.connected()
       }
     }
 
@@ -71,17 +72,29 @@ function startConnectionLoop(session: RpcSession, createWebSocket, listeners: Rp
 }
 
 function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners, resolve, errorDelay): void {
-  connect(session, createWebSocket, listeners)
+  function reconnect() {
+    const timer = setTimeout(() => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay), errorDelay.value)
+
+    // 2nd and further reconnects are with random delays
+    errorDelay.value = Math.round(Math.random() * 15 * 1000)
+
+    if (timer.unref) {
+      timer.unref()
+    }
+  }
+
+  const l = {
+    ...listeners,
+    disconnected: ({code, reason}) => {
+      reconnect()
+      listeners.disconnected({code, reason})
+    }
+  }
+
+  connect(session, createWebSocket, l)
     .then(resolve)
     .catch(() => {
-      const timer = setTimeout(() => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay), errorDelay.value)
-
-      // 2nd and further reconnects are with random delays
-      errorDelay.value = Math.random() * 15 * 1000
-
-      if (timer.unref) {
-        timer.unref()
-      }
+      reconnect()
     })
 }
 
@@ -89,24 +102,40 @@ function connect(session: RpcSession, createWebSocket, listeners: RpcClientListe
   return new Promise((resolve, reject) => {
     const ws = createWebSocket()
 
+    let connected = false
+
+    const timer = setTimeout(() => {
+      if (!connected) reject("Connection timeout")
+    }, 10 * 1000) // 10s connection timeout
+
+    if (timer.unref) {
+      timer.unref()
+    }
+
     ws.onmessage = (evt) => {
       session.handleMessage(evt.data)
     }
 
     ws.onerror = e => {
+      if (!connected) {
+        reject(e)
+      }
+
       ws.close()
-      log.warn("WS connection error", e)
+      log.warn("WS connection error", e.message)
     }
 
     ws.onopen = () => {
+      connected = true
       listeners.connected()
       session.open(ws)
       resolve(ws)
     }
 
     ws.onclose = ({code, reason}) => {
-      listeners.disconnected({code, reason})
-      reject()
+      if (connected) {
+        listeners.disconnected({code, reason})
+      }
     }
   })
 }
