@@ -1,5 +1,6 @@
 import {RpcSession} from "./RpcSession"
 import {log} from "./logger"
+import {dateReviver} from "./utils"
 
 export interface RpcClientListeners {
   connected(): void
@@ -22,8 +23,9 @@ export interface RpcClientOptions {
   reconnect: boolean
   createContext(): any
   localMiddleware: (ctx, next) => Promise<any>
-  messageParser?(data): any[]
-  keepAlivePeriod?: number
+  messageParser(data): any[]
+  keepAlivePeriod: number
+  syncRemoteCalls: boolean
 }
 
 const defaultOptions: RpcClientOptions = {
@@ -40,23 +42,46 @@ const defaultOptions: RpcClientOptions = {
   reconnect: false,
   createContext: () => {},
   localMiddleware: (ctx, next) => next(),
+  messageParser: data => JSON.parse(data, dateReviver),
+  keepAlivePeriod: null,
+  syncRemoteCalls: false,
 }
 
-export function createRpcClient<R = any>(level, createWebSocket, options: Partial<RpcClientOptions> = {}): Promise<RpcClient<R>> {
+export function createRpcClient<R = any>(
+  level,
+  createWebSocket,
+  options: Partial<RpcClientOptions> = {}
+): Promise<RpcClient<R>> {
   const opts: RpcClientOptions = {...defaultOptions, ...options}
 
-  const session = new RpcSession(opts.local, level, opts.listeners, opts.createContext(), opts.localMiddleware, opts.messageParser, opts.keepAlivePeriod)
+  const session = new RpcSession(
+    opts.local,
+    level,
+    opts.listeners,
+    opts.createContext(),
+    opts.localMiddleware,
+    opts.messageParser,
+    opts.keepAlivePeriod,
+    opts.syncRemoteCalls
+  )
 
   const client = {
     remote: session.remote,
-    disconnect: () => session.terminate()
+    disconnect: () => session.terminate(),
   }
 
-  return (opts.reconnect ? startConnectionLoop : connect)(session, createWebSocket, opts.listeners)
-    .then(() => client)
+  return (opts.reconnect ? startConnectionLoop : connect)(
+    session,
+    createWebSocket,
+    opts.listeners
+  ).then(() => client)
 }
 
-function startConnectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners): Promise<void> {
+function startConnectionLoop(
+  session: RpcSession,
+  createWebSocket,
+  listeners: RpcClientListeners
+): Promise<void> {
   return new Promise(resolve => {
     let onFirstConnection = resolve
     const errorDelay = {value: 0}
@@ -67,19 +92,34 @@ function startConnectionLoop(session: RpcSession, createWebSocket, listeners: Rp
         // first reconnect after succesfull connection is immediate
         errorDelay.value = 0
         listeners.connected()
-      }
+      },
     }
 
-    connectionLoop(session, createWebSocket, l, () => {
-      onFirstConnection()
-      onFirstConnection = () => {}
-    }, errorDelay)
+    connectionLoop(
+      session,
+      createWebSocket,
+      l,
+      () => {
+        onFirstConnection()
+        onFirstConnection = () => {}
+      },
+      errorDelay
+    )
   })
 }
 
-function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClientListeners, resolve, errorDelay): void {
+function connectionLoop(
+  session: RpcSession,
+  createWebSocket,
+  listeners: RpcClientListeners,
+  resolve,
+  errorDelay
+): void {
   function reconnect() {
-    const timer = setTimeout(() => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay), errorDelay.value)
+    const timer = setTimeout(
+      () => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay),
+      errorDelay.value
+    )
 
     // 2nd and further reconnects are with random delays
     errorDelay.value = Math.round(Math.random() * 15 * 1000)
@@ -94,7 +134,7 @@ function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClie
     disconnected: ({code, reason}) => {
       reconnect()
       listeners.disconnected({code, reason})
-    }
+    },
   }
 
   connect(session, createWebSocket, l)
@@ -104,7 +144,11 @@ function connectionLoop(session: RpcSession, createWebSocket, listeners: RpcClie
     })
 }
 
-function connect(session: RpcSession, createWebSocket, listeners: RpcClientListeners): Promise<void> {
+function connect(
+  session: RpcSession,
+  createWebSocket,
+  listeners: RpcClientListeners
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const ws = createWebSocket()
 
@@ -118,7 +162,7 @@ function connect(session: RpcSession, createWebSocket, listeners: RpcClientListe
       timer.unref()
     }
 
-    ws.onmessage = (evt) => {
+    ws.onmessage = evt => {
       session.handleMessage(evt.data)
     }
 

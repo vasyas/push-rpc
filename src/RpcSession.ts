@@ -19,8 +19,9 @@ export class RpcSession {
     private listeners: RpcSessionListeners,
     private connectionContext: any,
     private localMiddleware: (ctx, next) => Promise<any>,
-    private messageParser: (data) => any[] = (data) => JSON.parse(data, dateReviver),
-    private keepAlivePeriod: number = undefined
+    private messageParser: (data) => any[],
+    private keepAlivePeriod: number,
+    private syncRemoteCalls: boolean
   ) {
     this.remote = createRemote(remoteLevel, this)
   }
@@ -65,7 +66,6 @@ export class RpcSession {
     }
   }
 
-
   private pingTimer
 
   async remove() {
@@ -93,7 +93,7 @@ export class RpcSession {
 
       const item = getServiceItem(this.local, name)
 
-      const localTopic = item as any as LocalTopicImpl<any, any>
+      const localTopic = (item as any) as LocalTopicImpl<any, any>
       const method = item as Method
 
       switch (type) {
@@ -132,7 +132,10 @@ export class RpcSession {
           break
 
         case MessageType.Data:
-          const remoteTopic = getServiceItem(this.remote, name) as any as RemoteTopicImpl<any, any>
+          const remoteTopic = (getServiceItem(this.remote, name) as any) as RemoteTopicImpl<
+            any,
+            any
+          >
 
           if (!remoteTopic) {
             throw new Error(`Can't find remote topic with name ${name}`)
@@ -162,16 +165,18 @@ export class RpcSession {
         reject,
       })
 
-      if (!Object.keys(this.runningCalls).length) {
-        this.sendCall()
-      }
+      this.sendCall()
     })
   }
 
   private sendCall() {
-    const call = this.queue.shift()
+    if (!!Object.keys(this.runningCalls).length && this.syncRemoteCalls) {
+      return
+    }
 
-    if (call) {
+    while (this.queue.length > 0) {
+      const call = this.queue.shift()
+
       if (call.type == "ping") {
         this.runningCalls[PING_MESSAGE_ID] = call
         this.ws.ping(call.params)
@@ -188,9 +193,10 @@ export class RpcSession {
         this.runningCalls[messageId] = call
         this.send(call.type, "" + messageId, call.name, call.params)
       }
+
+      if (this.syncRemoteCalls) return
     }
   }
-
 
   /** Creates call context - context to be used in calls */
   public createContext() {
@@ -258,13 +264,15 @@ export class RpcSession {
 
     const paramsKey = JSON.stringify(params)
 
-    this.subscriptions = this.subscriptions.filter(s => s.topic != topic || JSON.stringify(s.params) != paramsKey)
+    this.subscriptions = this.subscriptions.filter(
+      s => s.topic != topic || JSON.stringify(s.params) != paramsKey
+    )
     this.listeners.unsubscribed(this.subscriptions.length)
   }
 
   private ws: WebSocket = null
 
-  public subscriptions: {topic, params}[] = []
+  public subscriptions: {topic; params}[] = []
 
   // TODO reject on timeout, expire calls cache
   // both remote method calls and topics get
