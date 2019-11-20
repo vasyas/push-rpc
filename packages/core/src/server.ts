@@ -4,6 +4,7 @@ import {log} from "./logger"
 import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
+import {dateReviver} from "./utils"
 
 export interface RpcServerOptions {
   wss?: any
@@ -13,6 +14,7 @@ export interface RpcServerOptions {
   clientLevel?: number
   messageParser?(data): any[]
   keepAlivePeriod?: number
+  syncRemoteCalls?: boolean
 
   listeners?: {
     connected?(remoteId: string, connections: number): void
@@ -31,6 +33,8 @@ const defaultOptions: Partial<RpcServerOptions> = {
   getClientId: () => UUID.create().toString(),
   clientLevel: 0,
   keepAlivePeriod: 50 * 1000,
+  syncRemoteCalls: false,
+  messageParser: data => JSON.parse(data, dateReviver),
   listeners: {
     connected: () => {},
     disconnected: () => {},
@@ -50,7 +54,7 @@ export interface RpcServer {
 export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcServer {
   opts = {
     ...defaultOptions,
-    ...opts
+    ...opts,
   }
 
   const wss = new WebSocket.Server(opts.wss)
@@ -63,20 +67,33 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
   })
 
   function getTotalSubscriptions() {
-    return Object.values(sessions).map(s => s.subscriptions.length).reduce(((p, c) => p + c), 0)
+    return Object.values(sessions)
+      .map(s => s.subscriptions.length)
+      .reduce((p, c) => p + c, 0)
   }
 
   wss.on("connection", (ws, req) => {
     const remoteId = opts.getClientId(req)
-    const protocol = req.headers["sec-websocket-protocol"] ? req.headers["sec-websocket-protocol"][0] : null
+    const protocol = req.headers["sec-websocket-protocol"]
+      ? req.headers["sec-websocket-protocol"][0]
+      : null
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
-    const session = new RpcSession(local, opts.clientLevel, {
-      messageIn: data => opts.listeners.messageIn(remoteId, data),
-      messageOut: data => opts.listeners.messageOut(remoteId, data),
-      subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
-      unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
-    }, connectionContext, opts.localMiddleware, opts.messageParser, opts.keepAlivePeriod)
+    const session = new RpcSession(
+      local,
+      opts.clientLevel,
+      {
+        messageIn: data => opts.listeners.messageIn(remoteId, data),
+        messageOut: data => opts.listeners.messageOut(remoteId, data),
+        subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
+        unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
+      },
+      connectionContext,
+      opts.localMiddleware,
+      opts.messageParser,
+      opts.keepAlivePeriod,
+      opts.syncRemoteCalls
+    )
 
     session.open(ws)
 
@@ -113,14 +130,13 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
 
   return {
     wss,
-    getRemote: (clientId) => {
-      if (!sessions[clientId])
-        throw new Error(`Client ${clientId} is not connected`)
+    getRemote: clientId => {
+      if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
 
       return createRemote(opts.clientLevel, sessions[clientId])
     },
-    isConnected: (remoteId) => {
+    isConnected: remoteId => {
       return !!sessions[remoteId]
-    }
+    },
   }
 }
