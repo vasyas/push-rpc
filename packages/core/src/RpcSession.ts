@@ -3,7 +3,7 @@ import {log} from "./logger"
 import {createMessageId, dateReviver, message} from "./utils"
 import {getServiceItem, MessageType, Method} from "./rpc"
 import {LocalTopicImpl} from "./local"
-import {RemoteTopicImpl, createRemote} from "./remote"
+import {createRemote, RemoteTopicImpl} from "./remote"
 
 export interface RpcSessionListeners {
   messageIn(data: string): void
@@ -19,7 +19,8 @@ export class RpcSession {
     private listeners: RpcSessionListeners,
     private connectionContext: any,
     private localMiddleware: (ctx, next) => Promise<any>,
-    private messageParser: (data) => any[] = (data) => JSON.parse(data, dateReviver)
+    private messageParser: (data) => any[] = (data) => JSON.parse(data, dateReviver),
+    private keepAlivePeriod: number = undefined
   ) {
     this.remote = createRemote(remoteLevel, this)
   }
@@ -29,7 +30,42 @@ export class RpcSession {
   open(ws) {
     this.ws = ws
     resubscribeTopics(this.remote)
+
+    if (this.keepAlivePeriod) {
+      ws.on("pong", () => {
+        // log.debug(`CP ${this.chargeBoxId} received pong`)
+
+        // some upstream require pings to be synchronous with regular messages
+        if (this.runningCalls[PING_MESSAGE_ID]) {
+          if (this.runningCalls[PING_MESSAGE_ID].timeoutTimer) {
+            clearTimeout(this.runningCalls[PING_MESSAGE_ID].timeoutTimer)
+          }
+
+          this.runningCalls[PING_MESSAGE_ID].resolve()
+          delete this.runningCalls[PING_MESSAGE_ID]
+        }
+      })
+
+      this.checkAliveTimer = setTimeout(this.checkAlive, this.keepAlivePeriod)
+
+      ws.on("close", () => {
+        clearTimeout(this.checkAliveTimer)
+      })
+    }
   }
+
+  checkAlive = async () => {
+    try {
+      await this.callRemote(PING_MESSAGE_ID, "ping", MessageType.Call)
+      this.checkAliveTimer = setTimeout(this.checkAlive, this.keepAlivePeriod)
+    } catch (e) {
+      log.warn(`Keep alive check failed`)
+      this.terminate()
+    }
+  }
+
+
+  private checkAliveTimer
 
   async remove() {
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
@@ -38,31 +74,8 @@ export class RpcSession {
     this.listeners.unsubscribed(0)
   }
 
-  private alive = true
-
   terminate() {
     this.ws.terminate()
-  }
-
-  checkAlive() {
-    if (!this.alive) {
-      log.warn(`RpcSession keep alive check failed`)
-
-      this.ws.terminate()
-    } else {
-      this.alive = false
-
-      try {
-        log.debug("Send ping")
-        this.ws.ping()
-      } catch (e) {
-        log.debug("Send ping failed", e)
-      }
-    }
-  }
-
-  markAlive() {
-    this.alive = true
   }
 
   handleMessage(data) {
@@ -140,11 +153,43 @@ export class RpcSession {
 
   callRemote(name, params, type) {
     return new Promise((resolve, reject) => {
-      const id = createMessageId()
-      this.calls[id] = {resolve, reject}
-      this.send(type, id, name, params)
+      this.queue.push({
+        type,
+        action: name,
+        payload: params,
+        resolve,
+        reject,
+      })
+
+      if (!Object.keys(this.runningCalls).length) {
+        this.sendCall()
+      }
     })
   }
+
+  private sendCall() {
+    const call = this.queue.shift()
+
+    if (call) {
+      if (call.action == PING_MESSAGE_ID) {
+        this.runningCalls[PING_MESSAGE_ID] = call
+        this.ws.ping(call.payload)
+        // log.debug(`CP ${this.chargeBoxId} sent ping`)
+
+        call.timeoutTimer = setTimeout(() => {
+          log.debug(`Pong wait timeout`)
+
+          delete this.runningCalls[PING_MESSAGE_ID]
+          call.reject()
+        }, this.keepAlivePeriod / 2)
+      } else {
+        const messageId = createMessageId()
+        this.runningCalls[messageId] = call
+        this.send(call.type, "" + messageId, call.action, call.payload)
+      }
+    }
+  }
+
 
   /** Creates call context - context to be used in calls */
   public createContext() {
@@ -157,9 +202,9 @@ export class RpcSession {
   private callRemoteResponse(data) {
     const [_, id, res] = data
 
-    if (this.calls[id]) {
-      const {resolve, reject} = this.calls[id]
-      delete this.calls[id]
+    if (this.runningCalls[id]) {
+      const {resolve, reject} = this.runningCalls[id]
+      delete this.runningCalls[id]
 
       if (data[0] == MessageType.Result) {
         resolve(res)
@@ -167,6 +212,8 @@ export class RpcSession {
         reject(res)
       }
     }
+
+    this.sendCall()
   }
 
   private async callLocal(id, remoteMethod, params) {
@@ -218,9 +265,10 @@ export class RpcSession {
 
   public subscriptions: {topic, params}[] = []
 
-  // both remote method calls and topics get
   // TODO reject on timeout, expire calls cache
-  private calls: {[id: string]: {resolve, reject}} = {}
+  // both remote method calls and topics get
+  private queue: Call[] = []
+  private runningCalls: {[messageId: string]: Call} = {}
 }
 
 function resubscribeTopics(remote) {
@@ -232,3 +280,14 @@ function resubscribeTopics(remote) {
     }
   })
 }
+
+interface Call {
+  type: MessageType
+  action: string
+  payload: object
+  resolve(r?): void
+  reject(r?): void
+  timeoutTimer?: any
+}
+
+const PING_MESSAGE_ID = "–ws-ping"
