@@ -12,6 +12,7 @@ export interface RpcServerOptions {
   getClientId?: (req) => string
   clientLevel?: number
   messageParser?(data): any[]
+  keepAlivePeriod?: number
 
   listeners?: {
     connected?(remoteId: string, connections: number): void
@@ -29,6 +30,7 @@ const defaultOptions: Partial<RpcServerOptions> = {
   localMiddleware: (ctx, next) => next(),
   getClientId: () => UUID.create().toString(),
   clientLevel: 0,
+  keepAlivePeriod: 50 * 1000,
   listeners: {
     connected: () => {},
     disconnected: () => {},
@@ -60,10 +62,6 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
     log.error("RPC WS server error", e)
   })
 
-  setInterval(() => {
-    Object.values(sessions).forEach(session => session.checkAlive())
-  }, 15 * 1000).unref()
-
   function getTotalSubscriptions() {
     return Object.values(sessions).map(s => s.subscriptions.length).reduce(((p, c) => p + c), 0)
   }
@@ -78,7 +76,7 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
       messageOut: data => opts.listeners.messageOut(remoteId, data),
       subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
       unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
-    }, connectionContext, opts.localMiddleware, opts.messageParser)
+    }, connectionContext, opts.localMiddleware, opts.messageParser, opts.keepAlivePeriod)
 
     session.open(ws)
 
@@ -89,12 +87,6 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
     sessions[remoteId] = session
 
     opts.listeners.connected(remoteId, Object.keys(sessions).length)
-
-    ws.on("pong", () => {
-      log.debug("Got pong " + remoteId)
-
-      session.markAlive()
-    })
 
     ws.on("message", message => {
       session.handleMessage(message)
