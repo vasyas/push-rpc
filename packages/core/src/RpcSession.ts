@@ -18,7 +18,8 @@ export class RpcSession {
     remoteLevel: number,
     private listeners: RpcSessionListeners,
     private connectionContext: any,
-    private localMiddleware: (ctx, next) => Promise<any>
+    private localMiddleware: (ctx, next) => Promise<any>,
+    private messageParser: (data) => any[] = (data) => JSON.parse(data, dateReviver)
   ) {
     this.remote = createRemote(remoteLevel, this)
   }
@@ -68,7 +69,7 @@ export class RpcSession {
     try {
       this.listeners.messageIn(data)
 
-      const message = JSON.parse(data, dateReviver)
+      const message = this.messageParser(data)
 
       if (message[0] == MessageType.Result || message[0] == MessageType.Error) {
         return this.callRemoteResponse(message)

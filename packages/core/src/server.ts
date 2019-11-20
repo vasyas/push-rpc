@@ -11,6 +11,7 @@ export interface RpcServerOptions {
   localMiddleware?: (ctx, next) => Promise<any>
   getClientId?: (req) => string
   clientLevel?: number
+  messageParser?(data): any[]
 
   listeners?: {
     connected?(remoteId: string, connections: number): void
@@ -21,7 +22,6 @@ export interface RpcServerOptions {
     unsubscribed(subscriptions: number)
   }
 }
-
 
 const defaultOptions: Partial<RpcServerOptions> = {
   wss: {noServer: true},
@@ -78,7 +78,7 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
       messageOut: data => opts.listeners.messageOut(remoteId, data),
       subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
       unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
-    }, connectionContext, opts.localMiddleware)
+    }, connectionContext, opts.localMiddleware, opts.messageParser)
 
     session.open(ws)
 

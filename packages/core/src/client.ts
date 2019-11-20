@@ -22,6 +22,7 @@ export interface RpcClientOptions {
   reconnect: boolean
   createContext(): any
   localMiddleware: (ctx, next) => Promise<any>
+  messageParser?(data): any[]
 }
 
 const defaultOptions: RpcClientOptions = {
@@ -43,7 +44,7 @@ const defaultOptions: RpcClientOptions = {
 export function createRpcClient<R = any>(level, createWebSocket, options: Partial<RpcClientOptions> = {}): Promise<RpcClient<R>> {
   const opts: RpcClientOptions = {...defaultOptions, ...options}
 
-  const session = new RpcSession(opts.local, level, opts.listeners, opts.createContext(), opts.localMiddleware)
+  const session = new RpcSession(opts.local, level, opts.listeners, opts.createContext(), opts.localMiddleware, opts.messageParser)
 
   const client = {
     remote: session.remote,
