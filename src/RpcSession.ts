@@ -46,18 +46,19 @@ export class RpcSession {
         }
       })
 
-      this.checkAliveTimer = setTimeout(this.checkAlive, this.keepAlivePeriod)
+      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
 
       ws.on("close", () => {
-        clearTimeout(this.checkAliveTimer)
+        clearTimeout(this.pingTimer)
       })
     }
   }
 
-  checkAlive = async () => {
+  sendPing = async () => {
     try {
-      await this.callRemote(PING_MESSAGE_ID, "ping", MessageType.Call)
-      this.checkAliveTimer = setTimeout(this.checkAlive, this.keepAlivePeriod)
+      // call will be rejected if no reply will come in keepAlivePeriod / 2, see #sendCall
+      await this.callRemote("", "ping", "ping")
+      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
     } catch (e) {
       log.warn(`Keep alive check failed`)
       this.terminate()
@@ -65,7 +66,7 @@ export class RpcSession {
   }
 
 
-  private checkAliveTimer
+  private pingTimer
 
   async remove() {
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
@@ -155,8 +156,8 @@ export class RpcSession {
     return new Promise((resolve, reject) => {
       this.queue.push({
         type,
-        action: name,
-        payload: params,
+        name: name,
+        params: params,
         resolve,
         reject,
       })
@@ -171,9 +172,9 @@ export class RpcSession {
     const call = this.queue.shift()
 
     if (call) {
-      if (call.action == PING_MESSAGE_ID) {
+      if (call.type == "ping") {
         this.runningCalls[PING_MESSAGE_ID] = call
-        this.ws.ping(call.payload)
+        this.ws.ping(call.params)
         // log.debug(`CP ${this.chargeBoxId} sent ping`)
 
         call.timeoutTimer = setTimeout(() => {
@@ -185,7 +186,7 @@ export class RpcSession {
       } else {
         const messageId = createMessageId()
         this.runningCalls[messageId] = call
-        this.send(call.type, "" + messageId, call.action, call.payload)
+        this.send(call.type, "" + messageId, call.name, call.params)
       }
     }
   }
@@ -282,9 +283,9 @@ function resubscribeTopics(remote) {
 }
 
 interface Call {
-  type: MessageType
-  action: string
-  payload: object
+  type: MessageType.Call | MessageType.Get | "ping"
+  name: string
+  params: object
   resolve(r?): void
   reject(r?): void
   timeoutTimer?: any
