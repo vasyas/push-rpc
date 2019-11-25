@@ -1,6 +1,5 @@
-import * as WebSocket from "ws"
 import {log} from "./logger"
-import {createMessageId, dateReviver, message} from "./utils"
+import {createMessageId, message} from "./utils"
 import {getServiceItem, MessageType, Method} from "./rpc"
 import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
@@ -270,7 +269,7 @@ export class RpcSession {
     this.listeners.unsubscribed(this.subscriptions.length)
   }
 
-  private ws: WebSocket = null
+  private ws = null
 
   public subscriptions: {topic; params}[] = []
 
