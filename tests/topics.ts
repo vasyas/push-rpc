@@ -9,8 +9,8 @@ describe("Topics", () => {
 
     await startTestServer({
       test: {
-        item: new LocalTopicImpl<{}, any>(async () => item)
-      }
+        item: new LocalTopicImpl<{}, any>(async () => item),
+      },
     })
 
     const client = await createTestClient()
@@ -25,13 +25,17 @@ describe("Topics", () => {
 
     const server = {
       test: {
-        item: new LocalTopicImpl<typeof item, {}>(async () => item)
-      }
+        item: new LocalTopicImpl<typeof item, {}>(async () => item),
+      },
     }
 
     await startTestServer(server)
 
-    const {remote: client, disconnect} = await createRpcClient(1, () => new WebSocket(`ws://localhost:${TEST_PORT}`), {reconnect: true})
+    const {remote: client, disconnect} = await createRpcClient(
+      1,
+      () => new WebSocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
 
     let receivedItem
 
@@ -58,5 +62,63 @@ describe("Topics", () => {
     server.test.item.trigger()
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(receivedItem, item)
+  })
+
+  it("trigger filter", async () => {
+    interface Item {
+      key: string
+    }
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl<Item, {key: string}>(async ({key}) => ({key})),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      () => new WebSocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let item1
+    let item2
+
+    await client.test.item.subscribe(
+      item => {
+        item1 = item
+      },
+      {key: "1"}
+    )
+
+    await client.test.item.subscribe(
+      item => {
+        item2 = item
+      },
+      {key: "2"}
+    )
+
+    // first notificaiton right after subscription, clear items
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    // trigger sends 1st item, but not second
+    item1 = null
+    item2 = null
+
+    server.test.item.trigger({key: "1"})
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item1, {key: "1"})
+    assert.isNull(item2)
+
+    // null trigger sends all items
+    item1 = null
+    item2 = null
+
+    server.test.item.trigger(null)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item1, {key: "1"})
+    assert.deepEqual(item2, {key: "2"})
   })
 })

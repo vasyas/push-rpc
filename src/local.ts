@@ -3,73 +3,102 @@ import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
 
 /** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
-export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
-  constructor(private supplier: DataSupplier<D, P>) {
+export class LocalTopicImpl<D, F extends object> extends TopicImpl implements Topic<D, F> {
+  constructor(private supplier: DataSupplier<D, F>) {
     super()
   }
 
   name: string
 
-  trigger(params: P = null, suppliedData?: D): void {
-    const key = JSON.stringify(params)
+  trigger(filter: Partial<F> = {}, suppliedData?: D): void {
+    for (const subscription of Object.values(this.subscriptions)) {
+      if (filterContains(filter, subscription.filter)) {
+        // data cannot be cached between subscribers, b/c for different subscriber there could be a different context
+        subscription.sessions.forEach(async session => {
+          const data: D =
+            suppliedData != undefined
+              ? suppliedData
+              : await this.supplier(subscription.filter, session.createContext())
 
-    const subscribed: RpcSession[] = this.subscribedSessions[key] || []
-
-    // data cannot be cached between subscribers, b/c for dfferent subscriber there could be a different context
-    subscribed.forEach(async session => {
-      const data: D = suppliedData != undefined
-        ? suppliedData
-        : await this.supplier(params, session.createContext())
-
-      session.send(MessageType.Data, createMessageId(), this.name, params, data)
-    })
+          session.send(MessageType.Data, createMessageId(), this.name, subscription.filter, data)
+        })
+      }
+    }
   }
 
-  async getData(params: P, ctx: any): Promise<D> {
-    return await this.supplier(params, ctx)
+  async getData(filter: F, ctx: any): Promise<D> {
+    return await this.supplier(filter, ctx)
   }
 
-  async subscribeSession(session: RpcSession, params: P) {
-    const key = JSON.stringify(params)
+  async subscribeSession(session: RpcSession, filter: F) {
+    const key = JSON.stringify(filter)
 
-    const sessions = this.subscribedSessions[key] || []
+    const subscription: Subscription<F> = this.subscriptions[key] || {
+      filter,
+      sessions: [],
+    }
 
     // no double subscribe
-    if (sessions.indexOf(session) >= 0) return
+    if (subscription.sessions.indexOf(session) >= 0) return
 
-    sessions.push(session)
-    this.subscribedSessions[key] = sessions
+    subscription.sessions.push(session)
+    this.subscriptions[key] = subscription
 
     if (this.supplier) {
-      const data = await this.supplier(params, session.createContext())
-      session.send(MessageType.Data, createMessageId(), this.name, params, data)
+      const data = await this.supplier(filter, session.createContext())
+      session.send(MessageType.Data, createMessageId(), this.name, filter, data)
     }
   }
 
-  unsubscribeSession(session: RpcSession, params: P) {
-    const key = JSON.stringify(params)
+  unsubscribeSession(session: RpcSession, filter: F) {
+    const key = JSON.stringify(filter)
 
-    const sessions = this.subscribedSessions[key]
+    const subscription = this.subscriptions[key]
+    if (!subscription) return
 
-    if (!sessions) return
+    const index = subscription.sessions.indexOf(session)
+    subscription.sessions.splice(index, 1)
 
-    const index = sessions.indexOf(session)
-    sessions.splice(index, 1)
-
-    if (!sessions.length) {
-      delete this.subscribedSessions[key]
+    if (!subscription.sessions.length) {
+      delete this.subscriptions[key]
     }
   }
 
-  private subscribedSessions: {[key: string]: RpcSession[]} = {}
+  private subscriptions: {[key: string]: Subscription<F>} = {}
 
   // dummy implementations, see class comment
 
-  get(params?: P): Promise<D> { return undefined; }
-  subscribe(consumer: DataConsumer<D>, params: P, subscriptionKey: any): void {}
-  unsubscribe(params?: P, subscriptionKey?: any) {}
+  get(params?: F): Promise<D> {
+    return undefined
+  }
+  subscribe(consumer: DataConsumer<D>, params: F, subscriptionKey: any): void {}
+  unsubscribe(params?: F, subscriptionKey?: any) {}
 }
 
+function filterContains(container, filter): boolean {
+  if (filter == null) return true // subscribe to all data
+  if (container == null) return true // all data modified
+
+  for (const key of Object.keys(filter)) {
+    if (container[key] == undefined) continue
+    if (filter[key] == container[key]) continue
+
+    if (Array.isArray(container[key]) && Array.isArray(filter[key])) {
+      if (JSON.stringify(container[key]) == JSON.stringify(filter[key])) {
+        continue
+      }
+    }
+
+    return false
+  }
+
+  return true
+}
+
+interface Subscription<F> {
+  filter: F
+  sessions: RpcSession[]
+}
 
 /**
  * 1. Set name on topics
@@ -78,7 +107,7 @@ export class LocalTopicImpl<D, P> extends TopicImpl implements Topic<D, P> {
 export function prepareLocal(services, prefix = "") {
   const keys = [
     ...Object.keys(services),
-    ...(Object.getPrototypeOf(services) && Object.keys(Object.getPrototypeOf(services)) || []),
+    ...((Object.getPrototypeOf(services) && Object.keys(Object.getPrototypeOf(services))) || []),
   ]
 
   keys.forEach(key => {
