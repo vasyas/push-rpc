@@ -7,23 +7,20 @@ interface Subscription<D> {
   subscriptionKey: string
 }
 
-export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P> {
+export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F> {
   constructor(private topicName: string, private session: RpcSession) {
     super()
   }
 
-  subscribe(consumer: DataConsumer<D>, params: P = null, subscriptionKey: any = consumer) {
-    const paramsKey = JSON.stringify(params)
+  subscribe(consumer: DataConsumer<D>, filter: F = null, subscriptionKey: any = consumer) {
+    const filterKey = JSON.stringify(filter)
 
-    this.consumers[paramsKey] = [
-      ...(this.consumers[paramsKey] || []),
-      {consumer, subscriptionKey},
-    ]
+    this.consumers[filterKey] = [...(this.consumers[filterKey] || []), {consumer, subscriptionKey}]
 
-    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
+    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, filter)
   }
 
-  unsubscribe(params: P = null, subscriptionKey = undefined) {
+  unsubscribe(params: F = null, subscriptionKey = undefined) {
     const paramsKey = JSON.stringify(params)
 
     if (!this.consumers[paramsKey]) return
@@ -49,7 +46,7 @@ export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P
     }
   }
 
-  get(params: P = null): Promise<D> {
+  get(params: F = null): Promise<D> {
     return this.session.callRemote(this.topicName, params, MessageType.Get) as Promise<D>
   }
 
@@ -60,7 +57,7 @@ export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P
     })
   }
 
-  receiveData(params: P, data: D) {
+  receiveData(params: F, data: D) {
     const paramsKey = JSON.stringify(params)
     const subscriptions = this.consumers[paramsKey] || []
     subscriptions.forEach(subscription => subscription.consumer(data))
@@ -70,9 +67,9 @@ export class RemoteTopicImpl<D, P> extends TopicImpl implements RemoteTopic<D, P
 }
 
 export function createRemote(level: number, session: RpcSession) {
-  return createRemoteServiceItems(level, (name) => {
+  return createRemoteServiceItems(level, name => {
     // start with method
-    const remoteItem = (params) => {
+    const remoteItem = params => {
       return session.callRemote(name, params, MessageType.Call)
     }
 
@@ -87,37 +84,47 @@ export function createRemote(level: number, session: RpcSession) {
   })
 }
 
-function createRemoteServiceItems(level, createServiceItem: (name) => RemoteTopic<any, any> | Method, prefix = ""): any {
+function createRemoteServiceItems(
+  level,
+  createServiceItem: (name) => RemoteTopic<any, any> | Method,
+  prefix = ""
+): any {
   const cachedItems = {}
 
-  return new Proxy({}, {
-    get(target, name) {
-      // skip internal props
-      if (typeof name != "string") return target[name]
+  return new Proxy(
+    {},
+    {
+      get(target, name) {
+        // skip internal props
+        if (typeof name != "string") return target[name]
 
-      // and promise-alike
-      if (name == "then") return undefined
+        // and promise-alike
+        if (name == "then") return undefined
 
-      if (!cachedItems[name]) {
-        const itemName = prefix + name
+        if (!cachedItems[name]) {
+          const itemName = prefix + name
 
-        if (level > 0)
-          cachedItems[name] = createRemoteServiceItems(level - 1, createServiceItem, itemName + "/")
-        else
-          cachedItems[name] = createServiceItem(itemName)
-      }
+          if (level > 0)
+            cachedItems[name] = createRemoteServiceItems(
+              level - 1,
+              createServiceItem,
+              itemName + "/"
+            )
+          else cachedItems[name] = createServiceItem(itemName)
+        }
 
-      return cachedItems[name]
-    },
+        return cachedItems[name]
+      },
 
-    set(target, name, value) {
-      cachedItems[name] = value
-      return true
-    },
+      set(target, name, value) {
+        cachedItems[name] = value
+        return true
+      },
 
-    // Used in resubscribe
-    ownKeys() {
-      return Object.keys(cachedItems)
+      // Used in resubscribe
+      ownKeys() {
+        return Object.keys(cachedItems)
+      },
     }
-  })
+  )
 }
