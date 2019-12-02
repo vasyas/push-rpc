@@ -67,11 +67,16 @@ export class RpcSession {
 
   private pingTimer
 
-  async remove() {
+  async close() {
+    // clear subscriptions
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
     this.subscriptions = []
 
     this.listeners.unsubscribed(0)
+
+    // timeout pending calls
+
+    // stop timer
   }
 
   terminate() {

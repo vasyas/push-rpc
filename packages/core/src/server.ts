@@ -110,7 +110,7 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
     })
 
     ws.on("close", async (code, reason) => {
-      await session.remove()
+      await session.close()
 
       if (sessions[remoteId] == session) {
         delete sessions[remoteId]
