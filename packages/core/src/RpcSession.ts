@@ -38,21 +38,16 @@ export class RpcSession {
     resubscribeTopics(this.remote)
 
     if (this.keepAlivePeriod) {
+      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
+
       ws.on("pong", () => {
         // log.debug(`CP ${this.chargeBoxId} received pong`)
 
-        // some upstream require pings to be synchronous with regular messages
         if (this.runningCalls[PING_MESSAGE_ID]) {
-          if (this.runningCalls[PING_MESSAGE_ID].pingTimeoutTimer) {
-            clearTimeout(this.runningCalls[PING_MESSAGE_ID].pingTimeoutTimer)
-          }
-
           this.runningCalls[PING_MESSAGE_ID].resolve()
           delete this.runningCalls[PING_MESSAGE_ID]
         }
       })
-
-      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
 
       ws.on("close", () => {
         clearTimeout(this.pingTimer)
@@ -177,10 +172,13 @@ export class RpcSession {
   }
 
   private timeoutCalls() {
-    const expireBefore = Date.now() - callTimeout
+    const now = Date.now()
 
     for (const messageId of Object.keys(this.runningCalls)) {
-      if (this.runningCalls[messageId].startedAt < expireBefore) {
+      const expireCallBefore =
+        messageId == PING_MESSAGE_ID ? now - this.keepAlivePeriod / 2 : now - callTimeout
+
+      if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]
         delete this.runningCalls[messageId]
         reject(new Error("Timeout"))
@@ -215,13 +213,6 @@ export class RpcSession {
         this.runningCalls[PING_MESSAGE_ID] = call
         this.ws.ping(call.params)
         // log.debug(`CP ${this.chargeBoxId} sent ping`)
-
-        call.pingTimeoutTimer = setTimeout(() => {
-          log.debug(`Pong wait timeout`)
-
-          delete this.runningCalls[PING_MESSAGE_ID]
-          call.reject()
-        }, this.keepAlivePeriod / 2)
       } else {
         const messageId = createMessageId()
         this.runningCalls[messageId] = call
@@ -308,8 +299,6 @@ export class RpcSession {
 
   public subscriptions: {topic; params}[] = []
 
-  // TODO reject on timeout, expire calls cache
-  // both remote method calls and topics get
   private queue: Call[] = []
   private runningCalls: {[messageId: string]: Call} = {}
 }
@@ -328,9 +317,9 @@ interface Call {
   type: MessageType.Call | MessageType.Get | "ping"
   name: string
   params: object
+
   resolve(r?): void
   reject(r?): void
-  pingTimeoutTimer?: any
 
   startedAt?: number
 }
