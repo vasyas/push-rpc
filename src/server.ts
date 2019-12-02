@@ -74,9 +74,9 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
 
   wss.on("connection", (ws, req) => {
     const remoteId = opts.getClientId(req)
-    const protocol = req.headers["sec-websocket-protocol"]
-      ? req.headers["sec-websocket-protocol"][0]
-      : null
+    let protocol: any = req.headers["sec-websocket-protocol"]
+
+    if (protocol && Array.isArray(protocol)) protocol = protocol[0]
 
     const connectionContext = opts.createContext(req, protocol, remoteId)
     const session = new RpcSession(
