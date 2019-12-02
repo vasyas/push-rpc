@@ -4,6 +4,12 @@ import {getServiceItem, MessageType, Method} from "./rpc"
 import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
 
+let callTimeout: number = 3 * 60 * 1000 // 3 mins
+
+export function setCallTimeout(v) {
+  callTimeout = v
+}
+
 export interface RpcSessionListeners {
   messageIn(data: string): void
   messageOut(data: string): void
@@ -52,7 +58,24 @@ export class RpcSession {
         clearTimeout(this.pingTimer)
       })
     }
+
+    this.callTimeoutTimer = setInterval(() => this.timeoutCalls(), 1000) // every 1s
   }
+
+  async close() {
+    // stop timer
+    clearInterval(this.callTimeoutTimer)
+
+    // clear subscriptions
+    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
+    this.subscriptions = []
+
+    this.listeners.unsubscribed(0)
+
+    // timeout pending calls
+  }
+
+  private callTimeoutTimer
 
   sendPing = async () => {
     try {
@@ -66,18 +89,6 @@ export class RpcSession {
   }
 
   private pingTimer
-
-  async close() {
-    // clear subscriptions
-    await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
-    this.subscriptions = []
-
-    this.listeners.unsubscribed(0)
-
-    // timeout pending calls
-
-    // stop timer
-  }
 
   terminate() {
     this.ws.terminate()
@@ -159,6 +170,18 @@ export class RpcSession {
     this.ws.send(data)
   }
 
+  private timeoutCalls() {
+    const expireBefore = Date.now() - callTimeout
+
+    for (const messageId of Object.keys(this.runningCalls)) {
+      if (this.runningCalls[messageId].startedAt < expireBefore) {
+        const {reject} = this.runningCalls[messageId]
+        delete this.runningCalls[messageId]
+        reject(new Error("Timeout"))
+      }
+    }
+  }
+
   callRemote(name, params, type) {
     return new Promise((resolve, reject) => {
       this.queue.push({
@@ -180,6 +203,7 @@ export class RpcSession {
 
     while (this.queue.length > 0) {
       const call = this.queue.shift()
+      call.startedAt = Date.now()
 
       if (call.type == "ping") {
         this.runningCalls[PING_MESSAGE_ID] = call
@@ -301,6 +325,8 @@ interface Call {
   resolve(r?): void
   reject(r?): void
   pingTimeoutTimer?: any
+
+  startedAt?: number
 }
 
 const PING_MESSAGE_ID = "–ws-ping"
