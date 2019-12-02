@@ -1,7 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils"
 
-describe("Calls", () => {
+describe("calls", () => {
   it("success", async () => {
     const resp = {r: "asf"}
 
@@ -16,8 +16,8 @@ describe("Calls", () => {
           invocation.req = req
           invocation.ctx = ctx
           return resp
-        }
-      }
+        },
+      },
     })
 
     const client = await createTestClient()
@@ -36,17 +36,36 @@ describe("Calls", () => {
       test: {
         async getSomething() {
           throw new Error(message)
-        }
-      }
+        },
+      },
     })
 
     const client = await createTestClient()
 
     try {
-      await client.test.getSomething({})
+      await client.test.getSomething()
       assert.fail()
     } catch (e) {
       assert.equal(e.message, message)
+    }
+  })
+
+  it("timeout", async () => {
+    await startTestServer({
+      test: {
+        async longOp() {
+          await new Promise(r => setTimeout(r, 3 * 60 * 1000))
+        },
+      },
+    })
+
+    const client = await createTestClient()
+
+    try {
+      await client.test.longOp()
+      assert.fail()
+    } catch (e) {
+      assert.equal(e.message, "Timeout")
     }
   })
 })

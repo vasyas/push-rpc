@@ -37,8 +37,8 @@ export class RpcSession {
 
         // some upstream require pings to be synchronous with regular messages
         if (this.runningCalls[PING_MESSAGE_ID]) {
-          if (this.runningCalls[PING_MESSAGE_ID].timeoutTimer) {
-            clearTimeout(this.runningCalls[PING_MESSAGE_ID].timeoutTimer)
+          if (this.runningCalls[PING_MESSAGE_ID].pingTimeoutTimer) {
+            clearTimeout(this.runningCalls[PING_MESSAGE_ID].pingTimeoutTimer)
           }
 
           this.runningCalls[PING_MESSAGE_ID].resolve()
@@ -181,7 +181,7 @@ export class RpcSession {
         this.ws.ping(call.params)
         // log.debug(`CP ${this.chargeBoxId} sent ping`)
 
-        call.timeoutTimer = setTimeout(() => {
+        call.pingTimeoutTimer = setTimeout(() => {
           log.debug(`Pong wait timeout`)
 
           delete this.runningCalls[PING_MESSAGE_ID]
@@ -295,7 +295,7 @@ interface Call {
   params: object
   resolve(r?): void
   reject(r?): void
-  timeoutTimer?: any
+  pingTimeoutTimer?: any
 }
 
 const PING_MESSAGE_ID = "–ws-ping"
