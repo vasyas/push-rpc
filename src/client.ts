@@ -183,6 +183,7 @@ function connect(
     }
 
     ws.onclose = ({code, reason}) => {
+      session.close()
       if (connected) {
         listeners.disconnected({code, reason})
       }
