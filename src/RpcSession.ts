@@ -73,6 +73,12 @@ export class RpcSession {
     this.listeners.unsubscribed(0)
 
     // timeout pending calls
+    ;[...this.queue, ...Object.values(this.runningCalls)].forEach(call => {
+      call.reject("Timeout")
+    })
+
+    this.queue = []
+    this.runningCalls = {}
   }
 
   private callTimeoutTimer
