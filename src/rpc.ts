@@ -1,6 +1,6 @@
 /**
-  * Each Service interface could be remote called.
-  * Each Service member should be either Topic or method
+ * Each Service interface could be remote called.
+ * Each Service member should be either Topic or method
  *
  * NOTE Do not extends this method, it is for reference only
  */
@@ -17,7 +17,7 @@ export type Method = (req?, ctx?) => Promise<any>
 
 export function getServiceItem(services: Services, name: string): ServiceItem {
   if (!name) {
-    throw new Error(`Can't lookup service item ${ name }`)
+    throw new Error(`Can't lookup service item ${name}`)
   }
 
   const names = name.split("/")
@@ -28,7 +28,7 @@ export function getServiceItem(services: Services, name: string): ServiceItem {
     if (i instanceof TopicImpl) return i as any
 
     if (!i) {
-      throw new Error(`Can't lookup service item ${ name }`)
+      throw new Error(`Can't lookup service item ${name}`)
     }
 
     return getServiceItem(i as Services, names.slice(1).join("/"))
@@ -59,22 +59,22 @@ export interface RpcContext<Remote = any> {
   protocol: string
   remoteId: string
   remote: Remote
+  messageId?: string
+  itemName?: string
 }
 
-export interface Topic<D, P = void> extends RemoteTopic<D, P>, LocalTopic<D, P> {
-}
+export interface Topic<D, P = void> extends RemoteTopic<D, P>, LocalTopic<D, P> {}
 
 export enum MessageType {
   // to server
-  Subscribe = 11,       // [11, id, name, params]
-  Unsubscribe = 12,     // [22, id, name, params]
-  Get = 14,             // [14, id, name, params]
-  Call = 2,             // [2, id, name, params]
+  Subscribe = 11, // [11, id, name, params]
+  Unsubscribe = 12, // [22, id, name, params]
+  Get = 14, // [14, id, name, params]
+  Call = 2, // [2, id, name, params]
   // to client
-  Data = 13,            // [13, id, name, params, data]
-  Result = 3,           // [3, id, res]
-  Error = 4,            // [4, id, code, description, details]
+  Data = 13, // [13, id, name, params, data]
+  Result = 3, // [3, id, res]
+  Error = 4, // [4, id, code, description, details]
 }
 
-export class TopicImpl {
-}
+export class TopicImpl {}
