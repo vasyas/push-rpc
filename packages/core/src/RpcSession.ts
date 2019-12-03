@@ -144,7 +144,7 @@ export class RpcSession {
             break
           }
 
-          this.callLocal(id, method, other[0])
+          this.callLocal(id, name, method, other[0])
           break
 
         case MessageType.Data:
@@ -224,10 +224,12 @@ export class RpcSession {
   }
 
   /** Creates call context - context to be used in calls */
-  public createContext() {
+  public createContext(messageId?, itemName?) {
     return {
       ...this.connectionContext,
       remote: this.remote,
+      messageId,
+      itemName,
     }
   }
 
@@ -248,9 +250,9 @@ export class RpcSession {
     this.sendCall()
   }
 
-  private async callLocal(id, remoteMethod, params) {
+  private async callLocal(id, name, remoteMethod, params) {
     try {
-      const callContext = this.createContext()
+      const callContext = this.createContext(id, name)
       const r = await this.localMiddleware(callContext, () => remoteMethod(params, callContext))
 
       this.send(MessageType.Result, id, r)
@@ -267,7 +269,7 @@ export class RpcSession {
 
   private async get(id, topic: LocalTopicImpl<any, any>, params) {
     try {
-      const d = await topic.getData(params, this.createContext())
+      const d = await topic.getData(params, this.createContext(id, topic.name))
       this.send(MessageType.Result, id, d)
     } catch (e) {
       const err = Object.getOwnPropertyNames(e)
