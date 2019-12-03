@@ -63,7 +63,7 @@ export interface RpcContext<Remote = any> {
   itemName?: string
 }
 
-export interface Topic<D, P = void> extends RemoteTopic<D, P>, LocalTopic<D, P> {}
+export interface Topic<D, P = {}> extends RemoteTopic<D, P>, LocalTopic<D, P> {}
 
 export enum MessageType {
   // to server
