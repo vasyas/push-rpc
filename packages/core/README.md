@@ -3,8 +3,8 @@ A framework for organizing bidirectional client-server communication based on JS
 Client establishes Websocket connection to server and then client and server exchange JSON-encoded packets. 
 
 JSON-packets forms high-level protocol, based on [WAMP](https://wamp-proto.org/). Being based on WAMP, Push-RPC protocol 
-doesn't conforms to it. Instead it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
-More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, that adds Server PUSH capabilities to OCPP-J RPC.     
+doesn't strictly conforms to it. Instead it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
+More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, with additional PUSH capabilities.     
 
 Push-RPC allows you to:
 - create client-initiated connections between client and server
@@ -22,20 +22,6 @@ Push-RPC allows you to:
 
 # Getting Started
 
-# Goodies
-
-## Using TypeScript to define contract between client and server 
-
-This library allows you to define and consume your API using TypeScript interface.
-The interface definition could be share between your server and client code bases, providing you with type-safe 
-contract between server and client.
-
-In addition, library makes it easy to push changes from server to data (aka server-initiated refresh).
-
-Uses WebSockets as transport. 
-
-## Example
-
 ### Installation
 
 ```
@@ -49,7 +35,7 @@ yarn add ws
 
 You can use standard browser WebSockets on the client, or also use `ws` npm package.
 
-### Code
+### Example code (slightly outdated)
 
 shared.ts:
 ```
@@ -132,7 +118,20 @@ Run `server.ts` and then `client.ts`.
 
 Server will send empty todo list on client connecting and then will send updated list on change.
 
-## API
+# Goodies
+
+## Using TypeScript to define contract between client and server 
+
+The framework allows you to define and consume your API using TypeScript interface.
+The interface definition could be shared between server and client code bases, providing a type-safe 
+contract between server and client.
+
+## Also
+- Generating client and server RPC proxies based on zero-config TS interface.
+- JSON bodies auto-parsing with Date revival. 
+- Supported client envs: Node.JS (with `isomorphic-fetch`), browser, react-native(see notes).
+
+# API
 
 TBD
 
@@ -142,26 +141,16 @@ You can use this information to implement Typescrip-Push-Rpc protocol in differe
 
 TBD
  
-## Features
-- Generating client and server RPC proxies based on zero-config TS interface.
-- JSON bodies auto-parsing with Date revival. 
-- Supported client envs: Node.JS (with `isomorphic-fetch`), browser, react-native(see notes).
-- Auto-reconnect with maintaining list of subscriptions on WS disconnect
-
-## TODO
+## Roadmap
 - File upload support via multipart encoding (uses `koa-multer` under the hood).
 - Binary data download.
 - Generation of OpenAPI (Swagger) YAMLs with API description
  
-## Implementation flaws
-- untyped File in Multipart definition
-- untyped File in binary download
-- ctx parameter is untyped and should be defined in the base interface
+## FAQ
 
+### How to add path to websockets (routing)
 
-## Notes on the implementation
-
-### React-Native clients
+### Using with React-Native (Revised, could be outdated!)
 
 For generating clients ES6 Proxy is used. However, React-Native doesn't support ES6 proxy 
 on some devices, see [this RN Issue](https://github.com/facebook/react-native/issues/11232#issuecomment-264100958]).
@@ -173,9 +162,3 @@ export let backend: Backend = createClient(url, { ... },
 )
 ``` 
 
-
-## FAQ
-
-### How to add path to websockets (routing)
-
-### Importance of naming service methods
