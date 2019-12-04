@@ -47,6 +47,8 @@ export class RpcSession {
           this.runningCalls[PING_MESSAGE_ID].resolve()
           delete this.runningCalls[PING_MESSAGE_ID]
         }
+
+        this.sendCall()
       })
     }
 
