@@ -41,16 +41,12 @@ export class RpcSession {
       this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
 
       ws.on("pong", () => {
-        // log.debug(`CP ${this.chargeBoxId} received pong`)
+        this.listeners.messageIn("PONG")
 
         if (this.runningCalls[PING_MESSAGE_ID]) {
           this.runningCalls[PING_MESSAGE_ID].resolve()
           delete this.runningCalls[PING_MESSAGE_ID]
         }
-      })
-
-      ws.on("close", () => {
-        clearTimeout(this.pingTimer)
       })
     }
 
@@ -58,8 +54,9 @@ export class RpcSession {
   }
 
   async close() {
-    // stop timer
+    // stop timers
     clearInterval(this.callTimeoutTimer)
+    clearTimeout(this.pingTimer)
 
     // clear subscriptions
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
@@ -212,7 +209,7 @@ export class RpcSession {
       if (call.type == "ping") {
         this.runningCalls[PING_MESSAGE_ID] = call
         this.ws.ping(call.params)
-        // log.debug(`CP ${this.chargeBoxId} sent ping`)
+        this.listeners.messageOut("PING")
       } else {
         const messageId = createMessageId()
         this.runningCalls[messageId] = call
