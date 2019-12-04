@@ -17,16 +17,18 @@ export interface Todo {
   status: "open" | "closed"
 }
 
-
 // client
 async function createClient() {
-  const services: Services = await createRpcClient(1, () => new WebSocket("ws://localhost:5555"))
+  const {remote: services} = await createRpcClient(1, () => new WebSocket("ws://localhost:5555"))
 
   console.log("Client connected")
 
-  services.todo.todo.subscribe((todo) => {
-    console.log("Got todo", todo)
-  }, {id: "" + 1})
+  services.todo.todo.subscribe(
+    todo => {
+      console.log("Got todo", todo)
+    },
+    {id: "" + 1}
+  )
 
   await services.todo.update({id: "1", text: "new text"})
 }
@@ -50,6 +52,5 @@ async function createServer() {
     todo: new TodoServiceImpl(),
   }
 
-  const rpcWebsocketServer = new WebSocket.Server({port: 5555})
-  createRpcServer(services, rpcWebsocketServer)
+  createRpcServer(services, {wss: {port: 5555}})
 }
