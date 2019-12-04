@@ -3,7 +3,7 @@ import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
 
 /** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
-export class LocalTopicImpl<D, F extends object> extends TopicImpl implements Topic<D, F> {
+export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
   constructor(private supplier: DataSupplier<D, F>) {
     super()
   }
