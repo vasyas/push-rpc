@@ -3,6 +3,7 @@ import {createMessageId, message} from "./utils"
 import {getServiceItem, MessageType, Method, RpcConnectionContext, RpcContext} from "./rpc"
 import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
+import {Socket} from "./transport"
 
 let callTimeout: number = 3 * 60 * 1000 // 3 mins
 
@@ -33,14 +34,14 @@ export class RpcSession {
 
   public remote: any
 
-  open(ws) {
-    this.ws = ws
+  open(socket: Socket) {
+    this.socket = socket
     resubscribeTopics(this.remote)
 
     if (this.keepAlivePeriod) {
       this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
 
-      ws.on("pong", () => {
+      socket.onPong(() => {
         this.listeners.messageIn("PONG")
 
         if (this.runningCalls[PING_MESSAGE_ID]) {
@@ -91,7 +92,7 @@ export class RpcSession {
   private pingTimer
 
   terminate() {
-    this.ws.terminate()
+    this.socket.terminate()
   }
 
   handleMessage(data) {
@@ -167,7 +168,7 @@ export class RpcSession {
   send(type: MessageType, id: string, ...params) {
     const data = message(type, id, ...params)
     this.listeners.messageOut(data)
-    this.ws.send(data)
+    this.socket.send(data)
   }
 
   private timeoutCalls() {
@@ -210,7 +211,7 @@ export class RpcSession {
 
       if (call.type == "ping") {
         this.runningCalls[PING_MESSAGE_ID] = call
-        this.ws.ping(call.params)
+        this.socket.ping(JSON.stringify(call.params))
         this.listeners.messageOut("PING")
       } else {
         const messageId = createMessageId()
@@ -296,7 +297,7 @@ export class RpcSession {
     this.listeners.unsubscribed(this.subscriptions.length)
   }
 
-  private ws = null
+  private socket: Socket = null
 
   public subscriptions: {topic; params}[] = []
 

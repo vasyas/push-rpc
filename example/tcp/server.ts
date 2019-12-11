@@ -1,6 +1,5 @@
 import {createRpcServer, LocalTopicImpl, setLogger} from "../../src/index"
 import {Services, Todo, TodoService} from "./shared"
-import {createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 setLogger(console)
 
@@ -26,6 +25,6 @@ const services: Services = {
   todo: new TodoServiceImpl(),
 }
 
-createRpcServer(services, createWebsocketServer({port: 5555}))
+createRpcServer(services, {wss: {port: 5555}})
 
 console.log("RPC Server started at ws://localhost:5555")

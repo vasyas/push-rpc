@@ -55,7 +55,8 @@ export interface LocalTopic<D, P> {
 }
 
 export interface RpcConnectionContext<Remote = any> {
-  remoteId: string
+  [prop: string]: unknown
+  remoteId?: string
   protocol?: string
 }
 

@@ -2,6 +2,7 @@ import {assert} from "chai"
 import * as WebSocket from "ws"
 import {createRpcClient, LocalTopicImpl} from "../src"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
+import {createWebsocket} from "../src/websocketTransport/websocketServer"
 
 describe("Topics", () => {
   it("get", async () => {
@@ -33,7 +34,7 @@ describe("Topics", () => {
 
     const {remote: client, disconnect} = await createRpcClient(
       1,
-      () => new WebSocket(`ws://localhost:${TEST_PORT}`),
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -79,7 +80,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => new WebSocket(`ws://localhost:${TEST_PORT}`),
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 

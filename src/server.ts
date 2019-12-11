@@ -1,14 +1,13 @@
 import * as UUID from "uuid-js"
-import * as WebSocket from "ws"
 import {log} from "./logger"
 import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
 import {dateReviver} from "./utils"
 import {RpcConnectionContext} from "./rpc"
+import {SocketServer} from "./transport"
 
 export interface RpcServerOptions {
-  wss?: any
   createContext?(req): RpcConnectionContext
   localMiddleware?: (ctx, next) => Promise<any>
   clientLevel?: number
@@ -27,7 +26,6 @@ export interface RpcServerOptions {
 }
 
 const defaultOptions: Partial<RpcServerOptions> = {
-  wss: {noServer: true},
   createContext: req => ({remoteId: UUID.create().toString()}),
   localMiddleware: (ctx, next) => next(),
   clientLevel: 0,
@@ -45,23 +43,26 @@ const defaultOptions: Partial<RpcServerOptions> = {
 }
 
 export interface RpcServer {
-  wss: WebSocket.Server
   getRemote(remoteId: string): any
   isConnected(remoteId: string): boolean
+  close(cb): void
 }
 
-export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcServer {
+export function createRpcServer(
+  local: any,
+  socketServer: SocketServer,
+  opts: RpcServerOptions = {}
+): RpcServer {
   opts = {
     ...defaultOptions,
     ...opts,
   }
 
-  const wss = new WebSocket.Server(opts.wss)
   const sessions: {[clientId: string]: RpcSession} = {}
 
   prepareLocal(local)
 
-  wss.on("error", e => {
+  socketServer.onError(e => {
     log.error("RPC WS server error", e)
   })
 
@@ -71,8 +72,8 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
       .reduce((p, c) => p + c, 0)
   }
 
-  wss.on("connection", (ws, req) => {
-    const connectionContext = opts.createContext(req)
+  socketServer.onConnection((socket, transportDetails) => {
+    const connectionContext = opts.createContext(transportDetails)
     const {remoteId} = connectionContext
 
     const session = new RpcSession(
@@ -91,7 +92,7 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
       opts.syncRemoteCalls
     )
 
-    session.open(ws)
+    session.open(socket)
 
     if (sessions[remoteId]) {
       log.warn("Prev session active, discarding", remoteId)
@@ -101,11 +102,11 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
 
     opts.listeners.connected(remoteId, Object.keys(sessions).length)
 
-    ws.on("message", message => {
+    socket.onMessage(message => {
       session.handleMessage(message)
     })
 
-    ws.on("close", async (code, reason) => {
+    socket.onClose(async (code, reason) => {
       await session.close()
 
       if (sessions[remoteId] == session) {
@@ -119,13 +120,13 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
       opts.listeners.disconnected(remoteId, Object.keys(sessions).length)
     })
 
-    ws.on("error", e => {
+    socket.onError(e => {
       log.warn(`Communication error, client ${remoteId}`, e)
     })
   })
 
   return {
-    wss,
+    close: cb => socketServer.close(cb),
     getRemote: clientId => {
       if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
 
