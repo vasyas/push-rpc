@@ -54,11 +54,15 @@ export interface LocalTopic<D, P> {
   trigger(p?: P, data?: D): void
 }
 
-// common
-export interface RpcContext<Remote = any> {
-  protocol: string
+export interface RpcConnectionContext<Remote = any> {
   remoteId: string
+  protocol?: string
+}
+
+// used in calls
+export interface RpcContext<Remote = any> extends RpcConnectionContext<Remote> {
   remote: Remote
+
   messageId?: string
   itemName?: string
 }

@@ -1,6 +1,6 @@
 import {log} from "./logger"
 import {createMessageId, message} from "./utils"
-import {getServiceItem, MessageType, Method} from "./rpc"
+import {getServiceItem, MessageType, Method, RpcConnectionContext, RpcContext} from "./rpc"
 import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
 
@@ -22,7 +22,7 @@ export class RpcSession {
     private local: any,
     remoteLevel: number,
     private listeners: RpcSessionListeners,
-    private connectionContext: any,
+    private connectionContext: RpcConnectionContext,
     private localMiddleware: (ctx, next) => Promise<any>,
     private messageParser: (data) => any[],
     private keepAlivePeriod: number,
@@ -223,7 +223,7 @@ export class RpcSession {
   }
 
   /** Creates call context - context to be used in calls */
-  public createContext(messageId?, itemName?) {
+  public createContext(messageId?, itemName?): RpcContext {
     return {
       ...this.connectionContext,
       remote: this.remote,
