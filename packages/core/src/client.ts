@@ -1,6 +1,7 @@
 import {RpcSession} from "./RpcSession"
 import {log} from "./logger"
 import {dateReviver} from "./utils"
+import {RpcConnectionContext} from "./rpc"
 
 export interface RpcClientListeners {
   connected(): void
@@ -21,7 +22,7 @@ export interface RpcClientOptions {
   local: any
   listeners: RpcClientListeners
   reconnect: boolean
-  createContext(): any
+  createContext(): RpcConnectionContext
   localMiddleware: (ctx, next) => Promise<any>
   messageParser(data): any[]
   keepAlivePeriod: number
@@ -40,7 +41,7 @@ const defaultOptions: RpcClientOptions = {
     unsubscribed: () => {},
   },
   reconnect: false,
-  createContext: () => {},
+  createContext: () => ({remoteId: null}),
   localMiddleware: (ctx, next) => next(),
   messageParser: data => JSON.parse(data, dateReviver),
   keepAlivePeriod: null,

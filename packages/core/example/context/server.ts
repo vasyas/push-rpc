@@ -1,8 +1,9 @@
+import * as UUID from "uuid-js"
 import {createRpcServer, LocalTopicImpl} from "../../src"
 import {Services, Todo, TodoService} from "../basic/shared"
-import {RpcContext} from "../../src/rpc"
+import {RpcConnectionContext} from "../../src/rpc"
 
-interface ServiceContext extends RpcContext {
+interface ServiceContext extends RpcConnectionContext {
   sql(): Promise<any>
   userId: string
 }
@@ -34,15 +35,21 @@ function decodeToken(token) {
 }
 
 // TODO throw error if auth failed
-const createContext = (req, ctx): ServiceContext => ({
-  ...ctx,
-  sql: null,
-  userId: decodeToken(req.headers["Authentication"])
-})
+function createContext(req): ServiceContext {
+  let protocol: any = req.headers["sec-websocket-protocol"]
+  if (protocol && Array.isArray(protocol)) protocol = protocol[0]
+
+  return {
+    remoteId: UUID.create().toString(),
+    protocol,
+    sql: null,
+    userId: decodeToken(req.headers["Authentication"]),
+  }
+}
 
 export async function startTransaction(ctx, next) {
   try {
-    ctx.sql = async (query) => {
+    ctx.sql = async query => {
       console.log("Execeute query in DB", query)
     }
 

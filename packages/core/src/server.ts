@@ -5,12 +5,12 @@ import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
 import {dateReviver} from "./utils"
+import {RpcConnectionContext} from "./rpc"
 
 export interface RpcServerOptions {
   wss?: any
-  createContext?(req, protocol: string, remoteId: string): any
+  createContext?(req): RpcConnectionContext
   localMiddleware?: (ctx, next) => Promise<any>
-  getClientId?: (req) => string
   clientLevel?: number
   messageParser?(data): any[]
   keepAlivePeriod?: number
@@ -28,9 +28,8 @@ export interface RpcServerOptions {
 
 const defaultOptions: Partial<RpcServerOptions> = {
   wss: {noServer: true},
-  createContext: (req, protocol, remoteId) => ({protocol, remoteId}),
+  createContext: req => ({remoteId: UUID.create().toString()}),
   localMiddleware: (ctx, next) => next(),
-  getClientId: () => UUID.create().toString(),
   clientLevel: 0,
   keepAlivePeriod: 50 * 1000,
   syncRemoteCalls: false,
@@ -73,12 +72,9 @@ export function createRpcServer(local: any, opts: RpcServerOptions = {}): RpcSer
   }
 
   wss.on("connection", (ws, req) => {
-    const remoteId = opts.getClientId(req)
-    let protocol: any = req.headers["sec-websocket-protocol"]
+    const connectionContext = opts.createContext(req)
+    const {remoteId} = connectionContext
 
-    if (protocol && Array.isArray(protocol)) protocol = protocol[0]
-
-    const connectionContext = opts.createContext(req, protocol, remoteId)
     const session = new RpcSession(
       local,
       opts.clientLevel,
