@@ -2,6 +2,7 @@ import * as UUID from "uuid-js"
 import {createRpcServer, LocalTopicImpl} from "../../src"
 import {Services, Todo, TodoService} from "../basic/shared"
 import {RpcConnectionContext} from "../../src/rpc"
+import {createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 interface ServiceContext extends RpcConnectionContext {
   sql(): Promise<any>
@@ -63,6 +64,9 @@ export async function startTransaction(ctx, next) {
   }
 }
 
-createRpcServer(services, {wss: {port: 5555}, createContext, localMiddleware: startTransaction})
+createRpcServer(services, createWebsocketServer({port: 5555}), {
+  createContext,
+  localMiddleware: startTransaction,
+})
 
 console.log("RPC Server started at ws://localhost:5555")

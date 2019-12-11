@@ -1,5 +1,6 @@
 import {createRpcClient, createRpcServer, LocalTopicImpl, Topic} from "../../src"
 import * as WebSocket from "ws"
+import {createWebsocket, createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 // shared
 export interface Services {
@@ -19,7 +20,7 @@ export interface Todo {
 
 // client
 async function createClient() {
-  const {remote: services} = await createRpcClient(1, () => new WebSocket("ws://localhost:5555"))
+  const {remote: services} = await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
 
   console.log("Client connected")
 
@@ -52,5 +53,5 @@ async function createServer() {
     todo: new TodoServiceImpl(),
   }
 
-  createRpcServer(services, {wss: {port: 5555}})
+  createRpcServer(services, createWebsocketServer({port: 5555}))
 }

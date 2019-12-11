@@ -2,6 +2,7 @@ import {RpcSession} from "./RpcSession"
 import {log} from "./logger"
 import {dateReviver} from "./utils"
 import {RpcConnectionContext} from "./rpc"
+import {Socket} from "./transport"
 
 export interface RpcClientListeners {
   connected(): void
@@ -50,7 +51,7 @@ const defaultOptions: RpcClientOptions = {
 
 export function createRpcClient<R = any>(
   level,
-  createWebSocket,
+  createSocket: () => Socket,
   options: Partial<RpcClientOptions> = {}
 ): Promise<RpcClient<R>> {
   const opts: RpcClientOptions = {...defaultOptions, ...options}
@@ -73,14 +74,14 @@ export function createRpcClient<R = any>(
 
   return (opts.reconnect ? startConnectionLoop : connect)(
     session,
-    createWebSocket,
+    createSocket,
     opts.listeners
   ).then(() => client)
 }
 
 function startConnectionLoop(
   session: RpcSession,
-  createWebSocket,
+  createSocket: () => Socket,
   listeners: RpcClientListeners
 ): Promise<void> {
   return new Promise(resolve => {
@@ -98,7 +99,7 @@ function startConnectionLoop(
 
     connectionLoop(
       session,
-      createWebSocket,
+      createSocket,
       l,
       () => {
         onFirstConnection()
@@ -111,14 +112,14 @@ function startConnectionLoop(
 
 function connectionLoop(
   session: RpcSession,
-  createWebSocket,
+  createSocket: () => Socket,
   listeners: RpcClientListeners,
   resolve,
   errorDelay
 ): void {
   function reconnect() {
     const timer = setTimeout(
-      () => connectionLoop(session, createWebSocket, listeners, resolve, errorDelay),
+      () => connectionLoop(session, createSocket, listeners, resolve, errorDelay),
       errorDelay.value
     )
 
@@ -138,7 +139,7 @@ function connectionLoop(
     },
   }
 
-  connect(session, createWebSocket, l)
+  connect(session, createSocket, l)
     .then(resolve)
     .catch(() => {
       reconnect()
@@ -147,11 +148,11 @@ function connectionLoop(
 
 function connect(
   session: RpcSession,
-  createWebSocket,
+  createSocket: () => Socket,
   listeners: RpcClientListeners
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const ws = createWebSocket()
+    const socket = createSocket()
 
     let connected = false
 
@@ -163,31 +164,31 @@ function connect(
       timer.unref()
     }
 
-    ws.onmessage = evt => {
-      session.handleMessage(evt.data)
-    }
+    socket.onMessage(data => {
+      session.handleMessage(data)
+    })
 
-    ws.onerror = e => {
+    socket.onError(e => {
       if (!connected) {
         reject(e)
       }
 
-      ws.close()
+      socket.terminate()
       log.warn("WS connection error", e.message)
-    }
+    })
 
-    ws.onopen = () => {
+    socket.onOpen(() => {
       connected = true
       listeners.connected()
-      session.open(ws)
-      resolve(ws)
-    }
+      session.open(socket)
+      resolve()
+    })
 
-    ws.onclose = ({code, reason}) => {
+    socket.onClose(({code, reason}) => {
       session.close()
       if (connected) {
         listeners.disconnected({code, reason})
       }
-    }
+    })
   })
 }

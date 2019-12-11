@@ -13,20 +13,23 @@ describe("Context", () => {
       ctx: null,
     }
 
-    await startTestServer({
-      test: {
-        async getSomething(req, ctx) {
-          invocation.req = req
-          invocation.ctx = ctx
-          return resp
-        }
+    await startTestServer(
+      {
+        test: {
+          async getSomething(req, ctx) {
+            invocation.req = req
+            invocation.ctx = ctx
+            return resp
+          },
+        },
+      },
+      {
+        createContext: () => ({sessionId}),
+        localMiddleware: (ctx, next) => {
+          ctx.callId = callId
+          return next()
+        },
       }
-    }, {
-      createContext: () => ({sessionId}),
-      localMiddleware: (ctx, next) => {
-        ctx.callId = callId
-        return next()
-      }}
     )
 
     const client = await createTestClient()

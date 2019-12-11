@@ -1,6 +1,7 @@
 import {createRpcClient, createRpcServer, LocalTopicImpl} from "../src"
 import * as WebSocket from "ws"
 import {RpcServerOptions} from "../src/server"
+import {createWebsocket, createWebsocketServer} from "../src/websocketTransport/websocketServer"
 
 export const TEST_PORT = 5555
 
@@ -17,17 +18,23 @@ const listeners = {
 
 export function startTestServer(local, opts: RpcServerOptions = {}) {
   return new Promise(resolve => {
-    wss = createRpcServer(local, {wss: {port: TEST_PORT}, listeners, ...opts}).wss
+    const socketServer = createWebsocketServer({port: TEST_PORT})
+    wss = socketServer.wss
     wss.addListener("listening", resolve)
+
+    createRpcServer(local, socketServer, {listeners, ...opts})
   })
 }
 
-afterEach(() => new Promise(resolve => {
-  if (wss) {
-    wss.close(resolve)
-  }
-}))
+afterEach(
+  () =>
+    new Promise(resolve => {
+      if (wss) {
+        wss.close(resolve)
+      }
+    })
+)
 
 export async function createTestClient(level = 1) {
-  return (await createRpcClient(level, () => new WebSocket(`ws://localhost:${TEST_PORT}`))).remote
+  return (await createRpcClient(level, () => createWebsocket(`ws://localhost:${TEST_PORT}`))).remote
 }

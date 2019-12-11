@@ -1,12 +1,10 @@
-import {Services} from "./shared"
+import {Services} from "../basic/shared"
 import {createRpcClient, setLogger} from "../../src"
-import {createWebsocket} from "../../src/websocketTransport/websocketServer"
 
 setLogger(console)
 ;(async () => {
-  const services: Services = (
-    await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
-  ).remote
+  const services: Services = (await createRpcClient(1, () => new WebSocket("ws://localhost:5555")))
+    .remote
 
   console.log("Client connected")
 
