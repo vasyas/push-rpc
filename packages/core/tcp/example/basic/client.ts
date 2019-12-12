@@ -1,5 +1,5 @@
 import {createRpcClient, setLogger} from "@push-rpc/core"
-import {createSocket} from "../src/client"
+import {createSocket} from "../../src/client"
 
 setLogger(console)
 ;(async () => {

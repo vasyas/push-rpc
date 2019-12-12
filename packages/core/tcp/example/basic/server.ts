@@ -1,5 +1,5 @@
 import {createRpcServer, setLogger} from "@push-rpc/core"
-import {createSocketServer} from "../src/server"
+import {createSocketServer} from "../../src/server"
 
 setLogger(console)
 
