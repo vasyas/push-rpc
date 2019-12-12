@@ -1,5 +1,5 @@
 {
-  "name": "push-rpc",
+  "name": "@push-rpc/core",
   "version": "1.0.9",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,5 +22,7 @@
   },
   "dependencies": {
     "uuid-js": "^0.7.5"
-  }
+  },
+  "repository": "https://github.com/vasyas/typescript-rpc.git",
+  "author": "Vasyl Stashuk <vasyl@stashuk.com>"
 }
