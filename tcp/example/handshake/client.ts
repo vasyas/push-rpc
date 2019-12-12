@@ -11,7 +11,7 @@ setLogger(console)
     socket.connect(5555, "localhost")
 
     socket.on("connect", () => {
-      socket.write("my-id")
+      socket.write('my-id\n[2,"1","getHello",null]')
     })
 
     return wrapSocket(socket)
@@ -19,5 +19,5 @@ setLogger(console)
 
   console.log("Client connected")
 
-  console.log("From server: " + (await remote.getHello()))
+  // console.log("From server: " + (await remote.getHello()))
 })()
