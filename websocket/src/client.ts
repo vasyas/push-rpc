@@ -1,21 +1,29 @@
 import {Socket} from "@push-rpc/core"
 
-export function wrapWebsocket(ws): Socket {
+export function createWebsocket(url, protocol?) {
+  return wrapWebsocket(new WebSocket(url, protocol))
+}
+
+export function wrapWebsocket(ws: WebSocket): Socket {
   return {
     onMessage: h =>
-      ws.on("message", e => {
-        h(e.toString("utf-8"))
+      (ws.onmessage = e => {
+        h(e.data.toString())
       }),
-    onOpen: h => ws.on("open", h),
+    onOpen: h => (ws.onopen = h),
     onClose: h =>
-      ws.on("close", (code, reason) => {
+      (ws.onclose = ({code, reason}) => {
         h(code, reason)
       }),
-    onError: h => ws.on("error", h),
-    onPong: h => ws.on("pong", h),
+    onError: h => (ws.onerror = h),
+    onPong: h => {
+      // not implemented
+    },
 
-    terminate: () => ws.terminate(),
+    terminate: () => ws.close(),
     send: data => ws.send(data),
-    ping: data => ws.ping(data),
+    ping: () => {
+      // not implemented
+    },
   }
 }
