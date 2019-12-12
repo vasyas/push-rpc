@@ -1,7 +1,6 @@
-import {createRpcClient, createRpcServer, LocalTopicImpl} from "../src"
-import * as WebSocket from "ws"
+import {createRpcClient, createRpcServer} from "../src"
 import {RpcServerOptions} from "../src/server"
-import {createWebsocket, createWebsocketServer} from "../src/websocketTransport/websocketServer"
+import {createWebsocket, createWebsocketServer} from "../../websocket/src/server"
 
 export const TEST_PORT = 5555
 

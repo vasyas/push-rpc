@@ -15,6 +15,6 @@
     "ws": "^7.2.0"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.0.12"
+    "@push-rpc/core": "1.0.13"
   }
 }
