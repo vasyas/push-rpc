@@ -1,7 +1,6 @@
-import {createRpcServer, setLogger} from "../../src/index"
+import {createRpcServer, setLogger, RpcContext} from "@push-rpc/core"
+import {createWebsocketServer} from "@push-rpc/websocket"
 import {Client, Server} from "./shared"
-import {RpcContext} from "../../src/rpc"
-import {createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 setLogger(console)
 

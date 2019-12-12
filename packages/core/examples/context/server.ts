@@ -1,8 +1,7 @@
 import * as UUID from "uuid-js"
-import {createRpcServer, LocalTopicImpl} from "../../src"
+import {createRpcServer, RpcConnectionContext, LocalTopicImpl} from "@push-rpc/core"
+import {createWebsocketServer} from "@push-rpc/websocket"
 import {Services, Todo, TodoService} from "../basic/shared"
-import {RpcConnectionContext} from "../../src/rpc"
-import {createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 interface ServiceContext extends RpcConnectionContext {
   sql(): Promise<any>

@@ -1,4 +1,4 @@
-import {Topic} from "../../src"
+import {Topic} from "@push-rpc/core"
 
 export interface Services {
   todo: TodoService

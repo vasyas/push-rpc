@@ -2,10 +2,17 @@
 # yarn lockfile v1
 
 
-"@push-rpc/core@1.0.13", "@push-rpc/core@^1.0.13":
+"@push-rpc/core@1.0.13":
   version "1.0.13"
   resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.13.tgz#44ef182c3e47461c5224e38c52318f9596d63e6a"
   integrity sha512-oqrfuuJoPOxwPXZoxFwG2OKN4ZwmCJuyI7GS6mUl1EfWDgm1/jsGU46P2g8464rfOkKmzBr9fWIhvlIMU/4//A==
+  dependencies:
+    uuid-js "^0.7.5"
+
+"@push-rpc/core@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.14.tgz#d3076572ced37322f2f9101c885621bc1343a91b"
+  integrity sha512-QkJV+P0OGWLCPgT5r2wbDDMaT3TXr1DGfhv1vejiMBj24DJFiNsUt44FyrXsLxAM12Z6WAgEd7FMOEE08pm7Bg==
   dependencies:
     uuid-js "^0.7.5"
 
@@ -15,6 +22,11 @@
   integrity sha512-BUoEF1RUbM1++i0CpUDQk6SqE4T6XBcnANx9NOyFKPcOIDjl2l+SzFoVLpdcCeiyzEFIEnH5rEv6kqmi8q48iQ==
   dependencies:
     "@push-rpc/core" "1.0.13"
+
+"@types/node@^12.12.17":
+  version "12.12.17"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.17.tgz#191b71e7f4c325ee0fb23bc4a996477d92b8c39b"
+  integrity sha512-Is+l3mcHvs47sKy+afn2O1rV4ldZFU7W8101cNlOd+MRbjM4Onida8jSZnJdTe/0Pcf25g9BNIUsuugmE6puHA==
 
 arg@^4.1.0:
   version "4.1.2"

@@ -1,6 +1,7 @@
-import {createRpcClient, createRpcServer, LocalTopicImpl, Topic} from "../../src"
-import * as WebSocket from "ws"
-import {createWebsocket, createWebsocketServer} from "../../src/websocketTransport/websocketServer"
+import {createRpcServer, LocalTopicImpl, Topic} from "@push-rpc/core"
+import {createWebsocketServer} from "@push-rpc/websocket"
+import {createRpcClient} from "@push-rpc/core"
+import {createWebsocket} from "@push-rpc/websocket"
 
 // shared
 export interface Services {
