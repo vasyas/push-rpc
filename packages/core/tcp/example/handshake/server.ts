@@ -5,12 +5,13 @@ setLogger(console)
 
 const services = {
   async getHello(_, ctx: RpcContext) {
+    console.log("Receive req")
     return "Hello, " + ctx.remoteId
   },
 }
 
 createRpcServer(services, createSocketServer(5555), {
-  createConnectionContext(socket: Socket, transportDetails: any): Promise<RpcConnectionContext> {
+  createConnectionContext(socket: Socket, impl): Promise<RpcConnectionContext> {
     return new Promise((resolve, reject) => {
       let handshaked = false
 
@@ -27,9 +28,17 @@ createRpcServer(services, createSocketServer(5555), {
         handshaked = true
         clearTimeout(timer)
 
+        const [remoteId, message] = data.split("\n")
+
         resolve({
-          remoteId: data,
+          remoteId,
         })
+
+        if (message) {
+          setTimeout(() => {
+            impl.emit("data", message)
+          }, 0)
+        }
       })
     })
   },
