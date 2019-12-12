@@ -1,5 +1,5 @@
 {
-  "name": "@push-rpc/websocket",
+  "name": "@push-rpc/examples",
   "version": "1.0.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,6 +15,7 @@
     "ws": "^7.2.0"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.0.12"
+    "@push-rpc/core": "^1.0.12",
+    "@push-rpc/websocket": "^1.0.1"
   }
 }

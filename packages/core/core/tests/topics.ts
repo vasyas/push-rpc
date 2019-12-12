@@ -2,7 +2,7 @@ import {assert} from "chai"
 import * as WebSocket from "ws"
 import {createRpcClient, LocalTopicImpl} from "../src"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
-import {createWebsocket} from "../src/websocketTransport/websocketServer"
+import {createWebsocket} from "../../websocket/src/server"
 
 describe("Topics", () => {
   it("get", async () => {
