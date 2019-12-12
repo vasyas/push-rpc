@@ -1,11 +1,4 @@
-// import {createRpcServer, RpcContext, setLogger} from "@push-rpc/core"
-import {
-  createRpcServer,
-  RpcConnectionContext,
-  RpcContext,
-  setLogger,
-  Socket,
-} from "../../../core/src"
+import {createRpcServer, RpcConnectionContext, RpcContext, setLogger, Socket} from "@push-rpc/core"
 import {createSocketServer} from "../../src/server"
 
 setLogger(console)
