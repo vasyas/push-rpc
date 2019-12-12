@@ -5,10 +5,10 @@ import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
 import {dateReviver} from "./utils"
 import {RpcConnectionContext} from "./rpc"
-import {SocketServer} from "./transport"
+import {Socket, SocketServer} from "./transport"
 
 export interface RpcServerOptions {
-  createContext?(req): RpcConnectionContext
+  createConnectionContext?(socket: Socket, transportDetails: any): Promise<RpcConnectionContext>
   localMiddleware?: (ctx, next) => Promise<any>
   clientLevel?: number
   messageParser?(data): any[]
@@ -26,7 +26,9 @@ export interface RpcServerOptions {
 }
 
 const defaultOptions: Partial<RpcServerOptions> = {
-  createContext: req => ({remoteId: UUID.create().toString()}),
+  createConnectionContext: async (socket, transportDetails) => ({
+    remoteId: UUID.create().toString(),
+  }),
   localMiddleware: (ctx, next) => next(),
   clientLevel: 0,
   keepAlivePeriod: 50 * 1000,
@@ -72,8 +74,17 @@ export function createRpcServer(
       .reduce((p, c) => p + c, 0)
   }
 
-  socketServer.onConnection((socket, transportDetails) => {
-    const connectionContext = opts.createContext(transportDetails)
+  socketServer.onConnection(async (socket, transportDetails) => {
+    let connectionContext
+
+    try {
+      connectionContext = await opts.createConnectionContext(socket, transportDetails)
+    } catch (e) {
+      log.warn("Failed to create connection context", e)
+      socket.terminate()
+      return
+    }
+
     const {remoteId} = connectionContext
 
     const session = new RpcSession(
