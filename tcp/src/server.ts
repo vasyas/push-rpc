@@ -10,8 +10,8 @@ export function createSocketServer(port): SocketServer {
     onError: e => s.on("error", e),
 
     onConnection: h => {
-      s.on("connection", (socket, req) => {
-        h(wrapSocket(socket), req)
+      s.on("connection", socket => {
+        h(wrapSocket(socket), socket)
       })
     },
     close: h => s.close(h),
