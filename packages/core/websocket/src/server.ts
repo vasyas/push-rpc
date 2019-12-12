@@ -1,7 +1,5 @@
-import {SocketServer} from "@push-rpc/core"
-
 import * as WebSocket from "ws"
-import {wrapWebsocket} from "./client"
+import {Socket, SocketServer} from "@push-rpc/core"
 
 export function createWebsocketServer(
   options: WebSocket.ServerOptions = {noServer: true}
@@ -20,6 +18,26 @@ export function createWebsocketServer(
   }
 }
 
-export function createWebsocket(url) {
-  return wrapWebsocket(new WebSocket(url))
+export function createWebsocket(url, protocol?) {
+  return wrapWebsocket(new WebSocket(url, protocol))
+}
+
+export function wrapWebsocket(ws): Socket {
+  return {
+    onMessage: h =>
+      ws.on("message", e => {
+        h(e.toString("utf-8"))
+      }),
+    onOpen: h => ws.on("open", h),
+    onClose: h =>
+      ws.on("close", (code, reason) => {
+        h(code, reason)
+      }),
+    onError: h => ws.on("error", h),
+    onPong: h => ws.on("pong", h),
+
+    terminate: () => ws.terminate(),
+    send: data => ws.send(data),
+    ping: data => ws.ping(data),
+  }
 }
