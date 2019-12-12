@@ -8,24 +8,14 @@ export function createWebsocketServer(
 ): SocketServer & {wss: WebSocket.Server} {
   const wss = new WebSocket.Server(options)
 
-  function onError(handler) {
-    wss.on("error", handler)
-  }
-
-  function onConnection(handler) {
-    wss.on("connection", (ws, req) => {
-      handler(wrapWebsocket(ws), req)
-    })
-  }
-
-  function close(cb) {
-    wss.close(cb)
-  }
-
   return {
-    onError,
-    onConnection,
-    close,
+    onError: h => {
+      wss.on("error", h)
+    },
+    onConnection: h => {
+      wss.on("connection", (ws, req) => h(wrapWebsocket(ws), req))
+    },
+    close: h => wss.close(h),
     wss,
   }
 }

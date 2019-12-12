@@ -14,8 +14,6 @@ export function createSocketServer(port): SocketServer {
         h(wrapSocket(socket), req)
       })
     },
-    close: h => {
-      s.close(h)
-    },
+    close: h => s.close(h),
   }
 }
