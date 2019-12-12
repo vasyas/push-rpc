@@ -1,7 +1,6 @@
-import * as WebSocket from "ws"
-import {createRpcClient, setLogger} from "../../src"
+import {createRpcClient, setLogger} from "@push-rpc/core"
+import {createWebsocket} from "@push-rpc/websocket"
 import {Client} from "./shared"
-import {createWebsocket} from "../../src/websocketTransport/websocketServer"
 
 setLogger(console)
 ;(async () => {

@@ -1,4 +1,4 @@
-import {RpcContext} from "../../src/rpc"
+import {RpcContext} from "@push-rpc/core"
 
 export interface Server {
   getServerHello(_?, ctx?: RpcContext): Promise<string>

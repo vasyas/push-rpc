@@ -1,6 +1,6 @@
-import {createRpcServer, LocalTopicImpl, setLogger} from "../../src/index"
+import {createRpcServer, LocalTopicImpl, setLogger} from "@push-rpc/core"
+import {createWebsocketServer} from "@push-rpc/websocket"
 import {Services, Todo, TodoService} from "./shared"
-import {createWebsocketServer} from "../../src/websocketTransport/websocketServer"
 
 setLogger(console)
 
