@@ -131,7 +131,7 @@ export class RpcSession {
 
         case MessageType.Get:
           if (!localTopic) {
-            this.send(MessageType.Error, id, `Topic ${name} not implemented`, {})
+            this.send(MessageType.Error, id, null, `Topic ${name} not implemented`, {})
             break
           }
 
@@ -140,7 +140,7 @@ export class RpcSession {
 
         case MessageType.Call:
           if (!method) {
-            this.send(MessageType.Error, id, `Item ${name} not implemented`, {})
+            this.send(MessageType.Error, id, null, `Item ${name} not implemented`, {})
             break
           }
 
@@ -163,6 +163,14 @@ export class RpcSession {
     } catch (e) {
       log.error(`Failed to handle RPC message ${data}\n`, e)
     }
+  }
+
+  sendError(id, error: Error) {
+    const err = Object.getOwnPropertyNames(error)
+      .filter(prop => prop != "stack" && prop != "message")
+      .reduce((r, key) => ({...r, [key]: error[key]}), {})
+
+    this.send(MessageType.Error, id, null, error.message, err)
   }
 
   send(type: MessageType, id: string, ...params) {
@@ -260,12 +268,7 @@ export class RpcSession {
       this.send(MessageType.Result, id, r)
     } catch (e) {
       log.error("Unable to call method ", e)
-
-      const err = Object.getOwnPropertyNames(e)
-        .filter(prop => prop != "stack" && prop != "message")
-        .reduce((r, key) => ({...r, [key]: e[key]}), {})
-
-      this.send(MessageType.Error, id, "", e.message, err)
+      this.sendError(id, e)
     }
   }
 
@@ -274,11 +277,7 @@ export class RpcSession {
       const d = await topic.getData(params, this.createContext(id, topic.name))
       this.send(MessageType.Result, id, d)
     } catch (e) {
-      const err = Object.getOwnPropertyNames(e)
-        .filter(e => e != "stack")
-        .reduce((r, key) => ({...r, [key]: e[key]}), {})
-
-      this.send(MessageType.Error, id, err)
+      this.sendError(id, e)
     }
   }
 
