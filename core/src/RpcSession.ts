@@ -234,7 +234,7 @@ export class RpcSession {
   }
 
   private callRemoteResponse(data) {
-    const [_, id, res] = data
+    const [_, id, res, description, details] = data
 
     if (this.runningCalls[id]) {
       const {resolve, reject} = this.runningCalls[id]
@@ -243,7 +243,9 @@ export class RpcSession {
       if (data[0] == MessageType.Result) {
         resolve(res)
       } else {
-        reject(res)
+        const error = new Error(description || res || "Remote call failed")
+        Object.assign(error, details || {})
+        reject(error)
       }
     }
 
@@ -260,10 +262,10 @@ export class RpcSession {
       log.error("Unable to call method ", e)
 
       const err = Object.getOwnPropertyNames(e)
-        .filter(e => e != "stack")
+        .filter(prop => prop != "stack" && prop != "message")
         .reduce((r, key) => ({...r, [key]: e[key]}), {})
 
-      this.send(MessageType.Error, id, err)
+      this.send(MessageType.Error, id, "", e.message, err)
     }
   }
 

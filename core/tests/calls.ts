@@ -47,6 +47,7 @@ describe("calls", () => {
       await client.test.getSomething()
       assert.fail()
     } catch (e) {
+      console.log(e)
       assert.equal(e.message, message)
     }
   })
