@@ -5,7 +5,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "tsc",
-    "build": "tsc"
+    "build": "tsc",
+    "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiDescription ./api-description.json --output example.yml --baseDir=example"
   },
   "license": "MIT",
   "devDependencies": {

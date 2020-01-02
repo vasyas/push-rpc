@@ -1,13 +1,12 @@
 import * as path from "path"
 import {
+  EnumDeclaration,
   InterfaceDeclaration,
   MethodSignature,
   ObjectFlags,
   PropertySignature,
   Type,
-  EnumDeclaration,
 } from "ts-morph"
-import {OperationDescription} from "../operation"
 
 export class ApiDescriber {
   constructor(private baseDir: string, private skipPrefix?: string) {}
@@ -20,10 +19,12 @@ export class ApiDescriber {
     let paths = {}
 
     for (const method of i.getMethods()) {
-      const d = new OperationDescription(method.getName())
-
-      paths[prefix + d.getUrl()] = {
-        [d.getMethod().toLowerCase()]: this.operation(method, d),
+      paths[prefix + method.getName()] = {
+        post: {
+          parameters: this.requestParameters(method),
+          requestBody: this.requestBody(method),
+          responses: this.operationResponses(method),
+        },
       }
     }
 
@@ -63,15 +64,6 @@ export class ApiDescriber {
 
     return schemas
   }
-
-  private operation(method: MethodSignature, description: OperationDescription) {
-    const responses = this.operationResponses(method)
-
-    return description.getMethod() == "GET"
-      ? {parameters: this.requestParameters(method), responses}
-      : {requestBody: this.requestBody(method), responses}
-  }
-
   private operationResponses(method: MethodSignature) {
     const returnType = method.getReturnType()
 

@@ -1,7 +1,7 @@
 {
   "entry": {
     "file": "./example/spec.ts",
-    "interface": "Backend"
+    "interface": "Services"
   },
   "template": {
     "openapi": "3.0.0",
