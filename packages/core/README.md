@@ -1,22 +1,24 @@
-A framework for organizing bidirectional client-server communication based on JSON, featuring server-initiated data push.
+A framework for organizing bidirectional client-server communication based on JSON, 
+with server-initiated data push.
+
+Client establishes connection to server and then client and server exchange JSON packets. 
+
+Structure of the JSON packets is based on [WAMP](https://wamp-proto.org/), but not strictly conform to it. 
+Instead, it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
+More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, with additional push capabilities.     
+
+Push-RPC allows you to:
+- Bi-directionally invoke remote methods on server and client
+- Subscribe client for server-side events and vice versa
+- Auto-reconnect with subscription refresh
+- Create type-safe contracts of remote APIs using TypeScript code shared between client and server 
+- Create local proxies for remote objects, including support for transferring Date object
+- Supported client envs: Node.JS (with `isomorphic-fetch`), browser, React Native.
 
 Supports multiple pluggable transports:
 - WebSocket
 - Plain TCP
 - REST-like (planned).
-
-Client establishes connection to server (should be publicly available) and then client and server exchange JSON-encoded packets. 
-
-JSON-packets forms high-level protocol, based on [WAMP](https://wamp-proto.org/). Being based on WAMP, protocol 
-doesn't strictly conforms to it. Instead it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
-More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, with additional push capabilities.     
-
-Push-RPC allows you to:
-- create client-initiated connections between client and server
-- bi-directionally invoke remote methods on server and client
-- subscribe client for server-side events
-- auto-reconnect with subscription refresh
-- helpers for wrapping communications into handy JS (or TypeScript) objects.
 
 # Possible Applications
 
@@ -38,7 +40,7 @@ For the server, you will also need
 yarn add ws
 ```
 
-You can use standard browser WebSockets on the client, or also use `ws` npm package.
+You can use standard browser WebSockets on the client, or use `ws` npm package.
 
 ### Example code
 
@@ -60,7 +62,27 @@ export interface Todo {
   text: string
   status: "open" | "closed"
 }
+```
 
+client.ts:
+```
+import {createRpcClient} from "@push-rpc/core"
+import {createWebsocket} from "@push-rpc/websocket"
+import {Services} from "./shared"
+
+;(async () => {
+  const services: Services = (
+    await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
+  ).remote
+
+  console.log("Client connected")
+
+  services.todo.todos.subscribe(todos => {
+    console.log("Got todo items", todos)
+  })
+
+  await services.todo.addTodo({text: "Buy groceries"})
+})()
 ```
 
 server.ts:
@@ -95,50 +117,15 @@ createRpcServer(services, createWebsocketServer({port: 5555}))
 console.log("RPC Server started at ws://localhost:5555")
 ```
 
-client.ts:
-
-```
-import {createRpcClient} from "@push-rpc/core"
-import {createWebsocket} from "@push-rpc/websocket"
-import {Services} from "./shared"
-
-;(async () => {
-  const services: Services = (
-    await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
-  ).remote
-
-  console.log("Client connected")
-
-  services.todo.todos.subscribe(todos => {
-    console.log("Got todo items", todos)
-  })
-
-  await services.todo.addTodo({text: "Buy groceries"})
-})()
-```
-
 Run `server.ts` and then `client.ts`. 
 
-Server will send empty todo list on client connecting and then will send updated list on change.
-
-# Goodies
-
-## Using TypeScript to define contract between client and server 
-
-The framework allows you to define and consume your API using TypeScript interface.
-The interface definition could be shared between server and client code bases, providing a type-safe 
-contract between server and client.
-
-## Also
-- Generating client and server RPC proxies based on zero-config TS interface.
-- JSON bodies auto-parsing with Date revival. 
-- Supported client envs: Node.JS (with `isomorphic-fetch`), browser, ReactNative.
+Server will send empty todo list on client connecting and then will send updated list on adding new item.
 
 # API
 
 TBD
 
-## WS protocol details
+# Protocol Details
 
 You can use this information to implement `push-rpc` protocol in different languages.
 
