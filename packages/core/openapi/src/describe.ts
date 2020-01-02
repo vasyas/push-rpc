@@ -73,8 +73,16 @@ const usageSections = [
   const description = JSON.parse(fs.readFileSync(path.join(baseDir, apiDescription), "utf8"))
 
   const project = loadProject(path.join(baseDir, tsConfig))
+
   const entryFile = project.getSourceFile(description.entry.file)
+  if (!entryFile)
+    throw new Error(`Cannot find entry file ${description.entry.file}, check api-description.json`)
+
   const entryInterface = entryFile.getInterface(description.entry.interface)
+  if (!entryInterface)
+    throw new Error(
+      `Cannot find entry interface ${description.entry.interface}, check api-description.json`
+    )
 
   const apiDescriber = new ApiDescriber(baseDir, skip)
 
