@@ -71,15 +71,16 @@ export interface RpcContext<Remote = any> extends RpcConnectionContext<Remote> {
 export interface Topic<D, P = {}> extends RemoteTopic<D, P>, LocalTopic<D, P> {}
 
 export enum MessageType {
-  // to server
-  Subscribe = 11, // [11, id, name, params]
-  Unsubscribe = 12, // [22, id, name, params]
-  Get = 14, // [14, id, name, params]
+  // Requests
   Call = 2, // [2, id, name, params]
-  // to client
-  Data = 13, // [13, id, name, params, data]
+  Subscribe = 11, // [11, id, name, params]
+  Unsubscribe = 12, // [12, id, name, params]
+  Get = 14, // [14, id, name, params]
+
+  // Responses
   Result = 3, // [3, id, res]
   Error = 4, // [4, id, code, description, details]
+  Data = 13, // [13, id, name, params, data]
 }
 
 export class TopicImpl {}
