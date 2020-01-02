@@ -11,7 +11,7 @@ import {
 export class ApiDescriber {
   constructor(private baseDir: string, private skipPrefix?: string) {}
 
-  describeInterface(i: InterfaceDeclaration, prefix = ""): any {
+  describeInterface(i: InterfaceDeclaration, prefix = "/"): any {
     if (this.skipPrefix && prefix.startsWith(this.skipPrefix)) {
       return {}
     }
@@ -19,10 +19,18 @@ export class ApiDescriber {
     let paths = {}
 
     for (const method of i.getMethods()) {
+      const params = method.getParameters()
+      const requestType = params.length && params[0].getType()
+
+      // should be Promise<smth>, get smth
+      const returnType =
+        method.getReturnType().getTypeArguments().length &&
+        method.getReturnType().getTypeArguments()[0]
+
       paths[prefix + method.getName()] = {
         post: {
-          requestBody: this.requestBody(method),
-          responses: this.operationResponses(method),
+          requestBody: this.requestBody(requestType, requestType && !params[0].isOptional()),
+          responses: this.operationResponses(returnType),
         },
       }
     }
@@ -41,6 +49,16 @@ export class ApiDescriber {
         paths = {
           ...paths,
           ...nestedPaths,
+        }
+      } else if (type.getSymbol().getName() == "Topic") {
+        const responseType = type.getTypeArguments()[0]
+        const requestType = type.getTypeArguments()[1]
+
+        paths[prefix + prop.getName()] = {
+          trace: {
+            requestBody: this.requestBody(requestType, true),
+            responses: this.operationResponses(responseType),
+          },
         }
       } else {
         console.warn(`Unsupported property type`, {prop: prop.getName(), type: type.getText()})
@@ -63,38 +81,32 @@ export class ApiDescriber {
 
     return schemas
   }
-  private operationResponses(method: MethodSignature) {
-    const returnType = method.getReturnType()
 
+  private operationResponses(returnType) {
     const noContent = {"204": {description: "Success"}}
 
-    if (!returnType || returnType.isUndefined()) return noContent
-
-    // should be Promise<smth>, get smth
-    const promisedReturn = returnType.getTypeArguments()[0]
-    if (promisedReturn.getText() == "void") return noContent
+    if (!returnType || returnType.getText() == "void") return noContent
 
     return {
       "200": {
         description: "Success",
         content: {
           "application/json": {
-            schema: this.schema(promisedReturn),
+            schema: this.schema(returnType),
           },
         },
       },
     }
   }
 
-  private requestBody(method: MethodSignature) {
-    const params = method.getParameters()
-    if (!params.length) return undefined
+  private requestBody(type, required) {
+    if (!type) return undefined
 
     return {
-      required: !params[0].isOptional(), // TODO also, only if any keys in param type
+      required,
       content: {
         "application/json": {
-          schema: this.schema(params[0].getType()),
+          schema: this.schema(type),
         },
       },
     }
