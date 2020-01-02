@@ -35,16 +35,16 @@ export interface Page<T> {
 }
 
 export interface AuthService {
-  login({username, password}): Promise<{token: string}>
-  sendResetPassword({username}): Promise<void>
+  login(req: {username: string; password: string}, ctx?): Promise<{token: string}>
+  sendResetPassword(req: {username: string}, ctx?): Promise<void>
 }
 
 export interface ClientService {
-  getClient({id}: {id: number}): Promise<Client>
-  getAllClients(): Promise<Client[]>
-  getClients(): Promise<Page<Client>>
+  getClient(req: {id: number}, ctx?): Promise<Client>
+  getAllClients(_?, ctx?): Promise<Client[]>
+  getClients(_?, ctx?): Promise<Page<Client>>
 }
 
 export interface UserService {
-  getAllUsers(): Promise<User[]>
+  getAllUsers(_?, ctx?): Promise<User[]>
 }
