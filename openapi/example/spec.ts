@@ -1,3 +1,5 @@
+import {Topic} from "@push-rpc/core"
+
 export interface Services {
   auth: AuthService
   client: ClientService
@@ -41,8 +43,10 @@ export interface AuthService {
 
 export interface ClientService {
   getClient(req: {id: number}, ctx?): Promise<Client>
-  getAllClients(_?, ctx?): Promise<Client[]>
   getClients(_?, ctx?): Promise<Page<Client>>
+
+  clients: Topic<Client[]>
+  client: Topic<Client, {id: number}>
 }
 
 export interface UserService {
