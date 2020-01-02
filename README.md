@@ -127,7 +127,7 @@ TBD
 
 # Protocol Details
 
-You can use this information to implement `push-rpc` protocol in different languages.
+You can use this information to implement Push-RPC protocol in different languages.
 
 Each message is encoded as JSON array. Each message contain message type, message ID, and multiple payload fields. For example, CALL message:
 ```
@@ -172,7 +172,8 @@ Message ID is the same as in corresponding CALL message.
     
 Indicate error during remote method call. <br>
 Message ID is the same as in corresponding CALL message.<br>
-Client code will raise Error with message equals to `description` or `code` and details fields copied to Error object. 
+Local proxy will raise `Error` with message equals to `description` or `code` and `details` fields 
+copied to Error object. 
 </td>
 </tr>
 
@@ -205,7 +206,7 @@ Unsubscribe remote topic with parameters. <br>
 [13, "dfd9742e-2d44-11ea-978f-2e728ce88125", "user", {"id": 246}, {"email": "a@a.com"}] <br><br>
     
 Send topic data to subscriber. <br>
-Called after subscribe or when data changed. <br>
+Called after subscribe or when data change. <br>
 </td>
 </tr>
 
@@ -224,10 +225,10 @@ Will generate response RESULT message with the same ID. <br>
 </table>
 
  
-## Roadmap
-- File upload support via multipart encoding (uses `koa-multer` under the hood).
-- Binary data download.
-- Generation of OpenAPI (Swagger) YAMLs with API description
+## Possible new features
+- Binary data transfer
+- Generating OpenAPI (Swagger) YAMLs with API description
+- REST transport
  
 ## FAQ
 
