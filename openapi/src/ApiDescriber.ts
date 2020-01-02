@@ -21,7 +21,6 @@ export class ApiDescriber {
     for (const method of i.getMethods()) {
       paths[prefix + method.getName()] = {
         post: {
-          parameters: this.requestParameters(method),
           requestBody: this.requestBody(method),
           responses: this.operationResponses(method),
         },
@@ -36,7 +35,7 @@ export class ApiDescriber {
 
         const nestedPaths = this.describeInterface(
           declaration as InterfaceDeclaration,
-          prefix + "/" + prop.getName()
+          prefix + prop.getName() + "/"
         )
 
         paths = {
@@ -99,19 +98,6 @@ export class ApiDescriber {
         },
       },
     }
-  }
-
-  requestParameters(method: MethodSignature) {
-    const params = method.getParameters()
-    if (!params.length) return undefined
-
-    const {properties} = this.objectSchema(params[0].getType())
-
-    return Object.keys(properties).map(name => ({
-      in: "query",
-      name,
-      schema: properties[name],
-    }))
   }
 
   private schema(type: Type, parentTypeMapping = new TypeMapping(), noReference?) {
