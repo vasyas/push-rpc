@@ -8,6 +8,8 @@ import {
   Type,
 } from "ts-morph"
 
+// consider also lukeautry/tsoa
+
 export class ApiDescriber {
   constructor(private baseDir: string, private skipPrefix?: string) {}
 
@@ -135,7 +137,7 @@ export class ApiDescriber {
 
     if (type.getText() == "any") return {}
 
-    if (type.isObject()) return this.objectSchema(type, parentTypeMapping)
+    if (type.isObject() || type.isIntersection()) return this.objectSchema(type, parentTypeMapping)
     if (type.isEnum() || type.isEnumLiteral()) return this.enumSchema(type) // isEnumLiteral for enums with a single value
     if (type.isUnion()) return this.unionSchema(type)
 
