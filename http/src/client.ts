@@ -18,7 +18,7 @@ export function createHttpClient(urlPrefix: string): Socket {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(params),
+          body: params == null ? null : JSON.stringify(params),
         })
 
         if (response.status < 200 && response.status >= 300) {
@@ -36,8 +36,9 @@ export function createHttpClient(urlPrefix: string): Socket {
           handleMessage(JSON.stringify([MessageType.Data, id, name, params, json]))
         }
       } catch (e) {
-        if (type == MessageType.Call || type == MessageType.Get)
-          handleMessage(JSON.stringify([MessageType.Error, id, "code", "", {message: e.message}]))
+        if (type == MessageType.Call || type == MessageType.Get) {
+          handleMessage(JSON.stringify([MessageType.Error, id, e.message, "", {}]))
+        }
       }
     }
   }
@@ -47,12 +48,9 @@ export function createHttpClient(urlPrefix: string): Socket {
       handleMessage = h
     },
     onOpen(h) {
-      // HTTP is connection less and always open
       setTimeout(h, 0)
     },
-    onClose(h) {
-      // HTTP is connection less
-    },
+    onClose(h) {},
     onError(h) {
       handleError = h
     },
