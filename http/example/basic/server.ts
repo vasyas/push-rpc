@@ -1,3 +1,4 @@
+import * as Koa from "koa"
 import {createRpcServer, setLogger} from "../../../core/src"
 import {createHttpServer} from "../../src/server"
 
@@ -9,6 +10,10 @@ const services = {
   },
 }
 
-createRpcServer(services, createHttpServer(5555, "rpc"))
+function getRemoteId(ctx: Koa.Context) {
+  return "1" // share a single session for now
+}
+
+createRpcServer(services, createHttpServer(5555, getRemoteId, {prefix: "rpc"}))
 
 console.log("RPC Server started at http://localhost:5555/rpc")

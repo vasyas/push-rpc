@@ -1,3 +1,5 @@
+import {RpcSession} from "./RpcSession"
+
 export interface Socket {
   onMessage(h: (message: string) => void)
   onOpen(h: () => void)

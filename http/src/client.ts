@@ -13,9 +13,13 @@ export function createHttpClient(urlPrefix: string): Socket {
     if (type == MessageType.Get || type == MessageType.Call || type == MessageType.Subscribe) {
       const url = `${urlPrefix}${urlPrefix.endsWith("/") ? "" : "/"}${name}`
 
+      let method = "POST"
+      if (type == MessageType.Get) method = "PUT"
+      if (type == MessageType.Subscribe) method = "PATCH"
+
       try {
         const response = await fetch(url, {
-          method: "POST",
+          method,
           headers: {
             "Content-Type": "application/json",
           },
@@ -47,6 +51,8 @@ export function createHttpClient(urlPrefix: string): Socket {
 
         handleError(e)
       }
+    } else {
+      throw new Error("Unsupported message type " + type)
     }
   }
 
