@@ -26,16 +26,15 @@ export function createHttpClient(urlPrefix: string): Socket {
           body: params == null ? null : JSON.stringify(params),
         })
 
+        const json = await response.json()
+
         if (response.status < 200 && response.status >= 300) {
           if (type == MessageType.Call || type == MessageType.Get) {
-            // TODO parse response body
-            handleMessage(JSON.stringify([MessageType.Error, id, response.statusText, "", {}]))
+            handleMessage(JSON.stringify([MessageType.Error, id, "", response.statusText, json]))
           } else {
             // just log it?
           }
         }
-
-        const json = await response.json()
 
         if (type == MessageType.Call || type == MessageType.Get) {
           handleMessage(JSON.stringify([MessageType.Result, id, json]))
