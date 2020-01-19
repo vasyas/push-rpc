@@ -144,8 +144,6 @@ class HttpServerSocket implements Socket {
   }
 
   send(data: string) {
-    console.log(data)
-
     const [type, id, ...other] = JSON.parse(data)
 
     let status = 204
