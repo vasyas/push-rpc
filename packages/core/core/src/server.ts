@@ -74,6 +74,10 @@ export function createRpcServer(
       .reduce((p, c) => p + c, 0)
   }
 
+  function isConnected(remoteId) {
+    return !!sessions[remoteId]
+  }
+
   socketServer.onConnection(async (socket, transportDetails) => {
     let connectionContext
 
@@ -134,7 +138,7 @@ export function createRpcServer(
     socket.onError(e => {
       log.warn(`Communication error, client ${remoteId}`, e)
     })
-  })
+  }, isConnected)
 
   return {
     close: cb => socketServer.close(cb),
@@ -143,8 +147,6 @@ export function createRpcServer(
 
       return createRemote(opts.clientLevel, sessions[clientId])
     },
-    isConnected: remoteId => {
-      return !!sessions[remoteId]
-    },
+    isConnected,
   }
 }

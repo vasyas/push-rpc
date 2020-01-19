@@ -12,6 +12,9 @@ export interface Socket {
 
 export interface SocketServer {
   onError(h: (e) => void): void
-  onConnection(h: (socket: Socket, transportDetails: any) => void): void
+  onConnection(
+    h: (socket: Socket, transportDetails: any) => void,
+    isConnected: (remoteId: string) => boolean
+  ): void
   close(cb): void
 }

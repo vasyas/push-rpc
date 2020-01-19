@@ -1,5 +1,5 @@
-import {createRpcServer, setLogger} from "@push-rpc/core"
-import {createSocketServer} from "../../src/server"
+import {createRpcServer, setLogger} from "../../../core/src"
+import {createHttpServer} from "../../src/server"
 
 setLogger(console)
 
@@ -9,6 +9,6 @@ const services = {
   },
 }
 
-createRpcServer(services, createSocketServer(5555))
+createRpcServer(services, createHttpServer(5555, "rpc"))
 
-console.log("RPC Server started at localhost:5555")
+console.log("RPC Server started at http://localhost:5555/rpc")
