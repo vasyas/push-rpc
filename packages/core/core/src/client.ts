@@ -174,7 +174,7 @@ function connect(
       }
 
       socket.terminate()
-      log.warn("WS connection error", e.message)
+      log.warn("RPC connection error", e.message)
     })
 
     socket.onOpen(() => {

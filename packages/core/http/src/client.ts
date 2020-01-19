@@ -1,9 +1,10 @@
-import {Socket} from "@push-rpc/core"
+import {Socket} from "../../core/src"
 import {MessageType} from "../../core/src/rpc"
 
 export function createHttpClient(urlPrefix: string): Socket {
   let handleMessage = (message: string) => {}
   let handleError = (e: any) => {}
+  let handleClose = (code, reason) => {}
 
   async function sendHttpRequest(data) {
     const message = JSON.parse(data)
@@ -22,8 +23,12 @@ export function createHttpClient(urlPrefix: string): Socket {
         })
 
         if (response.status < 200 && response.status >= 300) {
-          // TODO parse error json
-          throw new Error(response.statusText)
+          if (type == MessageType.Call || type == MessageType.Get) {
+            // TODO parse response body
+            handleMessage(JSON.stringify([MessageType.Error, id, response.statusText, "", {}]))
+          } else {
+            // just log it?
+          }
         }
 
         const json = await response.json()
@@ -39,6 +44,8 @@ export function createHttpClient(urlPrefix: string): Socket {
         if (type == MessageType.Call || type == MessageType.Get) {
           handleMessage(JSON.stringify([MessageType.Error, id, e.message, "", {}]))
         }
+
+        handleError(e)
       }
     }
   }
@@ -50,13 +57,17 @@ export function createHttpClient(urlPrefix: string): Socket {
     onOpen(h) {
       setTimeout(h, 0)
     },
-    onClose(h) {},
+    onClose(h) {
+      handleClose = h
+    },
     onError(h) {
       handleError = h
     },
     onPong() {},
 
-    terminate() {},
+    terminate() {
+      setTimeout(() => handleClose("forced", null), 0)
+    },
     send(data) {
       sendHttpRequest(data)
     },
