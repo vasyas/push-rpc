@@ -16,9 +16,9 @@ Push-RPC allows you to:
 - Supported client envs: Node.JS (with `isomorphic-fetch`), browser, React Native.
 
 Supports multiple pluggable transports:
-- WebSocket
-- Plain TCP
-- HTTP REST-like.
+- [WebSocket](https://github.com/vasyas/push-rpc/tree/master/websocket) (recommended)
+- [Plain TCP](https://github.com/vasyas/push-rpc/tree/master/tcp)
+- [HTTP REST-like](https://github.com/vasyas/push-rpc/tree/master/http).
 
 # Possible Applications
 
