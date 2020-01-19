@@ -28,7 +28,7 @@ export function createHttpClient(urlPrefix: string): Socket {
 
         const json = await response.json()
 
-        if (response.status < 200 && response.status >= 300) {
+        if (response.status < 200 || response.status >= 300) {
           if (type == MessageType.Call || type == MessageType.Get) {
             handleMessage(JSON.stringify([MessageType.Error, id, "", response.statusText, json]))
           } else {
