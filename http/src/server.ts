@@ -56,14 +56,7 @@ export function createHttpServer(
       sockets[remoteId] = new HttpServerSocket(() => delete sockets[remoteId])
       handleConnection(sockets[remoteId], ctx)
     }
-
     const socket = sockets[remoteId]
-
-    if (!socket) {
-      handleError(
-        "Keep-alive period of HttpServerSocket should be > keep-alive period for RpcSession"
-      )
-    }
 
     const path = ctx.request.path
     const prefixStripped = opts.prefix ? path.substring(opts.prefix.length) : path
@@ -104,7 +97,7 @@ class HttpServerSocket implements Socket {
   private sendMessage: (string) => void
   private handleClose = (code, reason) => {}
 
-  // TODO timeout!
+  // Timeout expiration is not a big issue here, b/c these are the local calls, and RpcSession impl is robust in implementing local calls
   private calls: {[id: string]: (r: {body; status; responseMessage}) => void} = {}
 
   invoke(
