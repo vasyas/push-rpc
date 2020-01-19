@@ -73,9 +73,12 @@ export function createHttpServer(
     if (ctx.method == "PUT") messageType = MessageType.Get
     if (ctx.method == "PATCH") messageType = MessageType.Subscribe
 
-    const {body, status} = await socket.invoke(messageType, name, ctx.request.body)
+    const {body, status, responseMessage} = await socket.invoke(messageType, name, ctx.request.body)
 
     ctx.response.status = status
+    if (responseMessage) {
+      ctx.response.message = responseMessage
+    }
     ctx.body = body
   })
 
@@ -102,13 +105,13 @@ class HttpServerSocket implements Socket {
   private handleClose = (code, reason) => {}
 
   // TODO timeout!
-  private calls: {[id: string]: (r: {body; status}) => void} = {}
+  private calls: {[id: string]: (r: {body; status; responseMessage}) => void} = {}
 
   invoke(
     type: MessageType.Call | MessageType.Subscribe | MessageType.Get,
     name: string,
     params: any
-  ): Promise<{status; body}> {
+  ): Promise<{status; body; responseMessage}> {
     const id = UUID.create().toString()
     const message = [type, id, name, params]
 
@@ -141,13 +144,18 @@ class HttpServerSocket implements Socket {
   }
 
   send(data: string) {
+    console.log(data)
+
     const [type, id, ...other] = JSON.parse(data)
 
     let status = 204
     let body = null
+    let responseMessage = undefined
 
     if (type == MessageType.Error) {
       const [code, description, details] = other
+
+      responseMessage = description
       body = details
       status = 400
     } else if (type == MessageType.Data) {
@@ -163,7 +171,7 @@ class HttpServerSocket implements Socket {
     }
 
     if (this.calls[id]) {
-      this.calls[id]({status, body})
+      this.calls[id]({status, body, responseMessage})
       delete this.calls[id]
     }
   }
