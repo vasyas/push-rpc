@@ -18,7 +18,7 @@ Push-RPC allows you to:
 Supports multiple pluggable transports:
 - WebSocket
 - Plain TCP
-- REST-like (planned).
+- HTTP REST-like.
 
 # Possible Applications
 
@@ -228,7 +228,6 @@ Will generate response RESULT message with the same ID. <br>
 ## Possible new features
 - Binary data transfer
 - Generating OpenAPI (Swagger) YAMLs with API description
-- REST transport
  
 ## FAQ
 
