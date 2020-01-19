@@ -1,2 +1,2 @@
-export {createSocket, wrapSocket} from "./client"
-export {createSocketServer} from "./server"
+export {createHttpClient} from "./client"
+export {createHttpServer} from "./server"
