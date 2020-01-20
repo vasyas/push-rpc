@@ -58,8 +58,9 @@ export function createHttpServer(
     }
     const socket = sockets[remoteId]
 
-    const path = ctx.request.path
-    const prefixStripped = opts.prefix ? path.substring(opts.prefix.length) : path
+    let prefix = opts.prefix ? opts.prefix : "/"
+    if (!prefix.startsWith("/")) prefix = "/" + opts.prefix
+    const prefixStripped = ctx.request.path.substring(prefix.length)
     const name = prefixStripped.startsWith("/") ? prefixStripped.substring(1) : prefixStripped
 
     let messageType = MessageType.Call // POST and others HTTP methods

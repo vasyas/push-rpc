@@ -14,7 +14,7 @@ function getRemoteId(ctx: Koa.Context) {
   return "1" // share a single session for now
 }
 
-createRpcServer(services, createHttpServer(5555, getRemoteId, {prefix: "rpc"}), {
+createRpcServer(services, createHttpServer(5555, getRemoteId, {prefix: "/rpc"}), {
   listeners: {
     connected: (remoteId, connections) => {},
     disconnected: (remoteId, connections) => {},
