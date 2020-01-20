@@ -57,7 +57,7 @@ export class ApiDescriber {
         const requestType = type.getTypeArguments()[1]
 
         paths[prefix + prop.getName()] = {
-          trace: {
+          patch: {
             requestBody: this.requestBody(requestType, true),
             responses: this.operationResponses(responseType),
           },
