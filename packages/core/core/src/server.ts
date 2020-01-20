@@ -47,6 +47,7 @@ const defaultOptions: Partial<RpcServerOptions> = {
 export interface RpcServer {
   getRemote(remoteId: string): any
   isConnected(remoteId: string): boolean
+  getConnectedIds(): string[]
   close(cb): void
 }
 
@@ -148,5 +149,6 @@ export function createRpcServer(
       return createRemote(opts.clientLevel, sessions[clientId])
     },
     isConnected,
+    getConnectedIds: () => Object.keys(sessions),
   }
 }
