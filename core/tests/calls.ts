@@ -73,4 +73,25 @@ describe("calls", () => {
       assert.equal(e.message, "Timeout")
     }
   }).timeout(5000)
+
+  it("binds this", async () => {
+    const resp = {r: "asf"}
+
+    await startTestServer({
+      test: {
+        async getSomething() {
+          return this.method()
+        },
+
+        async method() {
+          return resp
+        },
+      },
+    })
+
+    const client = await createTestClient()
+
+    const r = await client.test.getSomething()
+    assert.deepEqual(r, resp)
+  })
 })

@@ -24,7 +24,7 @@ describe("Context", () => {
         },
       },
       {
-        createConnectionContext: async () => ({sessionId}),
+        createConnectionContext: async () => ({sessionId, remoteId: "555"}),
         localMiddleware: (ctx, next) => {
           ctx.callId = callId
           return next()
