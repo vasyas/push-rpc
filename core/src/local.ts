@@ -105,10 +105,7 @@ interface Subscription<F> {
  * 2. Bind this to remote methods
  */
 export function prepareLocal(services, prefix = "") {
-  const keys = [
-    ...Object.keys(services),
-    ...((Object.getPrototypeOf(services) && Object.keys(Object.getPrototypeOf(services))) || []),
-  ]
+  const keys = getObjectProps(services)
 
   keys.forEach(key => {
     const item = services[key]
@@ -126,4 +123,15 @@ export function prepareLocal(services, prefix = "") {
       services[key] = item.bind(services)
     }
   })
+}
+
+function getObjectProps(obj) {
+  let props = []
+
+  while (!!obj && obj != Object.prototype) {
+    props = props.concat(Object.getOwnPropertyNames(obj))
+    obj = Object.getPrototypeOf(obj)
+  }
+
+  return Array.from(new Set(props)).filter(p => p != "constructor")
 }

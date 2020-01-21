@@ -74,7 +74,7 @@ describe("calls", () => {
     }
   }).timeout(5000)
 
-  it("binds this", async () => {
+  it("binds this object", async () => {
     const resp = {r: "asf"}
 
     await startTestServer({
@@ -94,4 +94,31 @@ describe("calls", () => {
     const r = await client.test.getSomething()
     assert.deepEqual(r, resp)
   })
+
+  it("binds this class", async () => {
+    const resp = {r: "asf"}
+
+    class B extends A {
+      async method() {
+        return resp
+      }
+    }
+
+    await startTestServer({
+      test: new B(),
+    })
+
+    const client = await createTestClient()
+
+    const r = await client.test.getSomething()
+    assert.deepEqual(r, resp)
+  })
 })
+
+abstract class A {
+  async getSomething() {
+    return this.method()
+  }
+
+  abstract async method()
+}
