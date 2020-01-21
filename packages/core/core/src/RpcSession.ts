@@ -167,10 +167,10 @@ export class RpcSession {
 
   sendError(id, error: Error) {
     const err = Object.getOwnPropertyNames(error)
-      .filter(prop => prop != "stack" && prop != "message")
+      .filter(prop => prop != "stack" && prop != "message" && prop != "code")
       .reduce((r, key) => ({...r, [key]: error[key]}), {})
 
-    this.send(MessageType.Error, id, null, error.message, err)
+    this.send(MessageType.Error, id, error["code"], error.message, err)
   }
 
   send(type: MessageType, id: string, ...params) {
@@ -253,6 +253,7 @@ export class RpcSession {
       } else {
         const error = new Error(description || res || "Remote call failed")
         Object.assign(error, details || {})
+        if (res != null) error["code"] = res
         reject(error)
       }
     }
