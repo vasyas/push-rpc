@@ -84,7 +84,7 @@ export class RpcSession {
       await this.callRemote("", "ping", "ping")
       this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
     } catch (e) {
-      log.warn(`Keep alive check failed`)
+      log.debug(`Keep alive check failed ${this.connectionContext.remoteId}`)
       this.terminate()
     }
   }
