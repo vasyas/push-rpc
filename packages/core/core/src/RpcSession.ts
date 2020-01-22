@@ -107,7 +107,7 @@ export class RpcSession {
 
       const [type, id, name, ...other] = message
 
-      const item = getServiceItem(this.local, name)
+      const {item, object} = getServiceItem(this.local, name)
 
       const localTopic = (item as any) as LocalTopicImpl<any, any>
       const method = item as Method
@@ -144,11 +144,11 @@ export class RpcSession {
             break
           }
 
-          this.callLocal(id, name, method, other[0])
+          this.invokeLocal(id, name, method, object, other[0])
           break
 
         case MessageType.Data:
-          const remoteTopic = (getServiceItem(this.remote, name) as any) as RemoteTopicImpl<
+          const remoteTopic = (getServiceItem(this.remote, name).item as any) as RemoteTopicImpl<
             any,
             any
           >
@@ -232,10 +232,11 @@ export class RpcSession {
   }
 
   /** Creates call context - context to be used in calls */
-  public createContext(messageId?, itemName?): RpcContext {
+  public createContext(messageId?, itemName?, item?): RpcContext {
     return {
       ...this.connectionContext,
       remote: this.remote,
+      item,
       messageId,
       itemName,
     }
@@ -261,10 +262,12 @@ export class RpcSession {
     this.sendCall()
   }
 
-  private async callLocal(id, name, remoteMethod, params) {
+  private async invokeLocal(id, name, localMethod, localMethodObject, params) {
     try {
-      const callContext = this.createContext(id, name)
-      const r = await this.localMiddleware(callContext, () => remoteMethod(params, callContext))
+      const callContext = this.createContext(id, name, localMethod)
+      const r = await this.localMiddleware(callContext, () =>
+        localMethod.call(localMethodObject, params, callContext)
+      )
 
       this.send(MessageType.Result, id, r)
     } catch (e) {
