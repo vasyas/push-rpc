@@ -15,26 +15,26 @@ export interface Services {
 export type ServiceItem = Topic<any, any> | Method
 export type Method = (req?, ctx?) => Promise<any>
 
-export function getServiceItem(services: Services, name: string): ServiceItem {
+export function getServiceItem(services: Services, name: string): {item: ServiceItem; object: any} {
   if (!name) {
     throw new Error(`Can't lookup service item ${name}`)
   }
 
   const names = name.split("/")
 
-  const i = services[names[0]]
+  const item = services[names[0]]
 
-  if (typeof i == "object") {
-    if (i instanceof TopicImpl) return i as any
+  if (typeof item == "object") {
+    if (item instanceof TopicImpl) return {item: item as any, object: services}
 
-    if (!i) {
+    if (!item) {
       throw new Error(`Can't lookup service item ${name}`)
     }
 
-    return getServiceItem(i as Services, names.slice(1).join("/"))
+    return getServiceItem(item as Services, names.slice(1).join("/"))
   }
 
-  return i
+  return {item, object: services}
 }
 
 // remote interfaces
@@ -64,6 +64,7 @@ export interface RpcConnectionContext<Remote = any> {
 export interface RpcContext<Remote = any> extends RpcConnectionContext<Remote> {
   remote: Remote
 
+  item: ServiceItem
   messageId?: string
   itemName?: string
 }

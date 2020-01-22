@@ -119,8 +119,6 @@ export function prepareLocal(services, prefix = "") {
       }
 
       return prepareLocal(item, name + "/")
-    } else if (typeof item == "function") {
-      services[key] = item.bind(services)
     }
   })
 }
