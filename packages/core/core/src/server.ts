@@ -4,12 +4,13 @@ import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
 import {dateReviver} from "./utils"
-import {RpcConnectionContext} from "./rpc"
+import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket, SocketServer} from "./transport"
 
 export interface RpcServerOptions {
   createConnectionContext?(socket: Socket, transportDetails: any): Promise<RpcConnectionContext>
-  localMiddleware?: (ctx, next) => Promise<any>
+  localMiddleware?: Middleware
+  remoteMiddleware?: Middleware
   clientLevel?: number
   messageParser?(data): any[]
   keepAlivePeriod?: number
@@ -29,7 +30,8 @@ const defaultOptions: Partial<RpcServerOptions> = {
   createConnectionContext: async (socket, transportDetails) => ({
     remoteId: UUID.create().toString(),
   }),
-  localMiddleware: (ctx, next) => next(),
+  localMiddleware: (ctx, next, params) => next(params),
+  remoteMiddleware: (ctx, next, params) => next(params),
   clientLevel: 0,
   keepAlivePeriod: 50 * 1000,
   syncRemoteCalls: false,
@@ -103,6 +105,7 @@ export function createRpcServer(
       },
       connectionContext,
       opts.localMiddleware,
+      opts.remoteMiddleware,
       opts.messageParser,
       opts.keepAlivePeriod,
       opts.syncRemoteCalls

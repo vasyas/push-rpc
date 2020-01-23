@@ -1,7 +1,7 @@
 import {RpcSession} from "./RpcSession"
 import {log} from "./logger"
 import {dateReviver} from "./utils"
-import {RpcConnectionContext} from "./rpc"
+import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket} from "./transport"
 
 export interface RpcClientListeners {
@@ -24,7 +24,8 @@ export interface RpcClientOptions {
   listeners: RpcClientListeners
   reconnect: boolean
   createContext(): RpcConnectionContext
-  localMiddleware: (ctx, next) => Promise<any>
+  localMiddleware: Middleware
+  remoteMiddleware: Middleware
   messageParser(data): any[]
   keepAlivePeriod: number
   syncRemoteCalls: boolean
@@ -43,7 +44,8 @@ const defaultOptions: RpcClientOptions = {
   },
   reconnect: false,
   createContext: () => ({remoteId: null}),
-  localMiddleware: (ctx, next) => next(),
+  localMiddleware: (ctx, next, params) => next(params),
+  remoteMiddleware: (ctx, next, params) => next(params),
   messageParser: data => JSON.parse(data, dateReviver),
   keepAlivePeriod: null,
   syncRemoteCalls: false,
@@ -62,6 +64,7 @@ export function createRpcClient<R = any>(
     opts.listeners,
     opts.createContext(),
     opts.localMiddleware,
+    opts.remoteMiddleware,
     opts.messageParser,
     opts.keepAlivePeriod,
     opts.syncRemoteCalls
