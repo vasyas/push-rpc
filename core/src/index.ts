@@ -1,4 +1,4 @@
-export {Topic, RpcContext, RpcConnectionContext} from "./rpc"
+export {Topic, RpcContext, RpcConnectionContext, MessageType, Middleware} from "./rpc"
 export {Socket, SocketServer} from "./transport"
 export {LocalTopicImpl} from "./local"
 export {createRpcClient, RpcClient, RpcClientOptions, RpcClientListeners} from "./client"
