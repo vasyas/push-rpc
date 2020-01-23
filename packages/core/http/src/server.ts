@@ -30,9 +30,11 @@ export function createHttpKoaMiddleware(
     const remoteId = getRemoteId(ctx)
 
     if (!isConnected(remoteId)) {
-      sockets[remoteId] = new HttpServerSocket(() => delete sockets[remoteId])
-      await handleConnection(sockets[remoteId], ctx)
+      const socket = new HttpServerSocket(() => delete sockets[remoteId])
+      await handleConnection(socket, ctx)
+      sockets[remoteId] = socket
     }
+
     const socket = sockets[remoteId]
 
     let prefix = opts.prefix ? opts.prefix : "/"
