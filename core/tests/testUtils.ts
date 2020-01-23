@@ -1,4 +1,4 @@
-import {createRpcClient, createRpcServer} from "../src"
+import {createRpcClient, createRpcServer, RpcClientOptions} from "../src"
 import {RpcServerOptions} from "../src/server"
 import {createWebsocket, createWebsocketServer} from "../../websocket/src/server"
 
@@ -34,6 +34,8 @@ afterEach(
     })
 )
 
-export async function createTestClient(level = 1) {
-  return (await createRpcClient(level, () => createWebsocket(`ws://localhost:${TEST_PORT}`))).remote
+export async function createTestClient(level = 1, options: Partial<RpcClientOptions> = {}) {
+  return (
+    await createRpcClient(level, () => createWebsocket(`ws://localhost:${TEST_PORT}`), options)
+  ).remote
 }

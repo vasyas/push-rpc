@@ -1,5 +1,5 @@
 import * as UUID from "uuid-js"
-import {MessageType} from "./rpc"
+import {MessageType, Middleware} from "./rpc"
 
 export function dateReviver(key, val) {
   if (typeof val == "string") {
@@ -50,7 +50,7 @@ function convertDateToString<T>(message: T, format): T {
   return message
 }
 
-export const ISO8601 =      /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ$/
+export const ISO8601 = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ$/
 export const ISO8601_secs = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$/
 export const ISO8601_date = /^\d\d\d\d-\d\d-\d\d$/
 
@@ -68,5 +68,27 @@ export function getClassMethodNames(obj) {
   return Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
     .filter(m => obj[m] instanceof Function)
     .filter(m => obj[m].name != "constructor")
+}
 
+export function composeMiddleware(...middleware: Middleware[]): Middleware {
+  return function(ctx, next, params) {
+    let index = -1
+    return dispatch(0, params)
+
+    function dispatch(i, p) {
+      if (i <= index) return Promise.reject(new Error("next() called multiple times"))
+
+      index = i
+
+      try {
+        if (i === middleware.length) {
+          return Promise.resolve(next(p))
+        } else {
+          return Promise.resolve(middleware[i](ctx, dispatch.bind(null, i + 1), p))
+        }
+      } catch (err) {
+        return Promise.reject(err)
+      }
+    }
+  }
 }

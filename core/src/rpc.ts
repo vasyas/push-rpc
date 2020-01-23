@@ -85,3 +85,11 @@ export enum MessageType {
 }
 
 export class TopicImpl {}
+
+// Middleware - an local or remote call interceptor
+// ctx would be null for remote interceptors
+export type Middleware = (
+  ctx: RpcContext,
+  next: (params: any) => Promise<any>,
+  params: any
+) => Promise<any>
