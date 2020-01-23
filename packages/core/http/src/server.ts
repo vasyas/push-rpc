@@ -163,7 +163,7 @@ class HttpServerSocket implements Socket {
 
       responseMessage = description
       body = details
-      status = 400
+      status = code || 500
     } else if (type == MessageType.Data) {
       const [name, params, data] = other
       body = data
