@@ -28,24 +28,34 @@ export function createHttpClient(urlPrefix: string, headers = {}): Socket {
           body: params == null ? null : JSON.stringify(params),
         })
 
-        let json = response.status == 204 ? null : await response.json()
+        let res = null
+
+        if (response.status != 204) {
+          const contentType = response.headers.get("content-type")
+
+          if (contentType && contentType.includes("application/json")) {
+            res = await response.json()
+          } else {
+            res = await response.text()
+          }
+        }
 
         if (response.status < 200 || response.status >= 300) {
           if (type == MessageType.Call || type == MessageType.Get) {
             handleMessage(
-              JSON.stringify([MessageType.Error, id, response.status, response.statusText, json])
+              JSON.stringify([MessageType.Error, id, response.status, response.statusText, res])
             )
           } else {
-            log.error(`Unexpected response for message type ${type}`, response.status, json)
+            log.error(`Unexpected response for message type ${type}`, response.status, res)
           }
         }
 
         if (type == MessageType.Call || type == MessageType.Get) {
-          handleMessage(JSON.stringify([MessageType.Result, id, json]))
+          handleMessage(JSON.stringify([MessageType.Result, id, res]))
         }
 
         if (type == MessageType.Subscribe) {
-          handleMessage(JSON.stringify([MessageType.Data, id, name, params, json]))
+          handleMessage(JSON.stringify([MessageType.Data, id, name, params, res]))
         }
       } catch (e) {
         if (type == MessageType.Call || type == MessageType.Get) {
