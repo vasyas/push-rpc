@@ -1,8 +1,7 @@
-import * as Koa from "koa"
-import * as koaBody from "koa-body"
-import {Socket, SocketServer} from "@push-rpc/core"
+import {Socket} from "@push-rpc/core"
 import * as UUID from "uuid-js"
 import {MessageType} from "@push-rpc/core/dist/rpc"
+import {log} from "@push-rpc/core/dist/logger"
 
 export interface HttpServerOptions {
   prefix: string
@@ -13,7 +12,7 @@ const defaultOptions: HttpServerOptions = {
 }
 
 export function createHttpKoaMiddleware(
-  getRemoteId: (ctx: Koa.Context) => string,
+  getRemoteId: (ctx) => string,
   opts: Partial<HttpServerOptions> = {}
 ): {onError; onConnection; middleware} {
   opts = {
@@ -24,24 +23,6 @@ export function createHttpKoaMiddleware(
   let handleError = (e: any) => {}
   let handleConnection = async (socket: Socket, transportDetails: any) => {}
   let isConnected = (remoteId: string) => false
-
-  /*
-  app.use(async (ctx, next) => {
-    try {
-      return await next()
-    } catch (e) {
-      if (e.httpStatus) {
-        ctx.status = e.httpStatus
-        ctx.body = e.body ? e.body : e.message
-      } else {
-        const msg = e instanceof Error ? e.message : "" + e
-
-        ctx.status = 500
-        ctx.body = msg
-      }
-    }
-  })
-   */
 
   const sockets: {[remoteId: string]: HttpServerSocket} = {}
 
@@ -82,27 +63,6 @@ export function createHttpKoaMiddleware(
       isConnected = isConn
     },
     middleware,
-  }
-}
-
-export function createHttpServer(
-  port: number,
-  getRemoteId: (ctx: Koa.Context) => string,
-  opts: Partial<HttpServerOptions> = {}
-): SocketServer {
-  const {onError, onConnection, middleware} = createHttpKoaMiddleware(getRemoteId, opts)
-
-  const app = new Koa()
-  app.use(koaBody({multipart: true}))
-  app.use(middleware)
-  const server = app.listen(port)
-
-  return {
-    onError,
-    onConnection,
-    close(cb) {
-      server.close(cb)
-    },
   }
 }
 
@@ -173,7 +133,7 @@ class HttpServerSocket implements Socket {
       body = res
       status = 200
     } else {
-      // throw new Error("Unexpected message type " + type)
+      log.warn("Unexpected message type " + type)
     }
 
     if (this.calls[id]) {

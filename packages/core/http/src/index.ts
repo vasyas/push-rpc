@@ -1,2 +1,2 @@
 export {createHttpClient} from "./client"
-export {createHttpServer, createHttpKoaMiddleware} from "./server"
+export {createHttpKoaMiddleware} from "./server"
