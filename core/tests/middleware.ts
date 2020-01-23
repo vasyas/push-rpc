@@ -54,4 +54,23 @@ describe("middleware", () => {
     const r = await client.getSomething(1)
     assert.equal(r, 2)
   })
+
+  it("remote rejection", async () => {
+    await startTestServer({
+      async getSomething() {
+        throw new Error("msg")
+      },
+    })
+
+    const client = await createTestClient(0, {
+      remoteMiddleware: (ctx, next, params) => next(params),
+    })
+
+    try {
+      await client.getSomething()
+      assert.fail("Error expected")
+    } catch (e) {
+      assert.equal(e.message, "msg")
+    }
+  })
 })
