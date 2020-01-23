@@ -1,7 +1,8 @@
 import {Socket} from "@push-rpc/core"
 import {MessageType} from "@push-rpc/core/dist/rpc"
+import {log} from "@push-rpc/core/dist/logger"
 
-export function createHttpClient(urlPrefix: string): Socket {
+export function createHttpClient(urlPrefix: string, headers = {}): Socket {
   let handleMessage = (message: string) => {}
   let handleError = (e: any) => {}
   let handleClose = (code, reason) => {}
@@ -22,17 +23,20 @@ export function createHttpClient(urlPrefix: string): Socket {
           method,
           headers: {
             "Content-Type": "application/json",
+            ...headers,
           },
           body: params == null ? null : JSON.stringify(params),
         })
 
-        const json = await response.json()
+        let json = response.status == 204 ? null : await response.json()
 
         if (response.status < 200 || response.status >= 300) {
           if (type == MessageType.Call || type == MessageType.Get) {
-            handleMessage(JSON.stringify([MessageType.Error, id, "", response.statusText, json]))
+            handleMessage(
+              JSON.stringify([MessageType.Error, id, response.status, response.statusText, json])
+            )
           } else {
-            // just log it?
+            log.error(`Unexpected response for message type ${type}`, response.status, json)
           }
         }
 
