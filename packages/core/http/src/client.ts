@@ -1,5 +1,5 @@
-import {Socket} from "../../core/src"
-import {MessageType} from "../../core/src/rpc"
+import {Socket} from "@push-rpc/core"
+import {MessageType} from "@push-rpc/core/dist/rpc"
 
 export function createHttpClient(urlPrefix: string): Socket {
   let handleMessage = (message: string) => {}

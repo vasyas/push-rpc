@@ -1,8 +1,8 @@
 import * as Koa from "koa"
 import * as koaBody from "koa-body"
-import {Socket, SocketServer} from "../../core/src"
+import {Socket, SocketServer} from "@push-rpc/core"
 import * as UUID from "uuid-js"
-import {MessageType} from "../../core/src/rpc"
+import {MessageType} from "@push-rpc/core/dist/rpc"
 
 export interface HttpServerOptions {
   prefix: string
@@ -12,11 +12,10 @@ const defaultOptions: HttpServerOptions = {
   prefix: "",
 }
 
-export function createHttpServer(
-  port: number,
+export function createHttpKoaMiddleware(
   getRemoteId: (ctx: Koa.Context) => string,
   opts: Partial<HttpServerOptions> = {}
-): SocketServer {
+): {onError; onConnection; middleware} {
   opts = {
     ...defaultOptions,
     ...opts,
@@ -25,9 +24,6 @@ export function createHttpServer(
   let handleError = (e: any) => {}
   let handleConnection = (socket: Socket, transportDetails: any) => {}
   let isConnected = (remoteId: string) => false
-
-  const app = new Koa()
-  app.use(koaBody({multipart: true}))
 
   /*
   app.use(async (ctx, next) => {
@@ -49,7 +45,7 @@ export function createHttpServer(
 
   const sockets: {[remoteId: string]: HttpServerSocket} = {}
 
-  app.use(async ctx => {
+  async function middleware(ctx) {
     const remoteId = getRemoteId(ctx)
 
     if (!isConnected(remoteId)) {
@@ -73,10 +69,9 @@ export function createHttpServer(
     if (responseMessage) {
       ctx.response.message = responseMessage
     }
-    ctx.body = body
-  })
 
-  const server = app.listen(port)
+    ctx.body = body
+  }
 
   return {
     onError(h) {
@@ -86,6 +81,25 @@ export function createHttpServer(
       handleConnection = h
       isConnected = isConn
     },
+    middleware,
+  }
+}
+
+export function createHttpServer(
+  port: number,
+  getRemoteId: (ctx: Koa.Context) => string,
+  opts: Partial<HttpServerOptions> = {}
+): SocketServer {
+  const {onError, onConnection, middleware} = createHttpKoaMiddleware(getRemoteId, opts)
+
+  const app = new Koa()
+  app.use(koaBody({multipart: true}))
+  app.use(middleware)
+  const server = app.listen(port)
+
+  return {
+    onError,
+    onConnection,
     close(cb) {
       server.close(cb)
     },
