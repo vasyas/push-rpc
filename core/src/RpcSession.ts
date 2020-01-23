@@ -203,17 +203,21 @@ export class RpcSession {
   }
 
   callRemote(name, params, type) {
-    return new Promise((resolve, reject) => {
-      this.queue.push({
-        type,
-        name: name,
-        params: params,
-        resolve,
-        reject,
-      })
+    const sendMessage = p => {
+      return new Promise((resolve, reject) => {
+        this.queue.push({
+          type,
+          name: name,
+          params: p,
+          resolve,
+          reject,
+        })
 
-      this.sendCall()
-    })
+        this.sendCall()
+      })
+    }
+
+    return this.remoteMiddleware(null, sendMessage, params)
   }
 
   private sendCall() {
