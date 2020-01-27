@@ -34,8 +34,16 @@ afterEach(
     })
 )
 
-export async function createTestClient(level = 1, options: Partial<RpcClientOptions> = {}) {
+export async function createTestClient(
+  level = 1,
+  options: Partial<RpcClientOptions> = {},
+  protocol?
+) {
   return (
-    await createRpcClient(level, () => createWebsocket(`ws://localhost:${TEST_PORT}`), options)
+    await createRpcClient(
+      level,
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`, protocol),
+      options
+    )
   ).remote
 }

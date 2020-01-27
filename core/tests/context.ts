@@ -42,4 +42,31 @@ describe("Context", () => {
 
     assert.deepEqual(r, resp)
   })
+
+  it("can get protocol", async () => {
+    await startTestServer(
+      {
+        async getSomething(_, ctx) {
+          return ctx.protocol
+        },
+      },
+      {
+        createConnectionContext: async (socket, req, protocol) => ({
+          sessionId,
+          remoteId: "555",
+          protocol,
+        }),
+        localMiddleware: (ctx, next, params) => {
+          ctx.callId = callId
+          return next(params)
+        },
+      }
+    )
+
+    const protocol = "proto"
+    const client = await createTestClient(0, {}, protocol)
+    const r = await client.getSomething()
+
+    assert.equal(r, protocol)
+  })
 })

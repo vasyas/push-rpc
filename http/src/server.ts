@@ -22,7 +22,7 @@ export function createHttpKoaMiddleware(
   }
 
   let handleError = (e: any) => {}
-  let handleConnection = async (socket: Socket, transportDetails: any) => {}
+  let handleConnection = async (socket: Socket, ...transportDetails: any) => {}
   let isConnected = (remoteId: string) => false
 
   const sockets: {[remoteId: string]: HttpServerSocket} = {}

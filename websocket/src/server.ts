@@ -11,7 +11,7 @@ export function createWebsocketServer(
       wss.on("error", h)
     },
     onConnection: h => {
-      wss.on("connection", (ws, req) => h(wrapWebsocket(ws), req))
+      wss.on("connection", (ws, req) => h(wrapWebsocket(ws), req, ws.protocol))
     },
     close: h => wss.close(h),
     wss,
