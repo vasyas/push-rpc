@@ -12,7 +12,7 @@ import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
 import {Socket} from "./transport"
 
-let callTimeout: number = 3 * 60 * 1000 // 3 mins
+let callTimeout: number = 30 * 1000 // 30s
 
 export function setCallTimeout(v) {
   callTimeout = v
