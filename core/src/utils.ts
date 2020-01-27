@@ -54,8 +54,10 @@ export const ISO8601 = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ$/
 export const ISO8601_secs = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$/
 export const ISO8601_date = /^\d\d\d\d-\d\d-\d\d$/
 
-export function createMessageId() {
-  return UUID.create().toString()
+export let createMessageId = () => UUID.create().toString()
+
+export function setCreateMessageId(f: () => string) {
+  createMessageId = f
 }
 
 export function message(type: MessageType, id: string, ...params) {
