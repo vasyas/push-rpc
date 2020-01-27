@@ -2,6 +2,7 @@ import {Socket} from "@push-rpc/core"
 import * as UUID from "uuid-js"
 import {MessageType} from "@push-rpc/core/dist/rpc"
 import {log} from "@push-rpc/core/dist/logger"
+import {createMessageId} from "../../core/src/utils"
 
 export interface HttpServerOptions {
   prefix: string
@@ -82,7 +83,7 @@ class HttpServerSocket implements Socket {
     name: string,
     params: any
   ): Promise<{status; body; responseMessage}> {
-    const id = UUID.create().toString()
+    const id = createMessageId()
     const message = [type, id, name, params]
 
     return new Promise(resolve => {
