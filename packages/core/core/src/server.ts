@@ -8,7 +8,7 @@ import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket, SocketServer} from "./transport"
 
 export interface RpcServerOptions {
-  createConnectionContext?(socket: Socket, transportDetails: any): Promise<RpcConnectionContext>
+  createConnectionContext?(socket: Socket, ...transportDetails: any): Promise<RpcConnectionContext>
   localMiddleware?: Middleware
   remoteMiddleware?: Middleware
   clientLevel?: number
@@ -27,7 +27,7 @@ export interface RpcServerOptions {
 }
 
 const defaultOptions: Partial<RpcServerOptions> = {
-  createConnectionContext: async (socket, transportDetails) => ({
+  createConnectionContext: async (socket, ...transportDetails) => ({
     remoteId: UUID.create().toString(),
   }),
   localMiddleware: (ctx, next, params) => next(params),
@@ -81,11 +81,11 @@ export function createRpcServer(
     return !!sessions[remoteId]
   }
 
-  socketServer.onConnection(async (socket, transportDetails) => {
+  socketServer.onConnection(async (socket, ...transportDetails) => {
     let connectionContext
 
     try {
-      connectionContext = await opts.createConnectionContext(socket, transportDetails)
+      connectionContext = await opts.createConnectionContext(socket, ...transportDetails)
     } catch (e) {
       log.warn("Failed to create connection context", e)
       socket.terminate()
