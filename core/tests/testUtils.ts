@@ -1,4 +1,4 @@
-import {createRpcClient, createRpcServer, RpcClientOptions} from "../src"
+import {createRpcClient, createRpcServer, RpcClientOptions, RpcServer} from "../src"
 import {RpcServerOptions} from "../src/server"
 import {createWebsocket, createWebsocketServer} from "../../websocket/src/server"
 
@@ -15,13 +15,14 @@ const listeners = {
   disconnected: id => console.log("Disconnected", id),
 }
 
-export function startTestServer(local, opts: RpcServerOptions = {}) {
+export function startTestServer(local, opts: RpcServerOptions = {}): Promise<RpcServer> {
   return new Promise(resolve => {
     const socketServer = createWebsocketServer({port: TEST_PORT})
     wss = socketServer.wss
-    wss.addListener("listening", resolve)
 
-    createRpcServer(local, socketServer, {listeners, ...opts})
+    const rpcServer = createRpcServer(local, socketServer, {listeners, ...opts})
+
+    wss.addListener("listening", () => resolve(rpcServer))
   })
 }
 
