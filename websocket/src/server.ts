@@ -23,6 +23,10 @@ export function createWebsocket(url, protocol?) {
 }
 
 export function wrapWebsocket(ws): Socket {
+  let errorHandler: (e: any) => void = () => {
+
+  }
+
   return {
     onMessage: h =>
       ws.on("message", e => {
@@ -33,11 +37,26 @@ export function wrapWebsocket(ws): Socket {
       ws.on("close", (code, reason) => {
         h(code, reason)
       }),
-    onError: h => ws.on("error", h),
+    onError: h => {
+      errorHandler = h
+      ws.on("error", h)
+    },
     onPong: h => ws.on("pong", h),
 
     terminate: () => ws.terminate(),
-    send: data => ws.send(data),
-    ping: data => ws.ping(data),
+    send: data => {
+      try {
+        ws.send(data)
+      } catch (e) {
+        errorHandler(e)
+      }
+    },
+    ping: data => {
+      try {
+        ws.ping(data)
+      } catch (e) {
+        errorHandler(e)
+      }
+    },
   }
 }
