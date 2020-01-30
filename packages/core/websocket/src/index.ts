@@ -1,2 +1,2 @@
 export {createWebsocket} from "./client"
-export {createWebsocketServer, wrapWebsocket} from "./server"
+export {createWebsocketServer} from "./server"
