@@ -122,4 +122,45 @@ describe("Topics", () => {
     assert.deepEqual(item1, {key: "1"})
     assert.deepEqual(item2, {key: "2"})
   })
+
+  it("2nd subscribe", async () => {
+    const item = {r: "1"}
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl<typeof item, {}>(async () => item),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let item1
+    await client.test.item.subscribe(item => {
+      item1 = item
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item1, item)
+
+    let item2
+    await client.test.item.subscribe(item => {
+      item2 = item
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item2, item)
+
+    // trigger sends item
+    item.r = "2"
+    server.test.item.trigger()
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item1, item)
+    assert.deepEqual(item2, item)
+  })
 })

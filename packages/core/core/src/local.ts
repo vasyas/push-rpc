@@ -38,9 +38,6 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
       sessions: [],
     }
 
-    // no double subscribe
-    if (subscription.sessions.indexOf(session) >= 0) return
-
     subscription.sessions.push(session)
     this.subscriptions[key] = subscription
 
