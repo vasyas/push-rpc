@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@push-rpc/core@1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.13.tgz#44ef182c3e47461c5224e38c52318f9596d63e6a"
-  integrity sha512-oqrfuuJoPOxwPXZoxFwG2OKN4ZwmCJuyI7GS6mUl1EfWDgm1/jsGU46P2g8464rfOkKmzBr9fWIhvlIMU/4//A==
+"@push-rpc/core@^1.0.21":
+  version "1.0.21"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.21.tgz#c5cc931b0eff2381addf51b106b21ac6b83f6c7f"
+  integrity sha512-3qy2wZBrRnnGohbqo6Q4Nrh3JHejY5QlhazRbQ3GBdjhZ4mPgapi5lTVfU+UZESIqxo1lMmQVY4G7L6jp42Q0Q==
   dependencies:
     uuid-js "^0.7.5"
 
