@@ -4,7 +4,7 @@ import {RpcSession} from "./RpcSession"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
-  subscriptionKey: string
+  subscriptionKey: any
 }
 
 export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F> {
@@ -12,12 +12,18 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
     super()
   }
 
-  subscribe(consumer: DataConsumer<D>, filter: F = null, subscriptionKey: any = consumer) {
+  subscribe<SubscriptionKey = DataConsumer<D>>(
+    consumer: DataConsumer<D>,
+    filter: F = null,
+    subscriptionKey: SubscriptionKey = consumer as any
+  ): SubscriptionKey {
     const filterKey = JSON.stringify(filter)
 
     this.consumers[filterKey] = [...(this.consumers[filterKey] || []), {consumer, subscriptionKey}]
 
     this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, filter)
+
+    return subscriptionKey
   }
 
   unsubscribe(params: F = null, subscriptionKey = undefined) {
