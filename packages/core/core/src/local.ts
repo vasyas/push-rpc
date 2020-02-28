@@ -38,6 +38,9 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
       sessions: [],
     }
 
+    // TODO if already subscribed, just send current data, and do not add a new subscription - it will save
+    // some network ops
+
     subscription.sessions.push(session)
     this.subscriptions[key] = subscription
 
