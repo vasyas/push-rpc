@@ -8,7 +8,7 @@ describe("sync", () => {
     let callNo
 
     await startTestServer({
-      remoteFunc(_callNo) {
+      call(_callNo) {
         callNo = _callNo
 
         return new Promise(resolve => {
@@ -31,44 +31,45 @@ describe("sync", () => {
     resolveCall()
   })
 
-  false && it("wait local answer before calling remote", async () => {
-    let resolveCall
-    let remoteId
-    let remoteInvoked
+  false &&
+    it("wait local answer before calling remote", async () => {
+      let resolveCall
+      let remoteId
+      let remoteInvoked
 
-    const testServer = await startTestServer({
-      call(_, ctx) {
-        remoteId = ctx.remoteId
+      const testServer = await startTestServer({
+        call(_, ctx) {
+          remoteId = ctx.remoteId
 
-        return new Promise(resolve => {
-          resolveCall = resolve
-        })
-      },
-    })
-
-    const client = await createTestClient(0, {
-      syncRemoteCalls: true,
-      local: {
-        remoteFunc() {
-          remoteInvoked = true
+          return new Promise(resolve => {
+            resolveCall = resolve
+          })
         },
-      },
+      })
+
+      const client = await createTestClient(0, {
+        syncRemoteCalls: true,
+        local: {
+          remoteFunc() {
+            remoteInvoked = true
+          },
+        },
+      })
+
+      client.call()
+
+      await new Promise(r => setTimeout(r, 100))
+      const remote = testServer.getRemote(remoteId)
+      remote.remoteFunc()
+
+      await new Promise(r => setTimeout(r, 100))
+      assert.notOk(remoteInvoked) // waiting for call to resolve
+
+      resolveCall()
+      await new Promise(r => setTimeout(r, 100))
+      assert.ok(remoteInvoked)
+      resolveCall()
     })
-
-    client.call()
-
-    await new Promise(r => setTimeout(r, 100))
-    const remote = testServer.getRemote(remoteId)
-    remote.remoteFunc()
-
-    await new Promise(r => setTimeout(r, 100))
-    assert.notOk(remoteInvoked) // waiting for call to resolve
-
-    resolveCall()
-    await new Promise(r => setTimeout(r, 100))
-    assert.ok(remoteInvoked)
-    resolveCall()
-  })
 
   // wait before asnwer before _accepting_ new call
 })
