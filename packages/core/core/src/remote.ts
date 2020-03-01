@@ -14,14 +14,18 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
   subscribe<SubscriptionKey = DataConsumer<D>>(
     consumer: DataConsumer<D>,
-    filter: F = null,
+    params: F = null,
     subscriptionKey: SubscriptionKey = consumer as any
   ): SubscriptionKey {
-    const filterKey = JSON.stringify(filter)
+    const paramsKey = JSON.stringify(params)
 
-    this.consumers[filterKey] = [...(this.consumers[filterKey] || []), {consumer, subscriptionKey}]
+    this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
-    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, filter)
+    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
+
+    if (this.cached[paramsKey] !== undefined) {
+      consumer(this.cached[paramsKey])
+    }
 
     return subscriptionKey
   }
@@ -36,7 +40,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
     // unsubscribe all
     if (subscriptionKey == undefined) {
-      delete this.consumers[paramsKey]
+      this.deleteAllSubscriptions(paramsKey)
       return
     }
 
@@ -47,9 +51,14 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
       if (subscriptions.length > 1) {
         subscriptions.splice(idx, 1)
       } else {
-        delete this.consumers[paramsKey]
+        this.deleteAllSubscriptions(paramsKey)
       }
     }
+  }
+
+  private deleteAllSubscriptions(paramsKey: string) {
+    delete this.consumers[paramsKey]
+    delete this.cached[paramsKey]
   }
 
   get(params: F = null): Promise<D> {
@@ -66,10 +75,12 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
   receiveData(params: F, data: D) {
     const paramsKey = JSON.stringify(params)
     const subscriptions = this.consumers[paramsKey] || []
+    this.cached[paramsKey] = data
     subscriptions.forEach(subscription => subscription.consumer(data))
   }
 
-  private consumers: {[key: string]: Subscription<D>[]} = {}
+  private consumers: {[paramsKey: string]: Subscription<D>[]} = {}
+  private cached: {[paramsKey: string]: D} = {}
 }
 
 export function createRemote(level: number, session: RpcSession) {
