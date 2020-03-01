@@ -14,7 +14,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
   subscribe<SubscriptionKey = DataConsumer<D>>(
     consumer: DataConsumer<D>,
-    params: F = null,
+    params: F = {} as any,
     subscriptionKey: SubscriptionKey = consumer as any
   ): SubscriptionKey {
     const paramsKey = JSON.stringify(params)
@@ -30,7 +30,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
     return subscriptionKey
   }
 
-  unsubscribe(params: F = null, subscriptionKey = undefined) {
+  unsubscribe(params: F = {} as any, subscriptionKey = undefined) {
     const paramsKey = JSON.stringify(params)
 
     if (!this.consumers[paramsKey]) return
@@ -61,7 +61,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
     delete this.cached[paramsKey]
   }
 
-  get(params: F = null): Promise<D> {
+  get(params: F = {} as any): Promise<D> {
     return this.session.callRemote(this.topicName, params, MessageType.Get) as Promise<D>
   }
 
