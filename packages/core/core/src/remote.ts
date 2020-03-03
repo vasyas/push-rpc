@@ -21,6 +21,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
     this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
+    // TODO it is not necessary to send subscribe if we already have cached value
     this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
 
     if (this.cached[paramsKey] !== undefined) {
