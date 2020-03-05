@@ -14,15 +14,21 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
   subscribe<SubscriptionKey = DataConsumer<D>>(
     consumer: DataConsumer<D>,
-    params: F = {} as any,
+    filter: F = {} as any,
     subscriptionKey: SubscriptionKey = consumer as any
   ): SubscriptionKey {
-    const paramsKey = JSON.stringify(params)
+    if (filter === null) {
+      throw new Error(
+        "Subscribe with null filter is not supported, use empty object to get all data"
+      )
+    }
+
+    const paramsKey = JSON.stringify(filter)
 
     this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
     // TODO it is not necessary to send subscribe if we already have cached value
-    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
+    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, filter)
 
     if (this.cached[paramsKey] !== undefined) {
       consumer(this.cached[paramsKey])
