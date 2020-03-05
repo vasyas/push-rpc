@@ -283,7 +283,7 @@ export class RpcSession {
 
       this.send(MessageType.Result, id, r)
     } catch (e) {
-      log.error(`Unable to call method ${name} with params ${JSON.stringify(params)}`, e)
+      log.error(`Unable to call method ${name} with params ${JSON.stringify(params)}. `, e)
       this.sendError(id, e)
     }
   }
