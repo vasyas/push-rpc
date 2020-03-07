@@ -146,6 +146,8 @@ export function createRpcServer(
 
   return {
     close: cb => socketServer.close(cb),
+
+    /** These remote are not reconnecting - they should not be saved */
     getRemote: clientId => {
       if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
 
