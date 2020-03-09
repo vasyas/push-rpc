@@ -1,5 +1,5 @@
 import * as UUID from "uuid-js"
-import {MessageType, Middleware} from "./rpc"
+import {DataConsumer, MessageType, Middleware, RemoteTopic} from "./rpc"
 
 export function dateReviver(key, val) {
   if (typeof val == "string") {
@@ -92,5 +92,26 @@ export function composeMiddleware(...middleware: Middleware[]): Middleware {
         return Promise.reject(err)
       }
     }
+  }
+}
+
+export function mapTopic<D1, P, D2>(t: RemoteTopic<D1, P>, map: (D1) => D2): RemoteTopic<D2, P> {
+  return {
+    subscribe(consumer: DataConsumer<D2>, params?: P, subscriptionKey?: any) {
+      return t.subscribe(
+        (d: D1) => {
+          return consumer(map(d))
+        },
+        params,
+        subscriptionKey
+      )
+    },
+    unsubscribe(params?: P, subscriptionKey?: any) {
+      return t.unsubscribe(params, subscriptionKey)
+    },
+    async get(params?: P): Promise<D2> {
+      const d = await t.get(params)
+      return map(d)
+    },
   }
 }
