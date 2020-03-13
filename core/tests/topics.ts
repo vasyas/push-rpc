@@ -201,9 +201,11 @@ describe("Topics", () => {
   })
 
   it("trigger throttling", async () => {
+    const timeout = 400
+
     const server = {
       test: {
-        item: new LocalTopicImpl(async () => "result").throttle(1000),
+        item: new LocalTopicImpl(async () => "result").throttle(timeout),
       },
     }
 
@@ -227,9 +229,19 @@ describe("Topics", () => {
     assert.equal(count, 1)
 
     server.test.item.trigger({}, "1st")
-    server.test.item.trigger({}, "2nd") // 1st is throttled
+    server.test.item.trigger({}, "2nd") // throttled
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.equal(count, 2)
-    assert.equal(item, "2nd")
+    assert.equal(item, "1st")
+
+    server.test.item.trigger({}, "3rd") // throttled
+    server.test.item.trigger({}, "4th") // delivered on trailing edge
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.equal(count, 2)
+
+    await new Promise(resolve => setTimeout(resolve, timeout + 50))
+    assert.equal(count, 3)
+    assert.equal(item, "4th")
   })
 })
