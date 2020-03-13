@@ -199,4 +199,37 @@ describe("Topics", () => {
     // cached version should be delivered
     assert.deepEqual(item2, {r: "1"})
   })
+
+  it("trigger throttling", async () => {
+    const server = {
+      test: {
+        item: new LocalTopicImpl(async () => "result").throttle(1000),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let count = 0
+    let item = null
+
+    await client.test.item.subscribe(i => {
+      count++
+      item = i
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.equal(count, 1)
+
+    server.test.item.trigger({}, "1st")
+    server.test.item.trigger({}, "2nd") // 1st is throttled
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.equal(count, 2)
+    assert.equal(item, "2nd")
+  })
 })
