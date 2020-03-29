@@ -1,5 +1,5 @@
 import {createRpcClient, setLogger} from "@push-rpc/core"
-import {createWebsocket} from "@push-rpc/websocket"
+import {createWebsocket} from "@push-rpc/websocket/dist/server"
 import {Services} from "./shared"
 
 setLogger(console)
