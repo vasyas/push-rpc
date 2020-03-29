@@ -2,11 +2,12 @@
 # yarn lockfile v1
 
 
-"@push-rpc/core@^1.0.26":
-  version "1.0.26"
-  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.26.tgz#8347555913b4658ea91ed62ebaba5656e518cae7"
-  integrity sha512-hMnR3ERUpYKzk3nATa+o4oj1hopvJyu0a1PGYXIfFFazdryM6Jpf3Dz2t1FYkb5amq/JIwOdTfHmzaqbB9Ad+g==
+"@push-rpc/core@^1.0.30":
+  version "1.0.30"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.30.tgz#ac2fc38151e14b36150f7752a67c506f5bd93199"
+  integrity sha512-SV3P6soqPF4VagFhGSWHTBoZDq7QWwgY6mZG9Plbxi+HC2fG4xzBP6Hs76CGTRZpt6hP80p+D7lotm2Jgn49GA==
   dependencies:
+    throttle-debounce "^2.1.0"
     uuid-js "^0.7.5"
 
 arg@^4.1.0:
@@ -51,6 +52,11 @@ source-map@^0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
+
+throttle-debounce@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/throttle-debounce/-/throttle-debounce-2.1.0.tgz#257e648f0a56bd9e54fe0f132c4ab8611df4e1d5"
+  integrity sha512-AOvyNahXQuU7NN+VVvOOX+uW6FPaWdAOdRP5HfwYxAfCzXTFKRMoIMk+n+po318+ktcChx+F1Dd91G3YHeMKyg==
 
 ts-node@^8.5.4:
   version "8.5.4"
