@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/core",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
