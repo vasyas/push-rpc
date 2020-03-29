@@ -13,7 +13,8 @@ export interface RpcServerOptions {
   remoteMiddleware?: Middleware
   clientLevel?: number
   messageParser?(data): any[]
-  keepAlivePeriod?: number
+  pingSendTimeout?: number
+  pongWaitTimeout?: number
   syncRemoteCalls?: boolean
 
   listeners?: {
@@ -33,7 +34,8 @@ const defaultOptions: Partial<RpcServerOptions> = {
   localMiddleware: (ctx, next, params) => next(params),
   remoteMiddleware: (ctx, next, params) => next(params),
   clientLevel: 0,
-  keepAlivePeriod: 50 * 1000,
+  pingSendTimeout: 50 * 1000,
+  pongWaitTimeout: 25 * 1000,
   syncRemoteCalls: false,
   messageParser: data => JSON.parse(data, dateReviver),
   listeners: {
@@ -107,7 +109,8 @@ export function createRpcServer(
       opts.localMiddleware,
       opts.remoteMiddleware,
       opts.messageParser,
-      opts.keepAlivePeriod,
+      opts.pingSendTimeout,
+      opts.pongWaitTimeout,
       opts.syncRemoteCalls
     )
 
