@@ -27,7 +27,8 @@ export interface RpcClientOptions {
   localMiddleware: Middleware
   remoteMiddleware: Middleware
   messageParser(data): any[]
-  keepAlivePeriod: number
+  pingSendTimeout: number
+  pongWaitTimeout: number
   syncRemoteCalls: boolean
 }
 
@@ -47,7 +48,8 @@ const defaultOptions: RpcClientOptions = {
   localMiddleware: (ctx, next, params) => next(params),
   remoteMiddleware: (ctx, next, params) => next(params),
   messageParser: data => JSON.parse(data, dateReviver),
-  keepAlivePeriod: null,
+  pingSendTimeout: null,
+  pongWaitTimeout: null,
   syncRemoteCalls: false,
 }
 
@@ -66,7 +68,8 @@ export function createRpcClient<R = any>(
     opts.localMiddleware,
     opts.remoteMiddleware,
     opts.messageParser,
-    opts.keepAlivePeriod,
+    opts.pingSendTimeout,
+    opts.pongWaitTimeout,
     opts.syncRemoteCalls
   )
 

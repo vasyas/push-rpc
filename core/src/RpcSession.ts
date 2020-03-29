@@ -34,7 +34,8 @@ export class RpcSession {
     private localMiddleware: Middleware,
     private remoteMiddleware: Middleware,
     private messageParser: (data) => any[],
-    private keepAlivePeriod: number,
+    private pingSendTimeout: number,
+    private pongWaitTimeout: number,
     private syncRemoteCalls: boolean
   ) {
     this.remote = createRemote(remoteLevel, this)
@@ -46,8 +47,8 @@ export class RpcSession {
     this.socket = socket
     resubscribeTopics(this.remote)
 
-    if (this.keepAlivePeriod) {
-      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
+    if (this.pingSendTimeout) {
+      this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
 
       socket.onPong(() => {
         this.listeners.messageIn("PONG")
@@ -88,9 +89,9 @@ export class RpcSession {
 
   sendPing = async () => {
     try {
-      // call will be rejected if no reply will come in keepAlivePeriod / 2, see #sendCall
+      // call will be rejected if no reply will come in pongWaitTimeout, see #sendCall
       await this.callRemote("", "ping", "ping")
-      this.pingTimer = setTimeout(this.sendPing, this.keepAlivePeriod)
+      this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
     } catch (e) {
       log.debug(`Keep alive check failed ${this.connectionContext.remoteId}`)
       this.terminate()
@@ -192,7 +193,7 @@ export class RpcSession {
 
     for (const messageId of Object.keys(this.runningCalls)) {
       const expireCallBefore =
-        messageId == PING_MESSAGE_ID ? now - this.keepAlivePeriod / 2 : now - callTimeout
+        messageId == PING_MESSAGE_ID ? now - this.pongWaitTimeout : now - callTimeout
 
       if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]
