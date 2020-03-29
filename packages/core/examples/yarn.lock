@@ -9,11 +9,12 @@
   dependencies:
     uuid-js "^0.7.5"
 
-"@push-rpc/core@^1.0.14":
-  version "1.0.14"
-  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.14.tgz#d3076572ced37322f2f9101c885621bc1343a91b"
-  integrity sha512-QkJV+P0OGWLCPgT5r2wbDDMaT3TXr1DGfhv1vejiMBj24DJFiNsUt44FyrXsLxAM12Z6WAgEd7FMOEE08pm7Bg==
+"@push-rpc/core@^1.0.29":
+  version "1.0.29"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.29.tgz#082da0e054ae820d802ad5fb1296f2471980dbce"
+  integrity sha512-mp1Dp1mkiiQjqj+7vNIYPJzwNKGEefJVagRo5eHnqPrn7kRQWWKtgUtWOXjqQB6EB2IkfJwW1f2TuNDp4Yhx3A==
   dependencies:
+    throttle-debounce "^2.1.0"
     uuid-js "^0.7.5"
 
 "@push-rpc/websocket@^1.0.1":
@@ -70,6 +71,11 @@ source-map@^0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
+
+throttle-debounce@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/throttle-debounce/-/throttle-debounce-2.1.0.tgz#257e648f0a56bd9e54fe0f132c4ab8611df4e1d5"
+  integrity sha512-AOvyNahXQuU7NN+VVvOOX+uW6FPaWdAOdRP5HfwYxAfCzXTFKRMoIMk+n+po318+ktcChx+F1Dd91G3YHeMKyg==
 
 ts-node@^8.5.4:
   version "8.5.4"

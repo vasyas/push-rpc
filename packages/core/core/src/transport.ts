@@ -1,11 +1,10 @@
-import {RpcSession} from "./RpcSession"
-
 export interface Socket {
   onMessage(h: (message: string) => void)
   onOpen(h: () => void)
   onClose(h: (code, reason) => void)
   onError(h: (e) => void)
   onPong(h: () => void)
+  onPing(h: () => void)
 
   terminate()
   send(data: string)
