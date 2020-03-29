@@ -19,6 +19,9 @@ export function wrapWebsocket(ws: WebSocket): Socket {
     onPong: h => {
       // not implemented
     },
+    onPing: h => {
+      // not implemented
+    },
 
     terminate: () => ws.close(),
     send: data => ws.send(data),

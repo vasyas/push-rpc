@@ -47,20 +47,26 @@ export class RpcSession {
     this.socket = socket
     resubscribeTopics(this.remote)
 
+    socket.onPing(() => {
+      this.listeners.messageIn("PING")
+    })
+
     if (this.pingSendTimeout) {
       this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
+    }
 
-      socket.onPong(() => {
-        this.listeners.messageIn("PONG")
+    socket.onPong(() => {
+      this.listeners.messageIn("PONG")
 
+      if (this.pingSendTimeout) {
         if (this.runningCalls[PING_MESSAGE_ID]) {
           this.runningCalls[PING_MESSAGE_ID].resolve()
           delete this.runningCalls[PING_MESSAGE_ID]
         }
 
         this.sendCall()
-      })
-    }
+      }
+    })
 
     this.callTimeoutTimer = setInterval(() => this.timeoutCalls(), 1000) // every 1s
   }
