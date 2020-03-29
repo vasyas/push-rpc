@@ -17,6 +17,10 @@ export interface RpcServerOptions {
   pongWaitTimeout?: number
   syncRemoteCalls?: boolean
 
+  getKeepAliveSettings?(
+    connectionContext: RpcConnectionContext
+  ): {pingSendTimeout: number; pongWaitTimeout: number}
+
   listeners?: {
     connected?(remoteId: string, connections: number): void
     disconnected?(remoteId: string, connections: number): void
@@ -96,6 +100,10 @@ export function createRpcServer(
 
     const {remoteId} = connectionContext
 
+    const keepAliveSettings = opts.getKeepAliveSettings
+      ? opts.getKeepAliveSettings(connectionContext)
+      : {pingSendTimeout: opts.pingSendTimeout, pongWaitTimeout: opts.pongWaitTimeout}
+
     const session = new RpcSession(
       local,
       opts.clientLevel,
@@ -109,8 +117,8 @@ export function createRpcServer(
       opts.localMiddleware,
       opts.remoteMiddleware,
       opts.messageParser,
-      opts.pingSendTimeout,
-      opts.pongWaitTimeout,
+      keepAliveSettings.pingSendTimeout,
+      keepAliveSettings.pongWaitTimeout,
       opts.syncRemoteCalls
     )
 
