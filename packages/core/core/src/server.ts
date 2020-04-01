@@ -35,9 +35,9 @@ const defaultOptions: Partial<RpcServerOptions> = {
   localMiddleware: (ctx, next, params) => next(params),
   remoteMiddleware: (ctx, next, params) => next(params),
   clientLevel: 0,
-  pingSendTimeout: 50 * 1000,
-  keepAliveTimeout: 25 * 1000,
-  callTimeout: 30 * 1000,
+  pingSendTimeout: 40 * 1000,
+  keepAliveTimeout: 120 * 1000,
+  callTimeout: 15 * 1000,
   syncRemoteCalls: false,
   messageParser: data => JSON.parse(data, dateReviver),
   listeners: {
