@@ -12,12 +12,6 @@ import {LocalTopicImpl} from "./local"
 import {createRemote, RemoteTopicImpl} from "./remote"
 import {Socket} from "./transport"
 
-let callTimeout: number = 30 * 1000 // 30s
-
-export function setCallTimeout(v) {
-  callTimeout = v
-}
-
 export interface RpcSessionListeners {
   messageIn(data: string): void
   messageOut(data: string): void
@@ -36,6 +30,7 @@ export class RpcSession {
     private messageParser: (data) => any[],
     private pingSendTimeout: number,
     private pongWaitTimeout: number,
+    private callTimeout: number,
     private syncRemoteCalls: boolean
   ) {
     this.remote = createRemote(remoteLevel, this)
@@ -199,7 +194,7 @@ export class RpcSession {
 
     for (const messageId of Object.keys(this.runningCalls)) {
       const expireCallBefore =
-        messageId == PING_MESSAGE_ID ? now - this.pongWaitTimeout : now - callTimeout
+        messageId == PING_MESSAGE_ID ? now - this.pongWaitTimeout : now - this.callTimeout
 
       if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]

@@ -15,6 +15,7 @@ export interface RpcServerOptions {
   messageParser?(data): any[]
   pingSendTimeout?: number
   pongWaitTimeout?: number
+  callTimeout?: number
   syncRemoteCalls?: boolean
 
   getKeepAliveSettings?(
@@ -40,6 +41,7 @@ const defaultOptions: Partial<RpcServerOptions> = {
   clientLevel: 0,
   pingSendTimeout: 50 * 1000,
   pongWaitTimeout: 25 * 1000,
+  callTimeout: 30 * 1000,
   syncRemoteCalls: false,
   messageParser: data => JSON.parse(data, dateReviver),
   listeners: {
@@ -119,6 +121,7 @@ export function createRpcServer(
       opts.messageParser,
       keepAliveSettings.pingSendTimeout,
       keepAliveSettings.pongWaitTimeout,
+      opts.callTimeout,
       opts.syncRemoteCalls
     )
 

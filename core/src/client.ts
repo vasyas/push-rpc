@@ -29,6 +29,7 @@ export interface RpcClientOptions {
   messageParser(data): any[]
   pingSendTimeout: number
   pongWaitTimeout: number
+  callTimeout: number
   syncRemoteCalls: boolean
 }
 
@@ -50,6 +51,7 @@ const defaultOptions: RpcClientOptions = {
   messageParser: data => JSON.parse(data, dateReviver),
   pingSendTimeout: null,
   pongWaitTimeout: null,
+  callTimeout: 30 * 1000,
   syncRemoteCalls: false,
 }
 
@@ -70,6 +72,7 @@ export function createRpcClient<R = any>(
     opts.messageParser,
     opts.pingSendTimeout,
     opts.pongWaitTimeout,
+    opts.callTimeout,
     opts.syncRemoteCalls
   )
 
