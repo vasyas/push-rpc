@@ -40,7 +40,7 @@ createRpcServer(services, createWebsocketServer({port: 5555}), {
     },
   },
   pingSendTimeout: null,
-  pongWaitTimeout: null,
+  keepAliveTimeout: null,
 })
 
 console.log("RPC Server started at ws://localhost:5555")
