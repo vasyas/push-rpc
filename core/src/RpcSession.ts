@@ -120,7 +120,7 @@ export class RpcSession {
     const now = Date.now()
 
     if (this.lastMessageAt < now - this.keepAliveTimeout) {
-      log.debug("Keep alive period expired, closing ws")
+      log.debug(`Keep alive period expired, closing socket ${this.connectionContext.remoteId}`)
       this.terminate()
     }
   }
@@ -195,7 +195,10 @@ export class RpcSession {
           break
       }
     } catch (e) {
-      log.error(`Failed to handle RPC message ${data}\n`, e)
+      log.error(
+        `Failed to handle RPC message ${data}\n, remote id ${this.connectionContext.remoteId}`,
+        e
+      )
     }
   }
 
