@@ -37,21 +37,30 @@ export class RpcSession {
   }
 
   public remote: any
+  public subscriptions: {topic; params}[] = []
+  public lastMessageAt: number
+
+  private callTimeoutTimer
+  private pingTimer
+  private keepAliveTimer
+
+  private socket: Socket = null
+
+  private queue: Call[] = []
+  private runningCalls: {[messageId: string]: Call} = {}
 
   open(socket: Socket) {
     this.socket = socket
+    this.lastMessageAt = Date.now()
+
     resubscribeTopics(this.remote)
 
     socket.onPing(() => {
-      this.listeners.messageIn("PING")
+      this.trackMessageReceived("PING")
     })
 
-    if (this.pingSendTimeout) {
-      this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
-    }
-
     socket.onPong(() => {
-      this.listeners.messageIn("PONG")
+      this.trackMessageReceived("PONG")
 
       if (this.runningCalls[PING_MESSAGE_ID]) {
         this.runningCalls[PING_MESSAGE_ID].resolve()
@@ -61,13 +70,27 @@ export class RpcSession {
       this.sendCall()
     })
 
+    if (this.pingSendTimeout) {
+      this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
+    }
+
+    if (this.keepAliveTimeout) {
+      this.keepAliveTimer = setInterval(() => this.checkKeepAlive(), 1000)
+    }
+
     this.callTimeoutTimer = setInterval(() => this.timeoutCalls(), 1000) // every 1s
+  }
+
+  private trackMessageReceived(msg) {
+    this.lastMessageAt = Date.now()
+    this.listeners.messageIn(msg)
   }
 
   async close() {
     // stop timers
-    clearInterval(this.callTimeoutTimer)
     clearTimeout(this.pingTimer)
+    clearInterval(this.keepAliveTimer)
+    clearInterval(this.callTimeoutTimer)
 
     // clear subscriptions
     await Promise.all(this.subscriptions.map(s => s.topic.unsubscribeSession(this, s.params)))
@@ -84,8 +107,6 @@ export class RpcSession {
     this.runningCalls = {}
   }
 
-  private callTimeoutTimer
-
   sendPing = async () => {
     try {
       await this.callRemote("", "ping", "ping")
@@ -95,7 +116,14 @@ export class RpcSession {
     }
   }
 
-  private pingTimer
+  private checkKeepAlive() {
+    const now = Date.now()
+
+    if (this.lastMessageAt < now - this.keepAliveTimeout) {
+      log.debug("Keep alive period expired, closing ws")
+      this.terminate()
+    }
+  }
 
   terminate() {
     this.socket.terminate()
@@ -103,7 +131,7 @@ export class RpcSession {
 
   handleMessage(data) {
     try {
-      this.listeners.messageIn(data)
+      this.trackMessageReceived(data)
 
       const message = this.messageParser(data)
 
@@ -310,13 +338,6 @@ export class RpcSession {
     )
     this.listeners.unsubscribed(this.subscriptions.length)
   }
-
-  private socket: Socket = null
-
-  public subscriptions: {topic; params}[] = []
-
-  private queue: Call[] = []
-  private runningCalls: {[messageId: string]: Call} = {}
 }
 
 function resubscribeTopics(remote) {
