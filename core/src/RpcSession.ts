@@ -29,7 +29,7 @@ export class RpcSession {
     private remoteMiddleware: Middleware,
     private messageParser: (data) => any[],
     private pingSendTimeout: number,
-    private pongWaitTimeout: number,
+    private keepAliveTimeout: number,
     private callTimeout: number,
     private syncRemoteCalls: boolean
   ) {
@@ -90,7 +90,7 @@ export class RpcSession {
 
   sendPing = async () => {
     try {
-      // call will be rejected if no reply will come in pongWaitTimeout, see #sendCall
+      // call will be rejected if no reply will come in keepAliveTimeout, see #sendCall
       await this.callRemote("", "ping", "ping")
       this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
     } catch (e) {
@@ -194,7 +194,7 @@ export class RpcSession {
 
     for (const messageId of Object.keys(this.runningCalls)) {
       const expireCallBefore =
-        messageId == PING_MESSAGE_ID ? now - this.pongWaitTimeout : now - this.callTimeout
+        messageId == PING_MESSAGE_ID ? now - this.keepAliveTimeout : now - this.callTimeout
 
       if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]
