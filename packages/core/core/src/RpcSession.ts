@@ -53,14 +53,12 @@ export class RpcSession {
     socket.onPong(() => {
       this.listeners.messageIn("PONG")
 
-      if (this.pingSendTimeout) {
-        if (this.runningCalls[PING_MESSAGE_ID]) {
-          this.runningCalls[PING_MESSAGE_ID].resolve()
-          delete this.runningCalls[PING_MESSAGE_ID]
-        }
-
-        this.sendCall()
+      if (this.runningCalls[PING_MESSAGE_ID]) {
+        this.runningCalls[PING_MESSAGE_ID].resolve()
+        delete this.runningCalls[PING_MESSAGE_ID]
       }
+
+      this.sendCall()
     })
 
     this.callTimeoutTimer = setInterval(() => this.timeoutCalls(), 1000) // every 1s
@@ -90,12 +88,10 @@ export class RpcSession {
 
   sendPing = async () => {
     try {
-      // call will be rejected if no reply will come in keepAliveTimeout, see #sendCall
       await this.callRemote("", "ping", "ping")
       this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
     } catch (e) {
-      log.debug(`Keep alive check failed ${this.connectionContext.remoteId}`)
-      this.terminate()
+      log.debug(`Ping send failed ${this.connectionContext.remoteId}`)
     }
   }
 
@@ -193,8 +189,7 @@ export class RpcSession {
     const now = Date.now()
 
     for (const messageId of Object.keys(this.runningCalls)) {
-      const expireCallBefore =
-        messageId == PING_MESSAGE_ID ? now - this.keepAliveTimeout : now - this.callTimeout
+      const expireCallBefore = now - this.callTimeout
 
       if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]
