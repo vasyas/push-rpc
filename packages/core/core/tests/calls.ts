@@ -1,6 +1,5 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils"
-import {setCallTimeout} from "../src/RpcSession"
 
 describe("calls", () => {
   it("success", async () => {
@@ -54,7 +53,6 @@ describe("calls", () => {
 
   it("timeout", async () => {
     const callTimeout = 2 * 1000
-    setCallTimeout(callTimeout)
 
     await startTestServer({
       test: {
@@ -64,7 +62,9 @@ describe("calls", () => {
       },
     })
 
-    const client = await createTestClient()
+    const client = await createTestClient(1, {
+      callTimeout,
+    })
 
     try {
       await client.test.longOp()
