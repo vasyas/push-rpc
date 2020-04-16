@@ -27,6 +27,10 @@ export function wrapSocket(socket: net.Socket): Socket {
       // not implemented
     },
 
+    onPing(h: () => void) {
+      // not implemented
+    },
+
     terminate: () => socket.destroy(),
     send: data => socket.write(data),
     ping: data => {

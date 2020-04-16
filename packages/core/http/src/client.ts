@@ -83,6 +83,7 @@ export function createHttpClient(urlPrefix: string, headers = {}): Socket {
       handleError = h
     },
     onPong() {},
+    onPing() {},
 
     terminate() {
       setTimeout(() => handleClose("forced", null), 0)
