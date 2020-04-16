@@ -1,7 +1,6 @@
 import {Socket} from "@push-rpc/core"
-import * as UUID from "uuid-js"
-import {MessageType} from "@push-rpc/core/dist/rpc"
 import {log} from "@push-rpc/core/dist/logger"
+import {MessageType} from "@push-rpc/core/dist/rpc"
 import {createMessageId} from "../../core/src/utils"
 
 export interface HttpServerOptions {
@@ -108,6 +107,7 @@ class HttpServerSocket implements Socket {
 
   onError(h: (e) => void) {}
   onPong(h: () => void) {}
+  onPing(h: () => void) {}
 
   terminate() {
     this.clean()
