@@ -1,4 +1,5 @@
-import {DataConsumer, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
+import {LocalTopicImpl} from "./local"
+import {DataConsumer, LocalTopic, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
 import {createMessageId, getClassMethodNames} from "./utils"
 import {RpcSession} from "./RpcSession"
 
@@ -7,7 +8,8 @@ interface Subscription<D> {
   subscriptionKey: any
 }
 
-export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F> {
+export class RemoteTopicImpl<D, F> extends TopicImpl
+  implements RemoteTopic<D, F>, LocalTopic<D, F> {
   constructor(private topicName: string, private session: RpcSession) {
     super()
   }
@@ -88,6 +90,9 @@ export class RemoteTopicImpl<D, F> extends TopicImpl implements RemoteTopic<D, F
 
   private consumers: {[paramsKey: string]: Subscription<D>[]} = {}
   private cached: {[paramsKey: string]: D} = {}
+
+  // this is only to easy using for remote services during tests
+  trigger(p?: F, data?: D): void {}
 }
 
 export function createRemote(level: number, session: RpcSession) {
