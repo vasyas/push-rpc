@@ -1,6 +1,6 @@
 import * as Koa from "koa"
-import {createRpcServer, setLogger} from "../../../core/src"
-import {createHttpServer} from "../../src/server"
+import {createRpcServer, setLogger} from "@push-rpc/core"
+import {createHttpKoaMiddleware} from "../../src"
 
 setLogger(console)
 
@@ -10,11 +10,21 @@ const services = {
   },
 }
 
-function getRemoteId(ctx: Koa.Context) {
-  return "1" // share a single session for now
+const app = new Koa()
+const server = app.listen(5555)
+
+const {onError, onConnection, middleware} = createHttpKoaMiddleware(() => "1", {prefix: "/rpc"})
+app.use(middleware)
+
+const httpServer = {
+  onError,
+  onConnection,
+  close(cb) {
+    server.close(cb)
+  },
 }
 
-createRpcServer(services, createHttpServer(5555, getRemoteId, {prefix: "/rpc"}), {
+createRpcServer(services, httpServer, {
   listeners: {
     connected: (remoteId, connections) => {},
     disconnected: (remoteId, connections) => {},
