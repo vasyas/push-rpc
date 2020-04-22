@@ -1,5 +1,5 @@
 import {Socket} from "@push-rpc/core"
-import {MessageType} from "@push-rpc/core/dist/rpc"
+import {MessageType} from "@push-rpc/core"
 import {log} from "@push-rpc/core/dist/logger"
 
 export function createHttpClient(urlPrefix: string, headers = {}): Socket {

@@ -1,7 +1,6 @@
-import * as log from "why-is-node-running"
 import "isomorphic-fetch"
-import {createRpcClient, setLogger} from "../../../core/src"
-import {createHttpClient} from "../../src/client"
+import {createRpcClient, setLogger} from "@push-rpc/core"
+import {createHttpClient} from "../../src"
 
 setLogger(console)
 ;(async () => {
