@@ -20,7 +20,6 @@
     "typescript": "^3.6.2"
   },
   "dependencies": {
-    "throttle-debounce": "^2.1.0",
     "uuid-js": "^0.7.5"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
