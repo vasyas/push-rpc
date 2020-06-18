@@ -3,6 +3,20 @@ import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
 import {throttle} from "throttle-debounce"
 
+type Reducer<D> = (prevValue: D, newValue: D) => D
+
+export function lastValueReducer<D>(prevValue: D, newValue: D): D {
+  return newValue
+}
+
+// Intentionally skipped type checks b/c types are checked with isArray
+export function groupReducer<D>(prevValue: any, newValue: any): any {
+  if (!Array.isArray(newValue))
+    throw new Error("groupReducer should only be used with topics that return arrays")
+
+  return prevValue ? [...prevValue, ...newValue] : newValue
+}
+
 /** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
 export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
   constructor(private supplier: DataSupplier<D, F>) {
@@ -25,7 +39,7 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
 
   private throttleTimeout: number = null
 
-  public throttle(timeout: number): LocalTopicImpl<D, F> {
+  public throttle(timeout: number, reducer: Reducer<D> = lastValueReducer): LocalTopicImpl<D, F> {
     this.throttleTimeout = timeout
     return this
   }
