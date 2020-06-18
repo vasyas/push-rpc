@@ -11,15 +11,30 @@ export function groupReducer<D>(prevValue: any, newValue: any): any {
   return prevValue ? [...prevValue, ...newValue] : newValue
 }
 
+export interface LocalTopicImplOpts<D, TD> {
+  throttleTimeout: number
+  throttleReducer: ThrottleArgsReducer<D>
+  triggerMapper: (d: TD) => Promise<D>
+}
+
 /** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
-export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
-  constructor(private supplier: DataSupplier<D, F>) {
+export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, F, TD> {
+  constructor(
+    private readonly supplier: DataSupplier<D, F>,
+    private readonly opts: Partial<LocalTopicImplOpts<D, TD>> = {}
+  ) {
     super()
+
+    this.opts = {
+      triggerMapper: async d => d as any,
+      throttleReducer: lastValueReducer,
+      ...this.opts,
+    }
   }
 
   public name: string
 
-  trigger(filter: Partial<F> = {}, suppliedData?: D): void {
+  trigger(filter: Partial<F> = {}, suppliedData?: TD): void {
     for (const subscription of Object.values(this.subscriptions)) {
       if (filterContains(filter, subscription.filter)) {
         subscription.trigger(suppliedData)
@@ -31,22 +46,10 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
     return await this.supplier(filter, ctx)
   }
 
-  private throttleTimeout: number = null
-  private throttleArgsReducer: ThrottleArgsReducer<D> = null
-
-  public throttle(
-    timeout: number,
-    reducer: ThrottleArgsReducer<D> = lastValueReducer
-  ): LocalTopicImpl<D, F> {
-    this.throttleTimeout = timeout
-    this.throttleArgsReducer = reducer
-    return this
-  }
-
   private throttled(f) {
-    if (!this.throttleTimeout) return f
+    if (!this.opts.throttleTimeout) return f
 
-    return throttle(f, this.throttleTimeout, this.throttleArgsReducer)
+    return throttle(f, this.opts.throttleTimeout, this.opts.throttleReducer)
   }
 
   async subscribeSession(session: RpcSession, filter: F) {
@@ -54,7 +57,7 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
 
     const localTopic = this
 
-    const subscription: Subscription<F, D> = this.subscriptions[key] || {
+    const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
       filter,
       sessions: [],
       trigger: this.throttled(function(suppliedData) {
@@ -62,7 +65,7 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
         this.sessions.forEach(async session => {
           const data: D =
             suppliedData !== undefined
-              ? suppliedData
+              ? await localTopic.opts.triggerMapper(suppliedData)
               : await localTopic.supplier(filter, session.createContext())
 
           session.send(MessageType.Data, createMessageId(), localTopic.name, filter, data)
@@ -96,7 +99,7 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
     }
   }
 
-  private subscriptions: {[key: string]: Subscription<F, D>} = {}
+  private subscriptions: {[key: string]: Subscription<F, D, TD>} = {}
 
   // dummy implementations, see class comment
 
@@ -127,10 +130,10 @@ function filterContains(container, filter): boolean {
   return true
 }
 
-interface Subscription<F, D> {
+interface Subscription<F, D, TD> {
   filter: F
   sessions: RpcSession[]
-  trigger(suppliedData: D): void
+  trigger(suppliedData: TD): void
 }
 
 /**

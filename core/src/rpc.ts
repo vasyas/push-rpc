@@ -50,8 +50,8 @@ export type DataConsumer<D> = (d: D) => void
 // local interfaces
 export type DataSupplier<D, P> = (p: P, ctx) => Promise<D>
 
-export interface LocalTopic<D, P> {
-  trigger(p?: P, data?: D): void
+export interface LocalTopic<D, P, TD = D> {
+  trigger(p?: P, data?: TD): void
 }
 
 export interface RpcConnectionContext<Remote = any> {
@@ -69,7 +69,7 @@ export interface RpcContext<Remote = any> extends RpcConnectionContext<Remote> {
   itemName?: string
 }
 
-export interface Topic<D, P = {}> extends RemoteTopic<D, P>, LocalTopic<D, P> {}
+export interface Topic<D, P = {}, TD = D> extends RemoteTopic<D, P>, LocalTopic<D, P, TD> {}
 
 export enum MessageType {
   // Requests
