@@ -227,6 +227,7 @@ describe("Topics", () => {
 
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.equal(count, 1)
+    assert.equal(item, "result")
 
     server.test.item.trigger({}, "1st")
     server.test.item.trigger({}, "2nd") // throttled
@@ -245,7 +246,7 @@ describe("Topics", () => {
     assert.equal(item, "4th")
   })
 
-  it("throttling combine", async () => {
+  it("throttling reducer", async () => {
     const timeout = 400
 
     const server = {
@@ -273,7 +274,11 @@ describe("Topics", () => {
 
     server.test.item.trigger({}, [1])
     server.test.item.trigger({}, [2]) // throttled
+    server.test.item.trigger({}, [3]) // throttled
     await new Promise(resolve => setTimeout(resolve, 50))
-    assert.deepEqual(item, [1, 2])
+    assert.deepEqual(item, [1])
+
+    await new Promise(resolve => setTimeout(resolve, timeout))
+    assert.deepEqual(item, [2, 3]) // trailing edge
   })
 })

@@ -1,13 +1,7 @@
 import {DataConsumer, DataSupplier, MessageType, Topic, TopicImpl} from "./rpc"
+import {lastValueReducer, ThrottleArgsReducer, throttle} from "./throttle"
 import {createMessageId} from "./utils"
 import {RpcSession} from "./RpcSession"
-import {throttle} from "throttle-debounce"
-
-type Reducer<D> = (prevValue: D, newValue: D) => D
-
-export function lastValueReducer<D>(prevValue: D, newValue: D): D {
-  return newValue
-}
 
 // Intentionally skipped type checks b/c types are checked with isArray
 export function groupReducer<D>(prevValue: any, newValue: any): any {
@@ -38,16 +32,21 @@ export class LocalTopicImpl<D, F> extends TopicImpl implements Topic<D, F> {
   }
 
   private throttleTimeout: number = null
+  private throttleArgsReducer: ThrottleArgsReducer<D> = null
 
-  public throttle(timeout: number, reducer: Reducer<D> = lastValueReducer): LocalTopicImpl<D, F> {
+  public throttle(
+    timeout: number,
+    reducer: ThrottleArgsReducer<D> = lastValueReducer
+  ): LocalTopicImpl<D, F> {
     this.throttleTimeout = timeout
+    this.throttleArgsReducer = reducer
     return this
   }
 
-  private throttled<T>(f: T): T {
+  private throttled(f) {
     if (!this.throttleTimeout) return f
 
-    return throttle(this.throttleTimeout, f)
+    return throttle(f, this.throttleTimeout, this.throttleArgsReducer)
   }
 
   async subscribeSession(session: RpcSession, filter: F) {
