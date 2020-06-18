@@ -10,7 +10,7 @@ describe("Topics", () => {
 
     await startTestServer({
       test: {
-        item: new LocalTopicImpl<{}, any>(async () => item),
+        item: new LocalTopicImpl(async () => item),
       },
     })
 
@@ -26,7 +26,7 @@ describe("Topics", () => {
 
     const server = {
       test: {
-        item: new LocalTopicImpl<typeof item, {}>(async () => item),
+        item: new LocalTopicImpl(async () => item),
       },
     }
 
@@ -201,11 +201,13 @@ describe("Topics", () => {
   })
 
   it("trigger throttling", async () => {
-    const timeout = 400
+    const throttleTimeout = 400
 
     const server = {
       test: {
-        item: new LocalTopicImpl(async () => "result").throttle(timeout),
+        item: new LocalTopicImpl(async () => "result", {
+          throttleTimeout,
+        }),
       },
     }
 
@@ -241,17 +243,60 @@ describe("Topics", () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.equal(count, 2)
 
-    await new Promise(resolve => setTimeout(resolve, timeout + 50))
+    await new Promise(resolve => setTimeout(resolve, throttleTimeout + 50))
     assert.equal(count, 3)
     assert.equal(item, "4th")
   })
 
   it("throttling reducer", async () => {
-    const timeout = 400
+    const throttleTimeout = 400
 
     const server = {
       test: {
-        item: new LocalTopicImpl(async () => []).throttle(timeout, groupReducer),
+        item: new LocalTopicImpl(async () => [], {throttleTimeout, throttleReducer: groupReducer}),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let item = null
+
+    await client.test.item.subscribe(i => {
+      console.log(i.item)
+      item = i
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item, [])
+
+    server.test.item.trigger({}, [1])
+    server.test.item.trigger({}, [2]) // throttled
+    server.test.item.trigger({}, [3]) // throttled
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item, [1])
+
+    await new Promise(resolve => setTimeout(resolve, throttleTimeout))
+    assert.deepEqual(item, [2, 3]) // trailing edge
+  })
+
+  it("trigger mapper", async () => {
+    const map = {
+      1: "a",
+      2: "b",
+      3: "c",
+    }
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl(async () => "n/a", {
+          triggerMapper: (key: number) => map[key],
+        }),
       },
     }
 
@@ -270,15 +315,10 @@ describe("Topics", () => {
     })
 
     await new Promise(resolve => setTimeout(resolve, 50))
-    assert.deepEqual(item, [])
+    assert.deepEqual(item, "n/a")
 
-    server.test.item.trigger({}, [1])
-    server.test.item.trigger({}, [2]) // throttled
-    server.test.item.trigger({}, [3]) // throttled
+    server.test.item.trigger({}, 1)
     await new Promise(resolve => setTimeout(resolve, 50))
-    assert.deepEqual(item, [1])
-
-    await new Promise(resolve => setTimeout(resolve, timeout))
-    assert.deepEqual(item, [2, 3]) // trailing edge
+    assert.deepEqual(item, "a")
   })
 })
