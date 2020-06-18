@@ -1,6 +1,6 @@
 import {assert} from "chai"
-import * as WebSocket from "ws"
 import {createRpcClient, LocalTopicImpl} from "../src"
+import {groupReducer} from "../src/local"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 import {createWebsocket} from "../../websocket/src/server"
 
@@ -243,5 +243,37 @@ describe("Topics", () => {
     await new Promise(resolve => setTimeout(resolve, timeout + 50))
     assert.equal(count, 3)
     assert.equal(item, "4th")
+  })
+
+  it("throttling combine", async () => {
+    const timeout = 400
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl(async () => []).throttle(timeout, groupReducer),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let item = null
+
+    await client.test.item.subscribe(i => {
+      item = i
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item, [])
+
+    server.test.item.trigger({}, [1])
+    server.test.item.trigger({}, [2]) // throttled
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item, [1, 2])
   })
 })
