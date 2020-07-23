@@ -51,7 +51,7 @@ export type DataConsumer<D> = (d: D) => void
 export type DataSupplier<D, P> = (p: P, ctx) => Promise<D>
 
 export interface LocalTopic<D, P, TD = D> {
-  trigger(p?: P, data?: TD): void
+  trigger(p?: Partial<P>, data?: TD): void
 }
 
 export interface RpcConnectionContext<Remote = any> {
