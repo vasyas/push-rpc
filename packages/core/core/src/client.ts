@@ -193,7 +193,7 @@ function connect(
       resolve()
     })
 
-    socket.onClose(({code, reason}) => {
+    socket.onClose((code, reason) => {
       session.close()
       if (connected) {
         listeners.disconnected({code, reason})
