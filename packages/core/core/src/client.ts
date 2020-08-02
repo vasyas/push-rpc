@@ -182,8 +182,13 @@ function connect(
         reject(e)
       }
 
-      socket.terminate()
       log.warn("RPC connection error", e.message)
+
+      try {
+        socket.terminate()
+      } catch (e) {
+        // ignore
+      }
     })
 
     socket.onOpen(() => {
