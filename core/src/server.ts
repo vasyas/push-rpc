@@ -127,12 +127,8 @@ export function createRpcServer(
 
     opts.listeners.connected(remoteId, Object.keys(sessions).length)
 
-    socket.onMessage(message => {
-      session.handleMessage(message)
-    })
-
     socket.onDisconnected(async (code, reason) => {
-      await session.close()
+      await session.handleDisconnected()
 
       if (sessions[remoteId] == session) {
         delete sessions[remoteId]

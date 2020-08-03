@@ -55,6 +55,10 @@ export class RpcSession {
 
     resubscribeTopics(this.remote)
 
+    socket.onMessage(message => {
+      this.handleMessage(message)
+    })
+
     socket.onPing(() => {
       this.trackMessageReceived("PING")
     })
@@ -86,7 +90,7 @@ export class RpcSession {
     this.listeners.messageIn(msg)
   }
 
-  async close() {
+  async handleDisconnected() {
     // stop timers
     clearTimeout(this.pingTimer)
     clearInterval(this.keepAliveTimer)
