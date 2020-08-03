@@ -24,10 +24,14 @@ setLogger(console)
           console.log("OUT ", data)
         },
       },
+      reconnect: true,
     })
   ).remote
 
   services.todo.todos.subscribe(todos => {
     console.log("Got todo items", todos)
   })
+
+  // do not end process
+  await new Promise(r => setTimeout(r, 1000 * 60 * 60 * 100))
 })()
