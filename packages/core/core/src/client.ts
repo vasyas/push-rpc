@@ -173,8 +173,18 @@ function connect(
       timer.unref()
     }
 
-    socket.onMessage(data => {
-      session.handleMessage(data)
+    socket.onOpen(() => {
+      connected = true
+      listeners.connected()
+      session.open(socket)
+      resolve()
+    })
+
+    socket.onDisconnected((code, reason) => {
+      session.handleDisconnected()
+      if (connected) {
+        listeners.disconnected({code, reason})
+      }
     })
 
     socket.onError(e => {
@@ -188,20 +198,6 @@ function connect(
         socket.disconnect()
       } catch (e) {
         // ignore
-      }
-    })
-
-    socket.onOpen(() => {
-      connected = true
-      listeners.connected()
-      session.open(socket)
-      resolve()
-    })
-
-    socket.onDisconnected((code, reason) => {
-      session.close()
-      if (connected) {
-        listeners.disconnected({code, reason})
       }
     })
   })
