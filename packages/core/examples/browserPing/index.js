@@ -1,9 +1,10 @@
-const {createRpcClient} = require("@push-rpc/core")
+const {createRpcClient, PING_MESSAGE, PONG_MESSAGE} = require("@push-rpc/core")
 
 async function start() {
-  const {remote} = await createRpcClient(1, () => createWebsocket("ws://localhost:5555"), {
-    // pingSendTimeout: 20 * 1000,
-    // keepAliveTimeout: 20 * 1000,
+  const {remote} = await createRpcClient(1, () => createWebsocket("ws://192.168.0.35:5555"), {
+    // without pings client won't be able to detect connection loss
+    pingSendTimeout: 10 * 1000,
+    keepAliveTimeout: 20 * 1000,
     listeners: {
       unsubscribed() {},
       subscribed(){},
@@ -16,10 +17,10 @@ async function start() {
         document.getElementById("status").innerHTML = "Connected"
       },
       messageIn(data) {
-        console.log("IN ", data)
+        console.log("IN", data)
       },
       messageOut(data) {
-        console.log("OUT ", data)
+        console.log("OUT", data)
       },
     },
     reconnect: true,
@@ -33,10 +34,17 @@ async function start() {
 function createWebsocket(url) {
   const ws = new WebSocket(url)
 
+  let onPong = () => {}
+
   return {
     onMessage: h =>
       (ws.onmessage = e => {
-        h(e.data.toString())
+        const message = e.data.toString()
+
+        if (message == PONG_MESSAGE)
+          onPong()
+        else
+          h(message)
       }),
     onOpen: h => (ws.onopen = h),
     onClose: h =>
@@ -45,7 +53,7 @@ function createWebsocket(url) {
       }),
     onError: h => (ws.onerror = h),
     onPong: h => {
-      // not implemented
+      onPong = h
     },
     onPing: h => {
       // not implemented
@@ -54,7 +62,7 @@ function createWebsocket(url) {
     terminate: () => ws.close(),
     send: data => ws.send(data),
     ping: () => {
-      // not implemented
+      ws.send(PING_MESSAGE)
     },
   }
 }

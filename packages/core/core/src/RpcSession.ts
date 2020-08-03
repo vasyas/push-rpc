@@ -133,6 +133,13 @@ export class RpcSession {
     try {
       this.trackMessageReceived(data)
 
+      // handle emulated PINGs
+      if (data == PING_MESSAGE) {
+        this.listeners.messageOut(PONG_MESSAGE)
+        this.socket.send(PONG_MESSAGE)
+        return
+      }
+
       const message = this.messageParser(data)
 
       if (message[0] == MessageType.Result || message[0] == MessageType.Error) {
@@ -365,3 +372,6 @@ interface Call {
 }
 
 const PING_MESSAGE_ID = "–ws-ping"
+
+export const PING_MESSAGE = "PING"
+export const PONG_MESSAGE = "PONG"
