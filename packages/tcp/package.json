@@ -12,7 +12,7 @@
     "@types/node": "^12.12.17"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.0.32"
+    "@push-rpc/core": "^1.0.35"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",
