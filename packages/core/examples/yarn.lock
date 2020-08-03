@@ -938,11 +938,6 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
-"@push-rpc/core@../core":
-  version "1.0.35"
-  dependencies:
-    uuid-js "^0.7.5"
-
 "@push-rpc/core@../core/":
   version "1.0.35"
   dependencies:

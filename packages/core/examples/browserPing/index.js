@@ -1,7 +1,7 @@
 const {createRpcClient, PING_MESSAGE, PONG_MESSAGE} = require("@push-rpc/core")
 
 async function start() {
-  const {remote} = await createRpcClient(1, () => createWebsocket("ws://192.168.0.35:5555"), {
+  const {remote} = await createRpcClient(1, () => createDomWebsocket("ws://10.12.0.2:5555"), {
     // without pings client won't be able to detect connection loss
     pingSendTimeout: 10 * 1000,
     keepAliveTimeout: 20 * 1000,
