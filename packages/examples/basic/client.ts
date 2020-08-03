@@ -1,11 +1,11 @@
 import {createRpcClient, setLogger} from "@push-rpc/core"
-import {createWebsocket} from "@push-rpc/websocket"
+import {createServerWebsocket} from "@push-rpc/websocket"
 import {Services} from "./shared"
 
 setLogger(console)
 ;(async () => {
   const services: Services = (
-    await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
+    await createRpcClient(1, () => createServerWebsocket("ws://localhost:5555"))
   ).remote
 
   console.log("Client connected")

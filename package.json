@@ -3,6 +3,11 @@
   "engines": {
     "yarn": ">=1.17.3"
   },
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
+    "publish": ""
+  },
   "name": "push-rpc",
   "version": "1.1.0",
   "main": "index.js",

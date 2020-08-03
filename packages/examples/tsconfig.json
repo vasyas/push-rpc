@@ -3,9 +3,10 @@
     "target": "es5",
     "outDir": "dist",
     "lib": [
-      "es6",
+      "es6"
     ],
-    "declaration": true
+    "declaration": true,
+    "skipLibCheck": true
   },
   "include": ["**/*.ts"]
 }

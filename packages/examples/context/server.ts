@@ -34,8 +34,7 @@ function decodeToken(token) {
   return token
 }
 
-// TODO throw error if auth failed
-function createContext(req): ServiceContext {
+async function createConnectionContext(req): Promise<ServiceContext> {
   let protocol: any = req.headers["sec-websocket-protocol"]
   if (protocol && Array.isArray(protocol)) protocol = protocol[0]
 
@@ -64,7 +63,7 @@ export async function startTransaction(ctx, next) {
 }
 
 createRpcServer(services, createWebsocketServer({port: 5555}), {
-  createContext,
+  createConnectionContext,
   localMiddleware: startTransaction,
 })
 
