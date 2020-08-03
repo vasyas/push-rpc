@@ -938,19 +938,22 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@push-rpc/core@../core":
+  version "1.0.35"
+  dependencies:
+    uuid-js "^0.7.5"
+
+"@push-rpc/core@../core/":
+  version "1.0.35"
+  dependencies:
+    uuid-js "^0.7.5"
+
 "@push-rpc/core@^1.0.30":
   version "1.0.30"
   resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.30.tgz#ac2fc38151e14b36150f7752a67c506f5bd93199"
   integrity sha512-SV3P6soqPF4VagFhGSWHTBoZDq7QWwgY6mZG9Plbxi+HC2fG4xzBP6Hs76CGTRZpt6hP80p+D7lotm2Jgn49GA==
   dependencies:
     throttle-debounce "^2.1.0"
-    uuid-js "^0.7.5"
-
-"@push-rpc/core@^1.0.35":
-  version "1.0.35"
-  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.35.tgz#8e72b0a8271fc8806417a05e38ec7cd22d742323"
-  integrity sha512-W01RVQUtsu/PN0ix72IVHCTG+drGjQNuocKvJ0Qeh6wCg755zfLxT+2e352DEBDJvHVlfUXxYXCxQye8rpSzAA==
-  dependencies:
     uuid-js "^0.7.5"
 
 "@push-rpc/websocket@^1.0.6":

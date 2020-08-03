@@ -19,3 +19,4 @@ export {
   setCreateMessageId,
   mapTopic,
 } from "./utils"
+export {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"
