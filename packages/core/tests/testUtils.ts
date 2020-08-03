@@ -1,6 +1,6 @@
 import {createRpcClient, createRpcServer, RpcClientOptions, RpcServer} from "../src"
 import {RpcServerOptions} from "../src/server"
-import {createWebsocket, createWebsocketServer} from "../../websocket/src/server"
+import {createNodeWebsocket, createWebsocketServer} from "../../websocket/src/server"
 
 export const TEST_PORT = 5555
 
@@ -43,7 +43,7 @@ export async function createTestClient(
   return (
     await createRpcClient(
       level,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`, protocol),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`, protocol),
       options
     )
   ).remote

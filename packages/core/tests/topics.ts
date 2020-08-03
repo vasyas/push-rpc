@@ -2,7 +2,7 @@ import {assert} from "chai"
 import {createRpcClient, LocalTopicImpl} from "../src"
 import {groupReducer} from "../src/local"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
-import {createWebsocket} from "../../websocket/src/server"
+import {createNodeWebsocket} from "../../websocket/src/server"
 
 describe("Topics", () => {
   it("get", async () => {
@@ -34,7 +34,7 @@ describe("Topics", () => {
 
     const {remote: client, disconnect} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -80,7 +80,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -136,7 +136,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -177,7 +177,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -215,7 +215,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -261,7 +261,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -304,7 +304,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 

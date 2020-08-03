@@ -1,5 +1,5 @@
 import {createRpcClient, setLogger} from "@push-rpc/core"
-import {createServerWebsocket} from "@push-rpc/websocket"
+import {createNodeWebsocket} from "@push-rpc/websocket"
 import {Client} from "./shared"
 
 setLogger(console)
@@ -8,7 +8,7 @@ setLogger(console)
     getClientHello: async () => "Hello from client",
   }
 
-  const {remote} = await createRpcClient(0, () => createServerWebsocket("ws://localhost:5555"), {
+  const {remote} = await createRpcClient(0, () => createNodeWebsocket("ws://localhost:5555"), {
     local,
   })
 

@@ -18,8 +18,7 @@ export function createWebsocketServer(
   }
 }
 
-// TODO rename to createNodeWebsocket
-export function createWebsocket(url, protocol?) {
+export function createNodeWebsocket(url, protocol?) {
   return wrapWebsocket(new WebSocket(url, protocol))
 }
 
