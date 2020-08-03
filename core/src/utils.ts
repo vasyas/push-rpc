@@ -123,7 +123,7 @@ export function createDomWebsocket(url, protocols = undefined) {
   const ws = new WebSocket(url, protocols)
 
   let onPong = () => {}
-  let onClose = () => {}
+  let onDisconnected = () => {}
 
   return {
     onMessage: h => {
@@ -135,8 +135,8 @@ export function createDomWebsocket(url, protocols = undefined) {
       }
     },
     onOpen: h => (ws.onopen = h),
-    onClose: h => {
-      onClose = h
+    onDisconnected: h => {
+      onDisconnected = h
 
       ws.onclose = ({code, reason}) => {
         h(code, reason)
@@ -150,12 +150,12 @@ export function createDomWebsocket(url, protocols = undefined) {
       // not implemented
     },
 
-    terminate: () => {
+    disconnect: () => {
       try {
         ws.close()
 
         // we sent close frame, no need to wait for actual close
-        onClose()
+        onDisconnected()
       } catch (e) {
         console.warn("Failed to close socket", e)
       }

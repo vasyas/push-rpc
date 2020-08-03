@@ -16,7 +16,7 @@ export function wrapSocket(socket: net.Socket): Socket {
 
     onOpen: h => socket.on("connect", h),
 
-    onClose: h =>
+    onDisconnected: h =>
       socket.on("close", error => {
         h(error ? 1 : 0, error ? "error" : null)
       }),
@@ -31,7 +31,7 @@ export function wrapSocket(socket: net.Socket): Socket {
       // not implemented
     },
 
-    terminate: () => socket.destroy(),
+    disconnect: () => socket.destroy(),
     send: data => socket.write(data),
     ping: data => {
       // not implemented

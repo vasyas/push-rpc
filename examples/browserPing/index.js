@@ -35,7 +35,7 @@ function createWebsocket(url, protocols = undefined) {
   const ws = new WebSocket(url, protocols)
 
   let onPong = () => {}
-  let onClose = () => {}
+  let onDisconnected = () => {}
 
   return {
     onMessage: h => {
@@ -49,8 +49,8 @@ function createWebsocket(url, protocols = undefined) {
       }
     },
     onOpen: h => (ws.onopen = h),
-    onClose: h => {
-      onClose = h
+    onDisconnected: h => {
+      onDisconnected = h
 
       ws.onclose = ({ code, reason }) => {
         h(code, reason)
@@ -64,12 +64,12 @@ function createWebsocket(url, protocols = undefined) {
       // not implemented
     },
 
-    terminate: () => {
+    disconnect: () => {
       try {
         ws.close()
 
         // we sent close frame, no need to wait for actual close
-        onClose()
+        onDisconnected("Disconnected")
       } catch (e) {
         console.warn("Failed to close socket", e)
       }

@@ -76,7 +76,7 @@ export function createHttpClient(urlPrefix: string, headers = {}): Socket {
     onOpen(h) {
       setTimeout(h, 0)
     },
-    onClose(h) {
+    onDisconnected(h) {
       handleClose = h
     },
     onError(h) {
@@ -85,7 +85,7 @@ export function createHttpClient(urlPrefix: string, headers = {}): Socket {
     onPong() {},
     onPing() {},
 
-    terminate() {
+    disconnect() {
       setTimeout(() => handleClose("forced", null), 0)
     },
     send(data) {
