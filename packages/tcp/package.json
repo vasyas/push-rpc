@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/tcp",
-  "version": "1.0.4",
+  "version": "1.1.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -12,7 +12,7 @@
     "@types/node": "^12.12.17"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.0.35"
+    "@push-rpc/core": "^1.1.1"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",
