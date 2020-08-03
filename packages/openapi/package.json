@@ -13,7 +13,7 @@
     "@types/node": "^12.12.17"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.0.15",
+    "@push-rpc/core": "^1.0.35",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
     "moment": "^2.22.1",
