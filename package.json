@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "engines": {
+    "yarn": ">=1.17.3"
+  },
+  "name": "push-rpc",
+  "version": "1.1.0",
+  "main": "index.js",
+  "repository": "https://github.com/vasyas/typescript-rpc.git",
+  "author": "vasyas <vasyl@stashuk.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  }
+}
