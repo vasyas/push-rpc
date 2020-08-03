@@ -1,0 +1,28 @@
+{
+  "name": "@push-rpc/examples",
+  "version": "1.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "browser": "parcel --no-autoinstall browserPing/index.html"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^12.12.17",
+    "parcel": "^1.12.4",
+    "prettier": "^1.19.1",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3",
+    "ws": "^7.2.0"
+  },
+  "dependencies": {
+    "@push-rpc/core": "../core/",
+    "@push-rpc/websocket": "^1.0.6"
+  },
+  "browserslist": [
+    "last 2 Chrome versions"
+  ],
+  "repository": "https://github.com/vasyas/push-rpc.git",
+  "author": "Vasyl Stashuk <vasyl@stashuk.com>"
+}

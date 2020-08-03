@@ -1,0 +1,30 @@
+{
+  "name": "@push-rpc/http",
+  "version": "1.0.7",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "tsc",
+    "build": "tsc"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/koa": "^2.11.0",
+    "@types/node": "^12.12.17",
+    "isomorphic-fetch": "^2.2.1",
+    "koa": "^2.11.0",
+    "koa-body": "^4.1.1",
+    "prettier": "^1.19.1",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "@push-rpc/core": "^1.0.32",
+    "uuid-js": "^0.7.5"
+  },
+  "repository": "https://github.com/vasyas/push-rpc.git",
+  "author": "Vasyl Stashuk <vasyl@stashuk.com>",
+  "publishConfig": {
+    "access": "public"
+  }
+}

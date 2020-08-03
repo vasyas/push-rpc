@@ -1,0 +1,30 @@
+{
+  "name": "@push-rpc/openapi",
+  "version": "1.0.2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "tsc",
+    "build": "tsc",
+    "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiDescription ./api-description.json --output example.yml --baseDir=example"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^12.12.17",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "@push-rpc/core": "^1.0.15",
+    "command-line-args": "^5.0.2",
+    "command-line-usage": "^5.0.5",
+    "moment": "^2.22.1",
+    "ts-morph": "^1.0.0",
+    "write-yaml": "^1.0.0"
+  },
+  "repository": "https://github.com/vasyas/push-rpc.git",
+  "author": "Vasyl Stashuk <vasyl@stashuk.com>",
+  "publishConfig": {
+    "access": "public"
+  }
+}
