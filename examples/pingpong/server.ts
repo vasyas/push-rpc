@@ -4,21 +4,15 @@ import {Services, Todo, TodoService} from "./shared"
 
 setLogger(console)
 
-let storage: Todo[] = []
+let storage: Todo[] = [
+  {
+    id: "1",
+    status: "open",
+    text: "Need to do it",
+  },
+]
 
 class TodoServiceImpl implements TodoService {
-  async addTodo({text}) {
-    storage.push({
-      id: "" + Math.random(),
-      text,
-      status: "open",
-    })
-
-    console.log("New todo item added")
-
-    this.todos.trigger()
-  }
-
   todos = new LocalTopicImpl(async () => storage)
 }
 
@@ -30,8 +24,12 @@ createRpcServer(services, createWebsocketServer({port: 5555}), {
   listeners: {
     unsubscribed(subscriptions: number): void {},
     subscribed(subscriptions: number): void {},
-    disconnected(remoteId: string, connections: number): void {},
-    connected(remoteId: string, connections: number): void {},
+    disconnected(remoteId: string, connections: number): void {
+      console.log(`Client ${remoteId} disconnected`)
+    },
+    connected(remoteId: string, connections: number): void {
+      console.log(`New client ${remoteId} connected`)
+    },
     messageIn(...params): void {
       console.log("IN ", params)
     },
