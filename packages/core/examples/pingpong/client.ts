@@ -11,8 +11,12 @@ setLogger(console)
       listeners: {
         unsubscribed(subscriptions: number): void {},
         subscribed(subscriptions: number): void {},
-        disconnected({code, reason}: {code: any; reason: any}): void {},
-        connected(): void {},
+        disconnected({code, reason}: {code: any; reason: any}): void {
+          console.log("Disconnected")
+        },
+        connected(): void {
+          console.log("Connected")
+        },
         messageIn(data: string): void {
           console.log("IN ", data)
         },
@@ -23,11 +27,7 @@ setLogger(console)
     })
   ).remote
 
-  console.log("Client connected")
-
   services.todo.todos.subscribe(todos => {
     console.log("Got todo items", todos)
   })
-
-  await services.todo.addTodo({text: "Buy groceries"})
 })()
