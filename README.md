@@ -14,6 +14,7 @@ Push-RPC allows you to:
 - Create type-safe contracts of remote APIs using TypeScript code shared between client and server 
 - Create local proxies for remote objects, including support for transferring Date object
 - Supported client envs: Node.JS (with `isomorphic-fetch`), browser, React Native.
+- Client-initiated ping/pong (missing feature in Browser websocket)
 
 Supports multiple pluggable transports:
 - [WebSocket](https://github.com/vasyas/push-rpc/tree/master/websocket) (recommended)
