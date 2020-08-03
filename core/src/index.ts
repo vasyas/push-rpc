@@ -18,5 +18,6 @@ export {
   createMessageId,
   setCreateMessageId,
   mapTopic,
+  createDomWebsocket,
 } from "./utils"
 export {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"

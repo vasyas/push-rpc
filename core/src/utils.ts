@@ -1,5 +1,6 @@
 import * as UUID from "uuid-js"
 import {DataConsumer, MessageType, Middleware, RemoteTopic} from "./rpc"
+import {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"
 
 export function dateReviver(key, val) {
   if (typeof val == "string") {
@@ -112,6 +113,56 @@ export function mapTopic<D1, P, D2>(t: RemoteTopic<D1, P>, map: (D1) => D2): Rem
     async get(params?: P): Promise<D2> {
       const d = await t.get(params)
       return map(d)
+    },
+  }
+}
+
+declare var WebSocket
+
+export function createDomWebsocket(url, protocols = undefined) {
+  const ws = new WebSocket(url, protocols)
+
+  let onPong = () => {}
+  let onClose = () => {}
+
+  return {
+    onMessage: h => {
+      ws.onmessage = e => {
+        const message = e.data.toString()
+
+        if (message == PONG_MESSAGE) onPong()
+        else h(message)
+      }
+    },
+    onOpen: h => (ws.onopen = h),
+    onClose: h => {
+      onClose = h
+
+      ws.onclose = ({code, reason}) => {
+        h(code, reason)
+      }
+    },
+    onError: h => (ws.onerror = h),
+    onPong: h => {
+      onPong = h
+    },
+    onPing: h => {
+      // not implemented
+    },
+
+    terminate: () => {
+      try {
+        ws.close()
+
+        // we sent close frame, no need to wait for actual close
+        onClose()
+      } catch (e) {
+        console.warn("Failed to close socket", e)
+      }
+    },
+    send: data => ws.send(data),
+    ping: () => {
+      ws.send(PING_MESSAGE)
     },
   }
 }

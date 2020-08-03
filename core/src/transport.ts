@@ -1,13 +1,14 @@
 export interface Socket {
-  onMessage(h: (message: string) => void)
   onOpen(h: () => void)
-  onClose(h: (code, reason) => void)
   onError(h: (e) => void)
   onPong(h: () => void)
   onPing(h: () => void)
 
   terminate()
+  onClose(h: (code, reason) => void)
+
   send(data: string)
+  onMessage(h: (message: string) => void)
   ping(data: string)
 }
 
