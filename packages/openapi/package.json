@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "tsc",
+    "prepublishOnly": "yarn build",
     "build": "tsc",
     "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiDescription ./api-description.json --output example.yml --baseDir=example"
   },
