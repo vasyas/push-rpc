@@ -31,26 +31,31 @@ async function start() {
   })
 }
 
-function createWebsocket(url) {
-  const ws = new WebSocket(url)
+function createWebsocket(url, protocols = undefined) {
+  const ws = new WebSocket(url, protocols)
 
   let onPong = () => {}
+  let onClose = () => {}
 
   return {
-    onMessage: h =>
-      (ws.onmessage = e => {
+    onMessage: h => {
+      ws.onmessage = e => {
         const message = e.data.toString()
 
         if (message == PONG_MESSAGE)
           onPong()
         else
           h(message)
-      }),
+      }
+    },
     onOpen: h => (ws.onopen = h),
-    onClose: h =>
-      (ws.onclose = ({code, reason}) => {
+    onClose: h => {
+      onClose = h
+
+      ws.onclose = ({ code, reason }) => {
         h(code, reason)
-      }),
+      }
+    },
     onError: h => (ws.onerror = h),
     onPong: h => {
       onPong = h
@@ -59,7 +64,16 @@ function createWebsocket(url) {
       // not implemented
     },
 
-    terminate: () => ws.close(),
+    terminate: () => {
+      try {
+        ws.close()
+
+        // we sent close frame, no need to wait for actual close
+        onClose()
+      } catch (e) {
+        console.warn("Failed to close socket", e)
+      }
+    },
     send: data => ws.send(data),
     ping: () => {
       ws.send(PING_MESSAGE)
