@@ -10,6 +10,13 @@
     throttle-debounce "^2.1.0"
     uuid-js "^0.7.5"
 
+"@push-rpc/core@^1.0.35":
+  version "1.0.35"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.0.35.tgz#8e72b0a8271fc8806417a05e38ec7cd22d742323"
+  integrity sha512-W01RVQUtsu/PN0ix72IVHCTG+drGjQNuocKvJ0Qeh6wCg755zfLxT+2e352DEBDJvHVlfUXxYXCxQye8rpSzAA==
+  dependencies:
+    uuid-js "^0.7.5"
+
 "@push-rpc/websocket@^1.0.6":
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@push-rpc/websocket/-/websocket-1.0.6.tgz#9f6c5656f463fe94271e68963d65c44ad959a592"
