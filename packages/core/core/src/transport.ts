@@ -4,8 +4,8 @@ export interface Socket {
   onPong(h: () => void)
   onPing(h: () => void)
 
-  terminate()
-  onClose(h: (code, reason) => void)
+  disconnect()
+  onDisconnected(h: (code, reason) => void)
 
   send(data: string)
   onMessage(h: (message: string) => void)

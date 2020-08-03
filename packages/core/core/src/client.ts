@@ -78,7 +78,7 @@ export function createRpcClient<R = any>(
 
   const client = {
     remote: session.remote,
-    disconnect: () => session.terminate(),
+    disconnect: () => session.disconnect(),
   }
 
   return (opts.reconnect ? startConnectionLoop : connect)(
@@ -185,7 +185,7 @@ function connect(
       log.warn("RPC connection error", e.message)
 
       try {
-        socket.terminate()
+        socket.disconnect()
       } catch (e) {
         // ignore
       }
@@ -198,7 +198,7 @@ function connect(
       resolve()
     })
 
-    socket.onClose((code, reason) => {
+    socket.onDisconnected((code, reason) => {
       session.close()
       if (connected) {
         listeners.disconnected({code, reason})

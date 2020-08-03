@@ -92,7 +92,7 @@ export function createRpcServer(
       connectionContext = await opts.createConnectionContext(socket, ...transportDetails)
     } catch (e) {
       log.warn("Failed to create connection context", e)
-      socket.terminate()
+      socket.disconnect()
       return
     }
 
@@ -121,7 +121,7 @@ export function createRpcServer(
 
     if (sessions[remoteId]) {
       log.warn("Prev session active, discarding", remoteId)
-      sessions[remoteId].terminate()
+      sessions[remoteId].disconnect()
     }
     sessions[remoteId] = session
 
@@ -131,7 +131,7 @@ export function createRpcServer(
       session.handleMessage(message)
     })
 
-    socket.onClose(async (code, reason) => {
+    socket.onDisconnected(async (code, reason) => {
       await session.close()
 
       if (sessions[remoteId] == session) {

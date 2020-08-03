@@ -121,12 +121,12 @@ export class RpcSession {
 
     if (this.lastMessageAt < now - this.keepAliveTimeout) {
       log.debug(`Keep alive period expired, closing socket ${this.connectionContext.remoteId}`)
-      this.terminate()
+      this.disconnect()
     }
   }
 
-  terminate() {
-    this.socket.terminate()
+  disconnect() {
+    this.socket.disconnect()
   }
 
   handleMessage(data) {

@@ -100,7 +100,7 @@ class HttpServerSocket implements Socket {
     setTimeout(h, 0)
   }
 
-  onClose(h: (code, reason) => void) {
+  onDisconnected(h: (code, reason) => void) {
     this.handleClose = h
   }
 
@@ -108,7 +108,7 @@ class HttpServerSocket implements Socket {
   onPong(h: () => void) {}
   onPing(h: () => void) {}
 
-  terminate() {
+  disconnect() {
     this.clean()
     this.handleClose("forced", null)
   }

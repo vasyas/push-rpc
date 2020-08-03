@@ -31,7 +31,7 @@ export function wrapWebsocket(ws): Socket {
         h(e.toString("utf-8"))
       }),
     onOpen: h => ws.on("open", h),
-    onClose: h =>
+    onDisconnected: h =>
       ws.on("close", (code, reason) => {
         h(code, reason)
       }),
@@ -42,7 +42,7 @@ export function wrapWebsocket(ws): Socket {
     onPong: h => ws.on("pong", h),
     onPing: h => ws.on("ping", h),
 
-    terminate: () => ws.terminate(),
+    disconnect: () => ws.terminate(),
     send: data => {
       try {
         ws.send(data)
