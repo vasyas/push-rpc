@@ -119,28 +119,34 @@ export function mapTopic<D1, P, D2>(t: RemoteTopic<D1, P>, map: (D1) => D2): Rem
 
 declare var WebSocket
 
+
 export function createDomWebsocket(url, protocols = undefined) {
   const ws = new WebSocket(url, protocols)
 
   let onPong = () => {}
-  let onDisconnected = () => {}
+  let onDisconnected = (code, reason) => {}
+
+  function singleCallDisconnected(code, reason) {
+    onDisconnected(code, reason)
+    onDisconnected = () => {}
+  }
 
   return {
     onMessage: h => {
       ws.onmessage = e => {
         const message = e.data.toString()
 
-        if (message == PONG_MESSAGE) onPong()
-        else h(message)
+        if (message == PONG_MESSAGE)
+          onPong()
+        else
+          h(message)
       }
     },
     onOpen: h => (ws.onopen = h),
     onDisconnected: h => {
       onDisconnected = h
 
-      ws.onclose = ({code, reason}) => {
-        h(code, reason)
-      }
+      ws.onclose = ({ code, reason }) => void singleCallDisconnected(code, reason)
     },
     onError: h => (ws.onerror = h),
     onPong: h => {
@@ -152,13 +158,13 @@ export function createDomWebsocket(url, protocols = undefined) {
 
     disconnect: () => {
       try {
-        ws.close()
-
-        // we sent close frame, no need to wait for actual close
-        onDisconnected()
+        ws.close(3000, "forced")
       } catch (e) {
         console.warn("Failed to close socket", e)
       }
+
+      // we sent close frame, no need to wait for actual close
+      singleCallDisconnected(3000, "forced")
     },
     send: data => ws.send(data),
     ping: () => {
