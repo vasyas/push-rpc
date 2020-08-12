@@ -119,7 +119,7 @@ export function mapTopic<D1, P, D2>(t: RemoteTopic<D1, P>, map: (D1) => D2): Rem
 
 declare var WebSocket
 
-
+// TODO better name would be createDomSocket
 export function createDomWebsocket(url, protocols = undefined) {
   const ws = new WebSocket(url, protocols)
 
