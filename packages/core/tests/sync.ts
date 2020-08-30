@@ -31,6 +31,79 @@ describe("sync", () => {
     resolveCall()
   })
 
+  it("handle unsynced clients", async () => {
+    let resolveServerCall
+    let resolveClientCall
+
+    let clientResponse
+    let serverResponse
+
+    const rpcServer = await startTestServer({
+      callServer() {
+        console.log("Server called")
+        return new Promise(resolve => {
+          resolveServerCall = resolve
+        })
+      },
+    }, {
+      syncRemoteCalls: true,
+      listeners: {
+        connected: (id, total) => {
+          setTimeout(async () => {
+            const client = await rpcServer.getRemote(id)
+            console.log("Try to call client")
+            clientResponse = await client.callClient()
+          }, 100)
+        },
+        disconnected: (id, total) => {
+        },
+        messageIn: (remoteId, data) => {
+          console.log("IN", data)
+        },
+        messageOut: (remoteId, data) => {
+          console.log("OUT", data)
+        },
+        subscribed: () => {
+        },
+        unsubscribed: () => {
+        },
+      }
+    })
+
+    const client = {
+      callClient() {
+        console.log("Client called")
+        return new Promise(resolve => {
+          resolveClientCall = resolve
+        })
+      }
+    }
+
+    const server = await createTestClient(0, {local: client})
+
+    // wait for server to call client
+    await new Promise(r => setTimeout(r, 200))
+
+    // client call is not resolved yet.
+    // but let client make his call to server
+    server.callServer().then(r => {
+      serverResponse = r
+    })
+
+    // and immediately respond
+    resolveClientCall("client ok")
+
+    await new Promise(r => setTimeout(r, 100))
+    resolveServerCall("server ok")
+
+    // give some time to complete all cbs
+    await new Promise(r => setTimeout(r, 50))
+
+    // make sure all have responded with correct values
+    assert.equal(serverResponse, "server ok")
+    assert.equal(clientResponse, "client ok")
+  })
+
   false &&
     it("wait local answer before calling remote", async () => {
       let resolveCall
