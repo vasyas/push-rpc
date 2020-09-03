@@ -6,6 +6,8 @@ export {
   Middleware,
   RemoteTopic,
   LocalTopic,
+  DataSupplier,
+  DataConsumer
 } from "./rpc"
 export {Socket, SocketServer} from "./transport"
 export {LocalTopicImpl} from "./local"

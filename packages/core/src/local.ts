@@ -79,10 +79,8 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     subscription.sessions.push(session)
     this.subscriptions[key] = subscription
 
-    if (this.supplier) {
-      const data = await this.supplier(filter, session.createContext())
-      session.send(MessageType.Data, createMessageId(), this.name, filter, data)
-    }
+    const data = await this.supplier(filter, session.createContext())
+    session.send(MessageType.Data, createMessageId(), this.name, filter, data)
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {
@@ -100,6 +98,10 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
   }
 
   private subscriptions: {[key: string]: Subscription<F, D, TD>} = {}
+
+  isSubscribed(): boolean {
+    return !!this.subscriptions.length
+  }
 
   // dummy implementations, see class comment
 
