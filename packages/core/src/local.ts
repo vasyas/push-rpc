@@ -11,17 +11,17 @@ export function groupReducer<D>(prevValue: any, newValue: any): any {
   return prevValue ? [...prevValue, ...newValue] : newValue
 }
 
-export interface LocalTopicImplOpts<D, TD> {
+export interface LocalTopicImplOpts<D, F, TD> {
   throttleTimeout: number
   throttleReducer: ThrottleArgsReducer<D>
-  triggerMapper: (d: TD) => Promise<D>
+  triggerMapper: (d: TD, filter: F) => Promise<D>
 }
 
 /** LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in ServiceImpl */
 export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, F, TD> {
   constructor(
     private readonly supplier: DataSupplier<D, F>,
-    private readonly opts: Partial<LocalTopicImplOpts<D, TD>> = {}
+    private readonly opts: Partial<LocalTopicImplOpts<D, F, TD>> = {}
   ) {
     super()
 
@@ -65,7 +65,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
         this.sessions.forEach(async session => {
           const data: D =
             suppliedData !== undefined
-              ? await localTopic.opts.triggerMapper(suppliedData)
+              ? await localTopic.opts.triggerMapper(suppliedData, filter)
               : await localTopic.supplier(filter, session.createContext())
 
           session.send(MessageType.Data, createMessageId(), localTopic.name, filter, data)
