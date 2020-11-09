@@ -1,5 +1,7 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer} from "./testUtils"
+import {createNodeWebsocket} from "../../websocket/src"
+import {createRpcClient} from "../src"
+import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 
 describe("connection", () => {
   it("server close connection on keep alive timeout", async () => {
@@ -27,4 +29,16 @@ describe("connection", () => {
     // should be closed
     assert.equal(rpcServer.getConnectedIds().length, 0)
   }).timeout(5000)
+
+  it("disconnect will stop reconnection loop", async () => {
+    const rpcClient = await createRpcClient(
+      1,
+      () => createNodeWebsocket(`wss://echo.websocket.org`),
+      {
+        reconnect: true
+      }
+    )
+
+    rpcClient.disconnect()
+  })
 })

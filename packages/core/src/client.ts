@@ -77,21 +77,27 @@ export function createRpcClient<R = any>(
   )
 
   const client = {
+    disconnectedMark: false,
     remote: session.remote,
-    disconnect: () => session.disconnect(),
+    disconnect: () => {
+      client.disconnectedMark = true
+      session.disconnect()
+    },
   }
 
   return (opts.reconnect ? startConnectionLoop : connect)(
     session,
     createSocket,
-    opts.listeners
+    opts.listeners,
+    client
   ).then(() => client)
 }
 
 function startConnectionLoop(
   session: RpcSession,
   createSocket: () => Socket,
-  listeners: RpcClientListeners
+  listeners: RpcClientListeners,
+  client: {disconnectedMark: boolean}
 ): Promise<void> {
   return new Promise(resolve => {
     let onFirstConnection = resolve
@@ -114,7 +120,8 @@ function startConnectionLoop(
         onFirstConnection()
         onFirstConnection = () => {}
       },
-      errorDelay
+      errorDelay,
+      client,
     )
   })
 }
@@ -124,11 +131,12 @@ function connectionLoop(
   createSocket: () => Socket,
   listeners: RpcClientListeners,
   resolve,
-  errorDelay
+  errorDelay,
+  client: {disconnectedMark: boolean}
 ): void {
   function reconnect() {
     const timer = setTimeout(
-      () => connectionLoop(session, createSocket, listeners, resolve, errorDelay),
+      () => connectionLoop(session, createSocket, listeners, resolve, errorDelay, client),
       errorDelay.value
     )
 
@@ -143,7 +151,10 @@ function connectionLoop(
   const l = {
     ...listeners,
     disconnected: ({code, reason}) => {
-      reconnect()
+      if (!client.disconnectedMark) {
+        reconnect()
+      }
+
       listeners.disconnected({code, reason})
     },
   }
@@ -151,7 +162,9 @@ function connectionLoop(
   connect(session, createSocket, l)
     .then(resolve)
     .catch(() => {
-      reconnect()
+      if (!client.disconnectedMark) {
+        reconnect()
+      }
     })
 }
 

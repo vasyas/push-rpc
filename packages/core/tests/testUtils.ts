@@ -31,6 +31,8 @@ afterEach(
     new Promise(resolve => {
       if (wss) {
         wss.close(resolve)
+      } else {
+        resolve()
       }
     })
 )
