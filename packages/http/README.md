@@ -2,13 +2,15 @@ HTTP transport for Push-RPC.
 
 Server-side push is not supported, only client-initiated messages are enabled.
 
-Uses Koa for HTTP server and Fetch for HTTP requests.
+Integrates with Koa or Express for HTTP server.
+Uses Fetch for making HTTP requests.
 
-## How to use
+## How to use (with Koa)
+
 ```
 import * as Koa from "koa"
 import {createRpcServer, createRpcClient} from "@push-rpc/core"
-import {createHttpServer, createHttpClient} from "@push-rpc/http"
+import {createKoaHttpServer, createHttpClient} from "@push-rpc/http"
 
 ...
 
@@ -24,7 +26,7 @@ function getRemoteId(ctx: Koa.Context) {
   return "1" // share a single session for now, real impl could use cookies or some other meaning for HTTP sessions
 }
 
-createRpcServer(services, createHttpServer(5555, getRemoteId, {prefix: "rpc"}))
+createRpcServer(services, createKoaHttpServer(5555, getRemoteId, {prefix: "rpc"}))
 
 ...
 

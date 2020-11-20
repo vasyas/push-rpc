@@ -10,7 +10,7 @@ const defaultOptions: HttpServerOptions = {
   prefix: "",
 }
 
-export function createHttpKoaMiddleware(
+export function createKoaHttpMiddleware(
   getRemoteId: (ctx) => string,
   opts: Partial<HttpServerOptions> = {}
 ): {onError; onConnection; middleware} {
@@ -45,14 +45,56 @@ export function createHttpKoaMiddleware(
     if (ctx.method == "PUT") messageType = MessageType.Get
     if (ctx.method == "PATCH") messageType = MessageType.Subscribe
 
-    const {body, status, responseMessage} = await socket.invoke(messageType, name, ctx.request.body)
+    const {body, status} = await socket.invoke(messageType, name, ctx.request.body)
 
     ctx.response.status = status
-    if (responseMessage) {
-      ctx.response.message = responseMessage
+    ctx.body = body
+  }
+
+  return {
+    onError(h) {
+      handleError = h
+    },
+    onConnection(h, isConn) {
+      handleConnection = h
+      isConnected = isConn
+    },
+    middleware,
+  }
+}
+
+export function createExpressHttpMiddleware(
+  getRemoteId: (ctx) => string
+): {onError; onConnection; middleware} {
+  let handleError = (e: any) => {}
+  let handleConnection = async (socket: Socket, ...transportDetails: any) => {}
+  let isConnected = (remoteId: string) => false
+
+  const sockets: {[remoteId: string]: HttpServerSocket} = {}
+
+  async function middleware(request, response, next) {
+    const remoteId = getRemoteId(request)
+
+    if (!isConnected(remoteId)) {
+      const socket = new HttpServerSocket(() => delete sockets[remoteId])
+      await handleConnection(socket, request, response)
+      sockets[remoteId] = socket
     }
 
-    ctx.body = body
+    const socket = sockets[remoteId]
+
+    const prefixStripped = request.path
+    const name = prefixStripped.startsWith("/") ? prefixStripped.substring(1) : prefixStripped
+
+    let messageType = MessageType.Call // POST and others HTTP methods
+    if (request.method == "PUT") messageType = MessageType.Get
+    if (request.method == "PATCH") messageType = MessageType.Subscribe
+
+    const {body, status} = await socket.invoke(messageType, name, request.body)
+
+    response
+      .status(status)
+      .send(body)
   }
 
   return {
@@ -74,13 +116,13 @@ class HttpServerSocket implements Socket {
   private handleClose = (code, reason) => {}
 
   // Timeout expiration is not a big issue here, b/c these are the local calls, and RpcSession impl is robust in implementing local calls
-  private calls: {[id: string]: (r: {body; status; responseMessage}) => void} = {}
+  private calls: {[id: string]: (r: {body; status}) => void} = {}
 
   invoke(
     type: MessageType.Call | MessageType.Subscribe | MessageType.Get,
     name: string,
     params: any
-  ): Promise<{status; body; responseMessage}> {
+  ): Promise<{status; body}> {
     const id = createMessageId()
     const message = [type, id, name, params]
 
@@ -118,13 +160,11 @@ class HttpServerSocket implements Socket {
 
     let status = 204
     let body = null
-    let responseMessage = undefined
 
     if (type == MessageType.Error) {
       const [code, description, details] = other
 
-      responseMessage = description
-      body = details
+      body = details || description
       status = code || 500
     } else if (type == MessageType.Data) {
       const [name, params, data] = other
@@ -139,7 +179,7 @@ class HttpServerSocket implements Socket {
     }
 
     if (this.calls[id]) {
-      this.calls[id]({status, body, responseMessage})
+      this.calls[id]({status, body})
       delete this.calls[id]
     }
   }
