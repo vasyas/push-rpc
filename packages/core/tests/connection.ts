@@ -24,7 +24,7 @@ describe("connection", () => {
     assert.equal(rpcServer.getConnectedIds().length, 1)
 
     // wait for timeout
-    await new Promise(r => setTimeout(r, keepAliveTimeout * 2))
+    await new Promise(r => setTimeout(r, keepAliveTimeout * 2.5))
 
     // should be closed
     assert.equal(rpcServer.getConnectedIds().length, 0)
