@@ -32,7 +32,15 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     }
   }
 
-  public name: string
+  private name: string
+
+  getTopicName(): string {
+    return this.name
+  }
+
+  setTopicName(s: string) {
+    this.name = s
+  }
 
   trigger(filter: Partial<F> = {}, suppliedData?: TD): void {
     for (const subscription of Object.values(this.subscriptions)) {
@@ -68,7 +76,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
               ? await localTopic.opts.triggerMapper(suppliedData, filter)
               : await localTopic.supplier(filter, session.createContext())
 
-          session.send(MessageType.Data, createMessageId(), localTopic.name, filter, data)
+          session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
         })
       }),
     }
@@ -80,7 +88,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     this.subscriptions[key] = subscription
 
     const data = await this.supplier(filter, session.createContext())
-    session.send(MessageType.Data, createMessageId(), this.name, filter, data)
+    session.send(MessageType.Data, createMessageId(), this.getTopicName(), filter, data)
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {
@@ -151,8 +159,8 @@ export function prepareLocal(services, prefix = "") {
     if (typeof item == "object") {
       const name = prefix + key
 
-      if (item instanceof LocalTopicImpl) {
-        item.name = name
+      if ("setTopicName" in item) {
+        item.setTopicName(name)
         return
       }
 

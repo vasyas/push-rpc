@@ -25,7 +25,7 @@ export function getServiceItem(services: Services, name: string): {item: Service
   const item = services[names[0]]
 
   if (typeof item == "object") {
-    if (item instanceof TopicImpl) return {item: item as any, object: services}
+    if ("getTopicName" in item) return {item: item as any, object: services}
 
     if (!item) {
       throw new Error(`Can't lookup service item ${name}`)

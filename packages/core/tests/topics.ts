@@ -32,9 +32,14 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client, disconnect} = await createRpcClient(
+    let socket
+
+    const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      () => {
+        socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
+        return socket
+      },
       {reconnect: true}
     )
 
@@ -54,8 +59,8 @@ describe("Topics", () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(receivedItem, item)
 
-    // resubscribe
-    disconnect()
+    // disconnect & resubscribe
+    socket.disconnect()
     await new Promise(resolve => setTimeout(resolve, 50))
 
     // session should be re-subscribed, trigger should continue to send items
