@@ -180,7 +180,7 @@ export class RpcSession {
             break
           }
 
-          this.get(id, localTopic, other[0])
+          this.get(id, name, localTopic, other[0])
           break
 
         case MessageType.Call:
@@ -327,11 +327,12 @@ export class RpcSession {
     }
   }
 
-  private async get(id, topic: LocalTopicImpl<any, any>, params) {
+  private async get(id, name: string, topic: LocalTopicImpl<any, any>, params) {
     try {
       const d = await topic.getData(params, this.createContext(id, topic.name))
       this.send(MessageType.Result, id, d)
     } catch (e) {
+      log.error(`Unable to get data from topic ${name}`, e)
       this.sendError(id, e)
     }
   }
