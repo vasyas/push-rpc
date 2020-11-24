@@ -129,7 +129,11 @@ class HttpServerSocket implements Socket {
     return new Promise(resolve => {
       this.calls[id] = resolve
       setTimeout(() => {
-        this.sendMessage(JSON.stringify(message))
+        try {
+          this.sendMessage(JSON.stringify(message))
+        } catch (e) { // should not happen, report just in case
+          log.error("Unhandled error from RPC session", e)
+        }
       }, 0)
     })
   }

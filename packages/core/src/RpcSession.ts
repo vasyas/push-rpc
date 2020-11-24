@@ -160,7 +160,8 @@ export class RpcSession {
       switch (type) {
         case MessageType.Subscribe:
           if (!localTopic) {
-            throw new Error(`Can't find local topic with name ${name}`)
+            this.send(MessageType.Error, id, null, `Topic '${name}' not implemented`, null)
+            break
           }
 
           this.subscribe(localTopic, other[0])
@@ -168,7 +169,8 @@ export class RpcSession {
 
         case MessageType.Unsubscribe:
           if (!localTopic) {
-            throw new Error(`Can't find local topic with name ${name}`)
+            this.send(MessageType.Error, id, null, `Topic '${name}' not implemented`, null)
+            break
           }
 
           this.unsubscribe(localTopic, other[0])
@@ -176,7 +178,7 @@ export class RpcSession {
 
         case MessageType.Get:
           if (!localTopic) {
-            this.send(MessageType.Error, id, null, `Topic ${name} not implemented`, {})
+            this.send(MessageType.Error, id, null, `Topic '${name}' not implemented`, null)
             break
           }
 
@@ -185,7 +187,7 @@ export class RpcSession {
 
         case MessageType.Call:
           if (!method) {
-            this.send(MessageType.Error, id, null, `Item ${name} not implemented`, {})
+            this.send(MessageType.Error, id, null, `Item '${name}' not implemented`, null)
             break
           }
 
@@ -199,7 +201,8 @@ export class RpcSession {
           >
 
           if (!remoteTopic) {
-            throw new Error(`Can't find remote topic with name ${name}`)
+            log.debug(`Can't find remote topic with name '${name}'`)
+            break
           }
 
           remoteTopic.receiveData(other[0], other[1])

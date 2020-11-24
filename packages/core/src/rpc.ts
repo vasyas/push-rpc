@@ -17,7 +17,7 @@ export type Method = (req?, ctx?) => Promise<any>
 
 export function getServiceItem(services: Services, name: string): {item: ServiceItem; object: any} {
   if (!name) {
-    throw new Error(`Can't lookup service item ${name}`)
+    return {item: null, object: null}
   }
 
   const names = name.split("/")
@@ -28,7 +28,7 @@ export function getServiceItem(services: Services, name: string): {item: Service
     if ("getTopicName" in item) return {item: item as any, object: services}
 
     if (!item) {
-      throw new Error(`Can't lookup service item ${name}`)
+      return {item: null, object: null}
     }
 
     return getServiceItem(item as Services, names.slice(1).join("/"))
