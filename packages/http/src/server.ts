@@ -2,23 +2,9 @@ import {Socket, MessageType} from "@push-rpc/core"
 import {log} from "@push-rpc/core/dist/logger"
 import {createMessageId} from "@push-rpc/core/dist/utils"
 
-export interface HttpServerOptions {
-  prefix: string
-}
-
-const defaultOptions: HttpServerOptions = {
-  prefix: "",
-}
-
 export function createKoaHttpMiddleware(
   getRemoteId: (ctx) => string,
-  opts: Partial<HttpServerOptions> = {}
 ): {onError; onConnection; middleware} {
-  opts = {
-    ...defaultOptions,
-    ...opts,
-  }
-
   let handleError = (e: any) => {}
   let handleConnection = async (socket: Socket, ...transportDetails: any) => {}
   let isConnected = (remoteId: string) => false
@@ -36,10 +22,8 @@ export function createKoaHttpMiddleware(
 
     const socket = sockets[remoteId]
 
-    let prefix = opts.prefix ? opts.prefix : "/"
-    if (!prefix.startsWith("/")) prefix = "/" + opts.prefix
-    const prefixStripped = ctx.request.path.substring(prefix.length)
-    const name = prefixStripped.startsWith("/") ? prefixStripped.substring(1) : prefixStripped
+    const {path} = ctx.request
+    const name = path.startsWith("/") ? path.substring(1) : path
 
     let messageType = MessageType.Call // POST and others HTTP methods
     if (ctx.method == "PUT") messageType = MessageType.Get

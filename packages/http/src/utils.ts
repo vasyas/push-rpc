@@ -1,14 +1,13 @@
+import {SocketServer} from "@push-rpc/core"
 import * as Koa from "koa"
 import * as koaBody from "koa-body"
-import {SocketServer} from "@push-rpc/core"
-import {createKoaHttpMiddleware, HttpServerOptions} from "./server"
+import {createKoaHttpMiddleware} from "./server"
 
 export function createKoaHttpServer(
   port: number,
-  getRemoteId: (ctx: Koa.Context) => string,
-  opts: Partial<HttpServerOptions> = {}
+  getRemoteId: (ctx: Koa.Context) => string
 ): SocketServer {
-  const {onError, onConnection, middleware} = createKoaHttpMiddleware(getRemoteId, opts)
+  const {onError, onConnection, middleware} = createKoaHttpMiddleware(getRemoteId)
 
   const app = new Koa()
   app.use(koaBody({multipart: true}))
