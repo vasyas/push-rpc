@@ -325,8 +325,12 @@ export class RpcSession {
 
   private async get(id, name: string, topic: LocalTopicImpl<any, any>, params) {
     try {
-      const d = await topic.getData(params, this.createContext(id, topic.getTopicName()))
-      this.send(MessageType.Result, id, d)
+      const callContext = this.createContext(id, topic.getTopicName())
+
+      const getFromTopic = (p = params) => topic.getData(p, callContext)
+      const r = await this.localMiddleware(callContext, getFromTopic, params, MessageType.Get)
+
+      this.send(MessageType.Result, id, r)
     } catch (e) {
       log.error(`Unable to get data from topic ${name}`, e)
       this.sendError(id, e)

@@ -1,6 +1,7 @@
-import {composeMiddleware} from "../src"
-import {Middleware} from "../src/rpc"
 import {assert} from "chai"
+import {composeMiddleware, LocalTopicImpl, MessageType} from "../src"
+import {Middleware} from "../src/rpc"
+import {message} from "../src/utils"
 import {createTestClient, startTestServer} from "./testUtils"
 
 describe("middleware", () => {
@@ -19,9 +20,30 @@ describe("middleware", () => {
 
     const composed = composeMiddleware(m1, m2)
 
-    const r = await composed(null, async p => p, 0)
+    const r = await composed(null, async p => p, 0, MessageType.Call)
 
     assert.equal(r, 3)
+  })
+
+  it("get topic", async () => {
+    let mwMessageType = null
+
+    await startTestServer(
+      {
+        item: new LocalTopicImpl(async () => "1"),
+      },
+      {
+        localMiddleware: (ctx, next, params, messageType) => {
+          mwMessageType = messageType
+          return next(params)
+        },
+      }
+    )
+
+    const client = await createTestClient(0)
+    const r = await client.item.get()
+    assert.equal(r, "1")
+    assert.equal(mwMessageType, MessageType.Get)
   })
 
   it("local param update", async () => {
