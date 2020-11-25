@@ -33,9 +33,12 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
-    await this.session.callRemote(this.topicName, filter, MessageType.Subscribe)
-
-    // TODO if await failed, unsubscribe
+    try {
+      await this.session.callRemote(this.topicName, filter, MessageType.Subscribe)
+    } catch (e) {
+      this.unsubscribe(filter, subscriptionKey)
+      throw e
+    }
 
     return subscriptionKey
   }
