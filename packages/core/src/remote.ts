@@ -1,7 +1,6 @@
-import {LocalTopicImpl} from "./local"
 import {DataConsumer, LocalTopic, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
-import {createMessageId, getClassMethodNames} from "./utils"
 import {RpcSession} from "./RpcSession"
+import {createMessageId, getClassMethodNames} from "./utils"
 
 interface Subscription<D> {
   consumer: DataConsumer<D>
@@ -14,11 +13,11 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
     super()
   }
 
-  subscribe<SubscriptionKey = DataConsumer<D>>(
+  async subscribe<SubscriptionKey = DataConsumer<D>>(
     consumer: DataConsumer<D>,
     filter: F = {} as any,
     subscriptionKey: SubscriptionKey = consumer as any
-  ): SubscriptionKey {
+  ): Promise<SubscriptionKey> {
     if (filter === null) {
       throw new Error(
         "Subscribe with null filter is not supported, use empty object to get all data"
@@ -27,14 +26,16 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     const paramsKey = JSON.stringify(filter)
 
-    this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
-
-    // TODO it is not necessary to send subscribe if we already have cached value
-    this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, filter)
-
+    // already have cached value with this params?
     if (this.cached[paramsKey] !== undefined) {
       consumer(this.cached[paramsKey])
     }
+
+    this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
+
+    await this.session.callRemote(this.topicName, filter, MessageType.Subscribe)
+
+    // TODO if await failed, unsubscribe
 
     return subscriptionKey
   }

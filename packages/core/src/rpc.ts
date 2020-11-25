@@ -40,7 +40,7 @@ export function getServiceItem(services: Services, name: string): {item: Service
 // remote interfaces
 
 export interface RemoteTopic<D, P> {
-  subscribe(consumer: DataConsumer<D>, params?: P, subscriptionKey?: any): void
+  subscribe(consumer: DataConsumer<D>, params?: P, subscriptionKey?: any): Promise<any>
   unsubscribe(params?: P, subscriptionKey?: any)
   get(params?: P): Promise<D>
 }

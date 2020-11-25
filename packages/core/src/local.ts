@@ -60,35 +60,36 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     return throttle(f, this.opts.throttleTimeout, this.opts.throttleReducer)
   }
 
-  async subscribeSession(session: RpcSession, filter: F) {
+  async subscribeSession(session: RpcSession, filter: F, messageId) {
     const key = JSON.stringify(filter)
-
     const localTopic = this
 
-    const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
-      filter,
-      sessions: [],
-      trigger: this.throttled(function(suppliedData) {
-        // data cannot be cached between subscribers, b/c for different subscriber there could be a different context
-        this.sessions.forEach(async session => {
-          const data: D =
-            suppliedData !== undefined
-              ? await localTopic.opts.triggerMapper(suppliedData, filter)
-              : await localTopic.supplier(filter, session.createContext())
+    try {
+      const data = await this.supplier(filter, session.createContext())
 
-          session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
-        })
-      }),
+      const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
+        filter,
+        sessions: [],
+        trigger: this.throttled(function(suppliedData) {
+          // data cannot be cached between subscribers, b/c for different subscriber there could be a different context
+          this.sessions.forEach(async session => {
+            const data: D =
+              suppliedData !== undefined
+                ? await localTopic.opts.triggerMapper(suppliedData, filter)
+                : await localTopic.supplier(filter, session.createContext())
+
+            session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
+          })
+        }),
+      }
+
+      subscription.sessions.push(session)
+      this.subscriptions[key] = subscription
+
+      session.send(MessageType.Data, messageId, this.getTopicName(), filter, data)
+    } catch (e) {
+      session.sendError(messageId, e)
     }
-
-    // TODO if already subscribed, just send current data, and do not add a new subscription - it will save
-    // some network ops
-
-    subscription.sessions.push(session)
-    this.subscriptions[key] = subscription
-
-    const data = await this.supplier(filter, session.createContext())
-    session.send(MessageType.Data, createMessageId(), this.getTopicName(), filter, data)
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {
@@ -116,7 +117,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
   get(params?: F): Promise<D> {
     return undefined
   }
-  subscribe(consumer: DataConsumer<D>, params: F, subscriptionKey: any): void {}
+  async subscribe(consumer: DataConsumer<D>, params: F, subscriptionKey: any) {}
   unsubscribe(params?: F, subscriptionKey?: any) {}
 }
 

@@ -157,7 +157,7 @@ export class RpcSession {
             break
           }
 
-          this.subscribe(localTopic, other[0])
+          this.subscribe(localTopic, other[0], id)
           break
 
         case MessageType.Unsubscribe:
@@ -198,6 +198,12 @@ export class RpcSession {
             break
           }
 
+          // release await on subscribe
+          if (this.runningCalls[id]) {
+            this.callRemoteResponse(message)
+          }
+
+          // and deliver to callback
           remoteTopic.receiveData(other[0], other[1])
           break
       }
@@ -290,15 +296,21 @@ export class RpcSession {
   }
 
   private callRemoteResponse(data) {
-    const [_, id, res, description, details] = data
+    const [messageType, id, ...other] = data
 
     if (this.runningCalls[id]) {
       const {resolve, reject} = this.runningCalls[id]
       delete this.runningCalls[id]
 
-      if (data[0] == MessageType.Result) {
-        resolve(res)
+      if (messageType == MessageType.Result || messageType == MessageType.Data) {
+        if (messageType == MessageType.Result) {
+          resolve(other[0])
+        } else {
+          resolve(other[2])
+        }
       } else {
+        const [res, description, details] = other
+
         const error = new Error(description || res || "Remote call failed")
         Object.assign(error, details || {})
         if (res != null) error["code"] = res
@@ -337,8 +349,8 @@ export class RpcSession {
     }
   }
 
-  private async subscribe(topic: LocalTopicImpl<any, any>, params) {
-    await topic.subscribeSession(this, params)
+  private async subscribe(topic: LocalTopicImpl<any, any>, params, messageId) {
+    await topic.subscribeSession(this, params, messageId)
     this.subscriptions.push({topic, params})
     this.listeners.subscribed(this.subscriptions.length)
   }

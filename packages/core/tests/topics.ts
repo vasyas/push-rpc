@@ -1,10 +1,29 @@
 import {assert} from "chai"
-import {createRpcClient, LocalTopicImpl} from "../src"
+import {createRpcClient, LocalTopicImpl, MessageType} from "../src"
 import {groupReducer} from "../src/local"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 import {createNodeWebsocket} from "../../websocket/src/server"
 
 describe("Topics", () => {
+  it("error in supplier breaks subscribe", async () => {
+    await startTestServer(
+      {
+        item: new LocalTopicImpl(async () => {
+          throw new Error("AA")
+        }),
+      }
+    )
+
+    const client = await createTestClient(0)
+
+    try {
+      await client.item.subscribe(() => {})
+      assert.fail("Error expected")
+    } catch (e) {
+      assert.equal(e.message, "AA")
+    }
+  })
+
   it("get", async () => {
     const item = {r: "asf"}
 
@@ -197,12 +216,17 @@ describe("Topics", () => {
     item.r = "2"
 
     let item2
-    await client.test.item.subscribe(item => {
+    client.test.item.subscribe(item => {
       item2 = item
     })
 
     // cached version should be delivered
     assert.deepEqual(item2, {r: "1"})
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    // and a new version after some time
+    assert.deepEqual(item2, item)
   })
 
   it("trigger throttling", async () => {
