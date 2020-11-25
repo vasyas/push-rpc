@@ -89,7 +89,7 @@ export class TopicImpl {}
 // Middleware - an local or remote call interceptor
 // ctx would be null for remote interceptors
 export type Middleware = (
-  ctx: RpcContext,
+  ctx: any,
   next: (params: any) => Promise<any>,
   params: any,
   messageType: MessageType.Call | MessageType.Get | MessageType.Subscribe
