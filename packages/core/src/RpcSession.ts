@@ -1,16 +1,9 @@
-import {log} from "./logger"
-import {createMessageId, message} from "./utils"
-import {
-  getServiceItem,
-  MessageType,
-  Method,
-  Middleware,
-  RpcConnectionContext,
-  RpcContext,
-} from "./rpc"
 import {LocalTopicImpl} from "./local"
+import {log} from "./logger"
 import {createRemote, RemoteTopicImpl} from "./remote"
+import {getServiceItem, MessageType, Method, Middleware, RpcConnectionContext, RpcContext,} from "./rpc"
 import {Socket} from "./transport"
+import {createMessageId, message} from "./utils"
 
 export interface RpcSessionListeners {
   messageIn(data: string): void
@@ -259,7 +252,7 @@ export class RpcSession {
       })
     }
 
-    return this.remoteMiddleware(null, sendMessage, params)
+    return this.remoteMiddleware(null, sendMessage, params, type)
   }
 
   private sendCall() {
@@ -321,7 +314,7 @@ export class RpcSession {
       const callContext = this.createContext(id, name, localMethod)
 
       const invokeLocalMethod = (p = params) => localMethod.call(localMethodObject, p, callContext)
-      const r = await this.localMiddleware(callContext, invokeLocalMethod, params)
+      const r = await this.localMiddleware(callContext, invokeLocalMethod, params, MessageType.Call)
 
       this.send(MessageType.Result, id, r)
     } catch (e) {

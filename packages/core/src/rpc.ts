@@ -91,7 +91,8 @@ export class TopicImpl {}
 export type Middleware = (
   ctx: RpcContext,
   next: (params: any) => Promise<any>,
-  params: any
+  params: any,
+  messageType: MessageType.Call | MessageType.Get | MessageType.Subscribe
 ) => Promise<any>
 
 // id generator

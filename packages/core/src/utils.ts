@@ -74,7 +74,7 @@ export function getClassMethodNames(obj) {
 }
 
 export function composeMiddleware(...middleware: Middleware[]): Middleware {
-  return function(ctx, next, params) {
+  return function(ctx, next, params, messageType) {
     let index = -1
     return dispatch(0, params)
 
@@ -87,7 +87,7 @@ export function composeMiddleware(...middleware: Middleware[]): Middleware {
         if (i === middleware.length) {
           return Promise.resolve(next(p))
         } else {
-          return Promise.resolve(middleware[i](ctx, dispatch.bind(null, i + 1), p))
+          return Promise.resolve(middleware[i](ctx, dispatch.bind(null, i + 1), p, messageType))
         }
       } catch (err) {
         return Promise.reject(err)

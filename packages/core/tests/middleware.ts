@@ -24,7 +24,7 @@ describe("middleware", () => {
     assert.equal(r, 3)
   })
 
-  it("local", async () => {
+  it("local param update", async () => {
     await startTestServer(
       {
         async getSomething(req) {

@@ -32,8 +32,8 @@ const defaultOptions: Partial<RpcServerOptions> = {
   createConnectionContext: async (socket, ...transportDetails) => ({
     remoteId: UUID.create().toString(),
   }),
-  localMiddleware: (ctx, next, params) => next(params),
-  remoteMiddleware: (ctx, next, params) => next(params),
+  localMiddleware: (ctx, next, params, messageType) => next(params),
+  remoteMiddleware: (ctx, next, params, messageType) => next(params),
   clientLevel: 0,
   pingSendTimeout: 40 * 1000,
   keepAliveTimeout: 120 * 1000,
