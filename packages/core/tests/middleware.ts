@@ -25,7 +25,7 @@ describe("middleware", () => {
     assert.equal(r, 3)
   })
 
-  it("get topic", async () => {
+  it("local get topic", async () => {
     let mwMessageType = null
 
     await startTestServer(
@@ -44,6 +44,32 @@ describe("middleware", () => {
     const r = await client.item.get()
     assert.equal(r, "1")
     assert.equal(mwMessageType, MessageType.Get)
+  })
+
+  it("local topic subscribe", async () => {
+    let mwMessageType = null
+
+    await startTestServer(
+      {
+        item: new LocalTopicImpl(async () => "1"),
+      },
+      {
+        localMiddleware: (ctx, next, params, messageType) => {
+          mwMessageType = messageType
+          return next(params)
+        },
+      }
+    )
+
+    let r = null
+
+    const client = await createTestClient(0)
+    await client.item.subscribe(data => r = data)
+
+    await new Promise(r => setTimeout(r, 50))
+
+    assert.equal(r, "1")
+    assert.equal(mwMessageType, MessageType.Subscribe)
   })
 
   it("local param update", async () => {
