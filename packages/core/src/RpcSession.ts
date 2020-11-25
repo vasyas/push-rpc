@@ -350,9 +350,19 @@ export class RpcSession {
   }
 
   private async subscribe(topic: LocalTopicImpl<any, any>, params, messageId) {
-    await topic.subscribeSession(this, params, messageId)
-    this.subscriptions.push({topic, params})
-    this.listeners.subscribed(this.subscriptions.length)
+    try {
+      const ctx = this.createContext(messageId, topic.getTopicName())
+
+      const subscribeTopic = (p = params) => topic.subscribeSession(this, p, messageId, ctx)
+      const r = await this.localMiddleware(ctx, subscribeTopic, params, MessageType.Subscribe)
+
+      this.send(MessageType.Data, messageId, topic.getTopicName(), params, r)
+
+      this.subscriptions.push({topic, params})
+      this.listeners.subscribed(this.subscriptions.length)
+    } catch (e) {
+      this.sendError(messageId, e)
+    }
   }
 
   private async unsubscribe(topic: LocalTopicImpl<any, any>, params) {

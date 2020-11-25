@@ -60,36 +60,32 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     return throttle(f, this.opts.throttleTimeout, this.opts.throttleReducer)
   }
 
-  async subscribeSession(session: RpcSession, filter: F, messageId) {
+  async subscribeSession(session: RpcSession, filter: F, messageId, ctx) {
     const key = JSON.stringify(filter)
     const localTopic = this
 
-    try {
-      const data = await this.supplier(filter, session.createContext())
+    const data = await this.supplier(filter, ctx)
 
-      const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
-        filter,
-        sessions: [],
-        trigger: this.throttled(function(suppliedData) {
-          // data cannot be cached between subscribers, b/c for different subscriber there could be a different context
-          this.sessions.forEach(async session => {
-            const data: D =
-              suppliedData !== undefined
-                ? await localTopic.opts.triggerMapper(suppliedData, filter)
-                : await localTopic.supplier(filter, session.createContext())
+    const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
+      filter,
+      sessions: [],
+      trigger: this.throttled(function(suppliedData) {
+        // data cannot be cached between subscribers, b/c for different subscriber there could be a different context
+        this.sessions.forEach(async session => {
+          const data: D =
+            suppliedData !== undefined
+              ? await localTopic.opts.triggerMapper(suppliedData, filter)
+              : await localTopic.supplier(filter, session.createContext())
 
-            session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
-          })
-        }),
-      }
-
-      subscription.sessions.push(session)
-      this.subscriptions[key] = subscription
-
-      session.send(MessageType.Data, messageId, this.getTopicName(), filter, data)
-    } catch (e) {
-      session.sendError(messageId, e)
+          session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
+        })
+      }),
     }
+
+    subscription.sessions.push(session)
+    this.subscriptions[key] = subscription
+
+    return data
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {
