@@ -31,6 +31,7 @@ export class ApiDescriber {
 
       paths[prefix + method.getName()] = {
         post: {
+          description: `Method ${method.getName()}`,
           requestBody: this.requestBody(requestType, requestType && !params[0].isOptional()),
           responses: this.operationResponses(returnType),
         },
@@ -58,6 +59,7 @@ export class ApiDescriber {
 
         paths[prefix + prop.getName()] = {
           put: {
+            description: `Topic ${prop.getName()}`,
             requestBody: this.requestBody(requestType, true),
             responses: this.operationResponses(responseType),
           },
