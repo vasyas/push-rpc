@@ -23,6 +23,13 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
+"@push-rpc/core@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.2.0.tgz#1adf0c55d7b28e72459f61677f0076537d1608df"
+  integrity sha512-CPRmQRNSlWu1t0WQ6WE6OuGEXk8+TrNRAoRtnd+wjxaOVChmhsrSQ9QT4Fklwev8uUcdi2JSEdNHQh84JVN/8A==
+  dependencies:
+    uuid-js "^0.7.5"
+
 "@types/node@^12.12.17":
   version "12.12.22"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.22.tgz#b8d9eae3328b96910a373cf06ac8d3c5abe9c200"
@@ -1105,6 +1112,11 @@ use@^3.1.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
+
+uuid-js@^0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/uuid-js/-/uuid-js-0.7.5.tgz#6c886d02a53d2d40dcf25d91a170b4a7b25b94d0"
+  integrity sha1-bIhtAqU9LUDc8l2RoXC0p7JblNA=
 
 wordwrapjs@^3.0.0:
   version "3.0.0"

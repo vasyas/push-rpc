@@ -74,7 +74,7 @@ const usageSections = [
   },
 ]
 ;(() => {
-  const {tsConfig, apiTemplate, output, baseDir, skip, entryFile, entryType} = commandLineArgs(optionList)
+  const {tsConfig, apiTemplate, output, baseDir = ".", skip, entryFile, entryType} = commandLineArgs(optionList)
 
   if (!tsConfig || !apiTemplate || !output || !entryFile || !entryType) {
     const usage = commandLineUsage(usageSections)
