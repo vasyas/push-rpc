@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Push-RPC example",
+    "description": "Example on how to generate API description in Swagger format",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "https://demo.myhost.com/api",
+      "description": "Demo Server"
+    }
+  ]
+}

@@ -6,7 +6,7 @@
   "scripts": {
     "prepublishOnly": "yarn build",
     "build": "tsc",
-    "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiDescription ./api-description.json --output example.yml --baseDir=example"
+    "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiTemplate ./api-template.json --output example.yml --baseDir=example --entryFile ./example/spec.ts --entryType Services"
   },
   "license": "MIT",
   "devDependencies": {

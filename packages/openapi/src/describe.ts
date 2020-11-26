@@ -31,9 +31,9 @@ const optionList = [
     typeLabel: "{underline file}",
   },
   {
-    name: "apiDescription",
+    name: "apiTemplate",
     type: String,
-    description: "Path to api-description.json",
+    description: "Default values for OpenAPI JSON",
     typeLabel: "{underline file}",
   },
   {name: "output", type: String, description: "Output file", typeLabel: "{underline file}"},
@@ -49,6 +49,18 @@ const optionList = [
     description: "Skip interfaces starting with this prefix.\nDefault to skip nothing",
     typeLabel: "{underline string}",
   },
+  {
+    name: "entryFile",
+    type: String,
+    description: "TypeScript file to look for entry type",
+    typeLabel: "{underline file}",
+  },
+  {
+    name: "entryType",
+    type: String,
+    description: "Type definition that is root of the API",
+    typeLabel: "{underline TS type name}",
+  },
 ]
 
 const usageSections = [
@@ -62,26 +74,26 @@ const usageSections = [
   },
 ]
 ;(() => {
-  const {tsConfig, apiDescription, output, baseDir, skip} = commandLineArgs(optionList)
+  const {tsConfig, apiTemplate, output, baseDir, skip, entryFile, entryType} = commandLineArgs(optionList)
 
-  if (!tsConfig || !apiDescription || !output) {
+  if (!tsConfig || !apiTemplate || !output || !entryFile || !entryType) {
     const usage = commandLineUsage(usageSections)
     console.log(usage)
     return
   }
 
-  const description = JSON.parse(fs.readFileSync(path.join(baseDir, apiDescription), "utf8"))
+  const template = JSON.parse(fs.readFileSync(path.join(baseDir, apiTemplate), "utf8"))
 
   const project = loadProject(path.join(baseDir, tsConfig))
 
-  const entryFile = project.getSourceFile(description.entry.file)
-  if (!entryFile)
-    throw new Error(`Cannot find entry file ${description.entry.file}, check api-description.json`)
+  const file = project.getSourceFile(entryFile)
+  if (!file)
+    throw new Error(`Cannot find entry file ${entryFile}`)
 
-  const entryInterface = entryFile.getInterface(description.entry.interface)
+  const entryInterface = file.getInterface(entryType)
   if (!entryInterface)
     throw new Error(
-      `Cannot find entry interface ${description.entry.interface}, check api-description.json`
+      `Cannot find entry type ${entryType}`
     )
 
   const apiDescriber = new ApiDescriber(baseDir, skip)
@@ -89,10 +101,10 @@ const usageSections = [
   const paths = apiDescriber.describeInterface(entryInterface)
 
   const result = {
-    ...description.template,
+    ...template,
     paths,
     components: {
-      ...description.template.components,
+      ...template.components,
       schemas: apiDescriber.createDefinitionSchemas(),
     },
   }
