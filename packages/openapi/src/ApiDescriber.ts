@@ -57,7 +57,7 @@ export class ApiDescriber {
         const requestType = type.getTypeArguments()[1]
 
         paths[prefix + prop.getName()] = {
-          patch: {
+          put: {
             requestBody: this.requestBody(requestType, true),
             responses: this.operationResponses(responseType),
           },
@@ -120,7 +120,7 @@ export class ApiDescriber {
     if (type.isArray()) {
       return {
         type: "array",
-        items: this.schema(parentTypeMapping.map(type.getArrayType())),
+        items: this.schema(parentTypeMapping.map(type.getArrayElementType())),
       }
     }
 
