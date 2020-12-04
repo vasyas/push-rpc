@@ -1,12 +1,5 @@
 import * as path from "path"
-import {
-  EnumDeclaration,
-  InterfaceDeclaration,
-  MethodSignature,
-  ObjectFlags,
-  PropertySignature,
-  Type,
-} from "ts-morph"
+import {EnumDeclaration, InterfaceDeclaration, ObjectFlags, PropertySignature, Type} from "ts-morph"
 
 // consider also lukeautry/tsoa
 

@@ -6,7 +6,7 @@
   "scripts": {
     "prepublishOnly": "yarn build",
     "build": "tsc",
-    "example": "ts-node ./src/describe.ts --tsConfig ./tsconfig.json --apiTemplate ./api-template.json --output example.yml --baseDir=example --entryFile ./example/spec.ts --entryType Services"
+    "example": "ts-node ./src/cli.ts --tsConfig ./tsconfig.json --apiTemplate ./api-template.json --output example.yml --baseDir=example --entryFile ./example/spec.ts --entryType Services"
   },
   "license": "MIT",
   "devDependencies": {
@@ -16,13 +16,16 @@
     "@push-rpc/core": "^1.2.0",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
+    "js-yaml": "^3.14.0",
     "moment": "^2.22.1",
-    "ts-morph": "^9.0.0",
-    "write-yaml": "^1.0.0"
+    "ts-morph": "^9.0.0"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "push-rpc-openapi": "./dist/cli.js"
   }
 }
