@@ -256,7 +256,7 @@ export class RpcSession {
         this.queue.push({
           type,
           name: name,
-          params: {...p},
+          params: cloneParams(p),
           resolve,
           reject,
         })
@@ -363,7 +363,7 @@ export class RpcSession {
       const subscribeTopic = (p = params) => topic.subscribeSession(this, p, messageId, ctx)
       const r = await this.localMiddleware(ctx, subscribeTopic, params, MessageType.Subscribe)
 
-      this.send(MessageType.Data, messageId, topic.getTopicName(), {...params}, r)
+      this.send(MessageType.Data, messageId, topic.getTopicName(), cloneParams(params), r)
 
       this.subscriptions.push({topic, params})
       this.listeners.subscribed(this.subscriptions.length)
@@ -409,3 +409,12 @@ const PING_MESSAGE_ID = "–ws-ping"
 
 export const PING_MESSAGE = "PING"
 export const PONG_MESSAGE = "PONG"
+
+function cloneParams(p) {
+  if (!p) return p
+  if (typeof p == "object") {
+    if (p instanceof Date) return p
+    return {...p}
+  }
+  return p
+}
