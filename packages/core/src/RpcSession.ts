@@ -1,7 +1,14 @@
 import {LocalTopicImpl} from "./local"
 import {log} from "./logger"
 import {createRemote, RemoteTopicImpl} from "./remote"
-import {getServiceItem, MessageType, Method, Middleware, RpcConnectionContext, RpcContext,} from "./rpc"
+import {
+  getServiceItem,
+  MessageType,
+  Method,
+  Middleware,
+  RpcConnectionContext,
+  RpcContext,
+} from "./rpc"
 import {Socket} from "./transport"
 import {createMessageId, message} from "./utils"
 
@@ -249,7 +256,7 @@ export class RpcSession {
         this.queue.push({
           type,
           name: name,
-          params: p,
+          params: {...p},
           resolve,
           reject,
         })
@@ -356,7 +363,7 @@ export class RpcSession {
       const subscribeTopic = (p = params) => topic.subscribeSession(this, p, messageId, ctx)
       const r = await this.localMiddleware(ctx, subscribeTopic, params, MessageType.Subscribe)
 
-      this.send(MessageType.Data, messageId, topic.getTopicName(), params, r)
+      this.send(MessageType.Data, messageId, topic.getTopicName(), {...params}, r)
 
       this.subscriptions.push({topic, params})
       this.listeners.subscribed(this.subscriptions.length)

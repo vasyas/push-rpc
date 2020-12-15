@@ -1,7 +1,6 @@
 import {assert} from "chai"
 import {composeMiddleware, LocalTopicImpl, MessageType} from "../src"
 import {Middleware} from "../src/rpc"
-import {message} from "../src/utils"
 import {createTestClient, startTestServer} from "./testUtils"
 
 describe("middleware", () => {
@@ -49,11 +48,9 @@ describe("middleware", () => {
   it("remote get topic", async () => {
     let mwMessageType = null
 
-    await startTestServer(
-      {
-        item: new LocalTopicImpl(async () => "1"),
-      }
-    )
+    await startTestServer({
+      item: new LocalTopicImpl(async () => "1"),
+    })
 
     const client = await createTestClient(0, {
       remoteMiddleware: (ctx, next, params, messageType) => {
@@ -85,7 +82,7 @@ describe("middleware", () => {
     let r = null
 
     const client = await createTestClient(0)
-    await client.item.subscribe(data => r = data)
+    await client.item.subscribe(data => (r = data))
 
     await new Promise(r => setTimeout(r, 50))
 
@@ -96,11 +93,9 @@ describe("middleware", () => {
   it("remote topic subscribe", async () => {
     let mwMessageType = null
 
-    await startTestServer(
-      {
-        item: new LocalTopicImpl(async () => "1"),
-      }
-    )
+    await startTestServer({
+      item: new LocalTopicImpl(async () => "1"),
+    })
 
     let r = null
 
@@ -110,7 +105,7 @@ describe("middleware", () => {
         return next(params)
       },
     })
-    await client.item.subscribe(data => r = data)
+    await client.item.subscribe(data => (r = data))
 
     await new Promise(r => setTimeout(r, 50))
 
