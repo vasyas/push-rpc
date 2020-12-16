@@ -18,4 +18,20 @@ describe("Misc", () => {
     await client.hello(req)
     assert.equal(typeof req.when, "object")
   })
+
+  it("Send array in parameter", async () => {
+    let param
+
+    await startTestServer({
+      async hello(p) {
+        param = p
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    await client.hello(["a"])
+    assert.equal(typeof param, "object")
+    assert.isArray(param)
+  })
 })

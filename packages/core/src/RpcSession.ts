@@ -414,7 +414,7 @@ function cloneParams(p) {
   if (!p) return p
   if (typeof p == "object") {
     if (p instanceof Date) return p
-    return {...p}
+    return JSON.parse(JSON.stringify(p))
   }
   return p
 }
