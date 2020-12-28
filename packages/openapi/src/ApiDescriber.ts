@@ -34,8 +34,6 @@ export class ApiDescriber {
     for (const prop of i.getProperties()) {
       const type = prop.getTypeNodeOrThrow().getType()
 
-      console.log(prop.getName())
-
       if (type.isInterface()) {
         const declaration = type.getSymbolOrThrow().getDeclarations()[0]
 
@@ -186,7 +184,7 @@ export class ApiDescriber {
           console.warn(`Unable to get type for property ${prop.getName()}`)
         }
       } else {
-        // console.warn(`Unable to read type for property ${ prop.getName() }`)
+        // console.warn(`Unable to read type for property ${prop.getName()}`)
         properties[prop.getName()] = {}
       }
     }

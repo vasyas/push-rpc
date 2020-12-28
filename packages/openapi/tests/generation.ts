@@ -7,7 +7,7 @@ describe("OpenAPI generation", () => {
   const template = {}
   const baseDir = "."
 
-  it("partial props have type", async () => {
+  it.skip("partial props have type", async () => {
     const yaml = generateOpenAPI({
       tsConfig,
       template,
