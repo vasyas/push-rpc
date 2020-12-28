@@ -34,6 +34,8 @@ export class ApiDescriber {
     for (const prop of i.getProperties()) {
       const type = prop.getTypeNodeOrThrow().getType()
 
+      console.log(prop.getName())
+
       if (type.isInterface()) {
         const declaration = type.getSymbolOrThrow().getDeclarations()[0]
 
@@ -137,7 +139,7 @@ export class ApiDescriber {
     if (type.isUnion()) return this.unionSchema(type)
 
     console.warn(`Unsupported type ${type.getText()}`)
-    return undefined
+    return {}
   }
 
   private shouldBeReferenced(type: Type) {

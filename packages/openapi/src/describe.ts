@@ -31,7 +31,7 @@ function filterUndefined(obj) {
   return obj
 }
 
-export function generateYml({tsConfig, template, baseDir, skip, entryFile, entryType}): string {
+export function generateOpenAPI({tsConfig, template, baseDir, skip, entryFile, entryType}) {
   const project = loadProject(path.join(baseDir, tsConfig))
 
   const file = project.getSourceFile(path.join(baseDir, entryFile))
@@ -44,7 +44,7 @@ export function generateYml({tsConfig, template, baseDir, skip, entryFile, entry
 
   const paths = apiDescriber.describeInterface(entryInterface)
 
-  const result = {
+  return {
     ...template,
     paths,
     components: {
@@ -52,6 +52,9 @@ export function generateYml({tsConfig, template, baseDir, skip, entryFile, entry
       schemas: apiDescriber.createDefinitionSchemas(),
     },
   }
+}
 
+export function generateYml({tsConfig, template, baseDir, skip, entryFile, entryType}): string {
+  const result = generateOpenAPI({tsConfig, template, baseDir, skip, entryFile, entryType})
   return yaml.safeDump(filterUndefined(result))
 }

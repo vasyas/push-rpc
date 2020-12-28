@@ -6,7 +6,8 @@
   "scripts": {
     "prepublishOnly": "yarn build",
     "build": "tsc",
-    "example": "ts-node ./src/cli.ts --tsConfig ./tsconfig.json --apiTemplate ./api-template.json --output example.yml --baseDir=example --entryFile ./example/spec.ts --entryType Services"
+    "example": "ts-node ./src/cli.ts --tsConfig ./tsconfig.json --apiTemplate ./api-template.json --output example.yml --baseDir=example --entryFile ./example/spec.ts --entryType Services",
+    "test": "mocha -t 10000 -r ts-node/register tests/**/*.ts"
   },
   "license": "MIT",
   "devDependencies": {
