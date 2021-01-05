@@ -1,0 +1,21 @@
+{
+  "name": "@push-rpc/nats",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "yarn build && yarn test",
+    "build": "tsc",
+    "test": "mocha -r ts-node/register tests/**/*.ts"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/vasyas/push-rpc.git",
+  "author": "Vasyl Stashuk <vasyl@stashuk.com>",
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "cac588b8c118843655324a23250020d7f6f1f090",
+  "dependencies": {
+    "nats": "^2.0.0-214"
+  }
+}
