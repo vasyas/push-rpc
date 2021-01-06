@@ -1,6 +1,6 @@
 import {connect, NatsConnection} from "nats"
 import {Services} from "./shared"
-import {createRpcClient} from "../nats"
+import {createRpcClient} from "../client"
 
 async function start() {
   const connection: NatsConnection = await connect()
@@ -9,19 +9,13 @@ async function start() {
 
   console.log("Client connected")
 
-  async function call(i) {
-    console.log("Before request " + i)
-    console.log(await services.todo.getHello(i))
-    console.log("Got response " + i)
-  }
-
-  for (let i = 0; i < 10; i++) {
-    call(i)
-  }
-
-  // services.todo.todos.subscribe(() => {
-  //
+  // services.todo.todos.subscribe(todos => {
+  //   console.log("Got todo items", todos)
   // })
+
+  console.log("items: " + (await services.todo.todos.get()).length)
+
+  // await services.todo.addTodo({text: "Buy groceries"})
 }
 
 start()
