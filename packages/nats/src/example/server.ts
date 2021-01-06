@@ -5,6 +5,8 @@ import {Services, TodoService} from "./shared"
 async function start() {
   class TodoServiceImpl implements TodoService {
     async getHello(i: number): Promise<string> {
+      await new Promise(r => setTimeout(r, 100 * Math.random()))
+
       return "hello " + i
     }
   }

@@ -91,9 +91,7 @@ async function serverMessageLoop(services, prefix, subscription) {
     console.log(`Start call ${body} subj ${m.subject}`)
 
     if ("method" in item) {
-      setTimeout(() => {
-        invokeMethod(item, body, m)
-      }, 0)
+      invokeMethod(item, body, m)
     } else {
     }
   }
