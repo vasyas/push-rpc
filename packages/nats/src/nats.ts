@@ -3,11 +3,15 @@ import {RemoteTopic, Topic} from "../../core/src"
 
 const codec = JSONCodec()
 
-export function createRpcClient(level: number, connection: NatsConnection): Promise<any> {
+export function createRpcClient(
+  level: number,
+  prefix: string,
+  connection: NatsConnection
+): Promise<any> {
   return createRemoteServiceItems(level, name => {
     // start with method
     const remoteItem = async body => {
-      const msg = await connection.request(name, codec.encode(body))
+      const msg = await connection.request(prefix + "." + name, codec.encode(body))
       return codec.decode(msg.data)
     }
 
@@ -67,33 +71,42 @@ function createRemoteServiceItems(
   )
 }
 
-export async function createRpcServer(services: any, connection: NatsConnection) {
-  const subscription = connection.subscribe(">")
+export async function createRpcServer(services: any, prefix: string, connection: NatsConnection) {
+  // alternatively, walk all service items and subscribe individually
+  const subscription = connection.subscribe(`${prefix}.>`)
 
-  serverMessageLoop(services, subscription)
+  serverMessageLoop(services, prefix, subscription)
 }
 
-async function serverMessageLoop(services, subscription) {
+async function serverMessageLoop(services, prefix, subscription) {
   for await (const m of subscription) {
-    console.log("Got message", m.headers)
-
-    const item = getServiceItem(services, m.subject)
-    // warn about unhandled item
+    const itemName = m.subject.substring(prefix.length + 1)
+    const item = getServiceItem(services, itemName)
 
     if (!item) return
+    // warn about unhandled item
 
     const body = codec.decode(m.data)
 
+    console.log(`Start call ${body} subj ${m.subject}`)
+
     if ("method" in item) {
-      const response = await item.method.call(item.object, body)
-
-      m.respond(codec.encode(response))
-      return
+      setTimeout(() => {
+        invokeMethod(item, body, m)
+      }, 0)
+    } else {
     }
-
-    // const r = await item(request)
-    // r.reply()
   }
+}
+
+async function invokeMethod(item: {method: Method; object: any}, body: any, m) {
+  const response = await item.method.call(item.object, body)
+
+  console.log("Responding call " + body)
+
+  m.respond(codec.encode(response))
+
+  console.log("Responded call " + body)
 }
 
 type Method = (req?, ctx?) => Promise<any>

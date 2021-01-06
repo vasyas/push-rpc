@@ -4,8 +4,8 @@ import {Services, TodoService} from "./shared"
 
 async function start() {
   class TodoServiceImpl implements TodoService {
-    async getHello(): Promise<string> {
-      return "hello"
+    async getHello(i: number): Promise<string> {
+      return "hello " + i
     }
   }
 
@@ -15,7 +15,7 @@ async function start() {
 
   const connection: NatsConnection = await connect()
 
-  await createRpcServer(services, connection)
+  await createRpcServer(services, "demo", connection)
 
   console.log("RPC Server started")
 }

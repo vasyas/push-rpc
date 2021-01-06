@@ -3,5 +3,5 @@ export interface Services {
 }
 
 export interface TodoService {
-  getHello(): Promise<string>
+  getHello(i: number): Promise<string>
 }
