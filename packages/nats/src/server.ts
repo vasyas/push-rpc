@@ -1,33 +1,24 @@
-import {JSONCodec, NatsConnection} from "nats"
-import {Method, ServiceItem, Topic, DataSupplier, DataConsumer, LocalTopic} from "./core"
-
-const codec = JSONCodec()
+import {NatsConnection} from "nats"
+import {DataConsumer, DataSupplier, Method, ServiceItem, Topic} from "./core"
+import {subscribeAndHandle} from "./utils"
 
 export async function createRpcServer(services: any, prefix: string, connection: NatsConnection) {
-  // alternatively, walk all service items and subscribe individually
-  const subscription = connection.subscribe(`${prefix}.>`)
+  subscribeAndHandle(connection, `${prefix}.>`, async (subject, body, respond) => {
+    const itemName = subject.substring(prefix.length + 1)
 
-  serverMessageLoop(services, prefix, subscription)
-}
-
-async function serverMessageLoop(services, prefix, subscription) {
-  for await (const m of subscription) {
-    const itemName = m.subject.substring(prefix.length + 1)
     const item = getServiceItem(services, itemName)
 
     if (!item) return
     // warn about unhandled item
 
-    const body = codec.decode(m.data)
-
     if ("method" in item) {
       // local method request
-      invokeMethod(item, body, r => m.respond(codec.encode(r)))
+      invokeMethod(item, body, respond)
     } else {
       // get data from topic
-      getTopicData(item as any, body, r => m.respond(codec.encode(r)))
+      getTopicData(item as any, body, respond)
     }
-  }
+  })
 }
 
 async function invokeMethod(item: {method: Method; object: any}, req: any, respond) {

@@ -9,13 +9,11 @@ async function start() {
 
   console.log("Client connected")
 
-  // services.todo.todos.subscribe(todos => {
-  //   console.log("Got todo items", todos)
-  // })
+  services.todo.todos.subscribe(todos => {
+    console.log("Got todo items", todos)
+  })
 
-  console.log("items: " + (await services.todo.todos.get()).length)
-
-  // await services.todo.addTodo({text: "Buy groceries"})
+  await services.todo.addTodo({text: "Buy groceries"})
 }
 
 start()

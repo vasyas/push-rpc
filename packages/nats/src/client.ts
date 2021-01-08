@@ -1,6 +1,7 @@
-import {JSONCodec, NatsConnection} from "nats"
-import {DataConsumer, Method, RemoteTopic, Topic} from "./core"
+import {JSONCodec, NatsConnection, Subscription as NatsSubscription} from "nats"
 import {getClassMethodNames} from "../../core/src/utils"
+import {DataConsumer, Method, RemoteTopic, Topic} from "./core"
+import {subscribeAndHandle} from "./utils"
 
 const codec = JSONCodec()
 
@@ -16,7 +17,7 @@ export function createRpcClient(
       return codec.decode(msg.data)
     }
 
-    const remoteTopic = new RemoteTopicImpl(prefix + "." + name, connection)
+    const remoteTopic = new RemoteTopicImpl(prefix, name, connection)
 
     // make remoteItem both topic and remoteMethod
     getClassMethodNames(remoteTopic).forEach(methodName => {
@@ -73,10 +74,26 @@ function createRemoteServiceItems(
 }
 
 export class RemoteTopicImpl<D, F> implements Topic<D, F> {
-  constructor(private subject: string, private connection: NatsConnection) {}
+  constructor(
+    private prefix: string,
+    private topicName: string,
+    private connection: NatsConnection
+  ) {}
 
-  async get(params: F = {} as any): Promise<D> {
-    const msg = await this.connection.request(this.subject, codec.encode(params))
+  private getTopicSubject(): string {
+    // TODO include filter params!
+    return this.prefix + "." + this.topicName
+  }
+
+  private getFilterKey(filter): string {
+    // TODO normalize filter (sort keys)
+    const filterKey = JSON.stringify(filter)
+    return filterKey
+  }
+
+  async get(filter: F = {} as any): Promise<D> {
+    // TODO encode filter in subject instead of passing in body?
+    const msg = await this.connection.request(this.getTopicSubject(), codec.encode(filter))
     return codec.decode(msg.data)
   }
 
@@ -85,93 +102,86 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
     filter: F = {} as any,
     subscriptionKey: SubscriptionKey = consumer as any
   ): Promise<SubscriptionKey> {
-    return null
+    if (filter === null) {
+      throw new Error(
+        "Subscribe with null filter is not supported, use empty object to get all data"
+      )
+    }
+
+    const filterKey = this.getFilterKey(filter)
+
+    // already have cached value with this params?
+    const subscription: Subscription<D> = this.subscriptions[filterKey] || {
+      cached: undefined,
+      consumers: [],
+      transportSubscription: null,
+    }
+    this.subscriptions[filterKey] = subscription
+
+    // can supply value early without network round trip
+    if (subscription?.cached !== undefined) {
+      consumer(subscription.cached)
+    }
+
+    if (!subscription.transportSubscription) {
+      subscription.transportSubscription = subscribeAndHandle(
+        this.connection,
+        this.getTopicSubject(),
+        (_, body) => this.receiveData(filter, body)
+      )
+    }
+
+    // TODO send request for 1st data!! (same as get?)
+
+    subscription.consumers.push({
+      consumer,
+      subscriptionKey,
+    })
+
+    return subscriptionKey
   }
 
-  unsubscribe(params: F = {} as any, subscriptionKey = undefined) {}
+  private receiveData = (filter: F, body: any) => {
+    // TODO get params from subject instead of passing?
 
-  /*
+    const subscription = this.subscriptions[this.getFilterKey(filter)]
+    subscription.cached = body
 
-    async subscribe<SubscriptionKey = DataConsumer<D>>(
-      consumer: DataConsumer<D>,
-      filter: F = {} as any,
-      subscriptionKey: SubscriptionKey = consumer as any
-    ): Promise<SubscriptionKey> {
-      if (filter === null) {
-        throw new Error(
-          "Subscribe with null filter is not supported, use empty object to get all data"
-        )
-      }
+    subscription.consumers.forEach(c => {
+      c.consumer(body)
+    })
+  }
 
-      const paramsKey = JSON.stringify(filter)
+  unsubscribe(params: F = {} as any, subscriptionKey = undefined) {
+    const paramsKey = this.getFilterKey(params)
 
-      // already have cached value with this params?
-      if (this.cached[paramsKey] !== undefined) {
-        consumer(this.cached[paramsKey])
-      }
+    const subscription = this.subscriptions[paramsKey]
+    if (!subscription) return
 
-      this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
-
-      try {
-        await this.session.callRemote(this.topicName, filter, MessageType.Subscribe)
-      } catch (e) {
-        this.unsubscribe(filter, subscriptionKey)
-        throw e
-      }
-
-      return subscriptionKey
-    }
-
-    unsubscribe(params: F = {} as any, subscriptionKey = undefined) {
-      const paramsKey = JSON.stringify(params)
-
-      if (!this.consumers[paramsKey]) return
-
-      // only if all unsubscribed?
-      this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
-
-      // unsubscribe all
-      if (subscriptionKey == undefined) {
-        this.deleteAllSubscriptions(paramsKey)
-        return
-      }
-
-      const subscriptions = this.consumers[paramsKey]
-
-      const idx = subscriptions.findIndex(s => s.subscriptionKey == subscriptionKey)
-      if (idx >= 0) {
-        if (subscriptions.length > 1) {
-          subscriptions.splice(idx, 1)
-        } else {
-          this.deleteAllSubscriptions(paramsKey)
-        }
+    const idx = subscription.consumers.findIndex(s => s.subscriptionKey == subscriptionKey)
+    if (idx >= 0) {
+      if (subscription.consumers.length > 1) {
+        subscription.consumers.splice(idx, 1)
+      } else {
+        subscription.transportSubscription.unsubscribe() // TODO or .drain?
+        delete this.subscriptions[paramsKey]
       }
     }
+  }
 
-    private deleteAllSubscriptions(paramsKey: string) {
-      delete this.consumers[paramsKey]
-      delete this.cached[paramsKey]
-    }
-
-    resubscribe() {
-      Object.keys(this.consumers).forEach(paramsKey => {
-        const params = JSON.parse(paramsKey)
-        this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
-      })
-    }
-
-    receiveData(params: F, data: D) {
-      const paramsKey = JSON.stringify(params)
-      const subscriptions = this.consumers[paramsKey] || []
-      this.cached[paramsKey] = data
-      subscriptions.forEach(subscription => subscription.consumer(data))
-    }
-
-    private consumers: {[paramsKey: string]: Subscription<D>[]} = {}
-    private cached: {[paramsKey: string]: D} = {}
-
-     */
+  private subscriptions: {[filterKey: string]: Subscription<D>} = {}
 
   // this is only to easy using for remote services during tests
   trigger(p?: F, data?: D): void {}
+}
+
+interface Subscription<D> {
+  cached: D
+  consumers: SubscribedConsumer<D>[]
+  transportSubscription: NatsSubscription
+}
+
+interface SubscribedConsumer<D> {
+  consumer: DataConsumer<D>
+  subscriptionKey: any
 }
