@@ -1,8 +1,12 @@
 import {NatsConnection} from "nats"
-import {DataConsumer, DataSupplier, Method, ServiceItem, Topic} from "./core"
+import {LocalTopicImpl, Method, ServiceItem, Transport} from "./core"
 import {subscribeAndHandle} from "./utils"
 
 export async function createRpcServer(services: any, prefix: string, connection: NatsConnection) {
+  const transport = new Transport(prefix, connection)
+
+  prepareLocal(services, transport)
+
   subscribeAndHandle(connection, `${prefix}.>`, async (subject, body, respond) => {
     const itemName = subject.substring(prefix.length + 1)
 
@@ -61,28 +65,36 @@ export function getServiceItem(services: any, name: string): ServiceItem {
   return {method: item, object: services}
 }
 
-export class LocalTopicImpl<D, F, TD = D> implements Topic<D, F, TD> {
-  constructor(readonly supplier: DataSupplier<D, F>) {}
+export function prepareLocal(services: any, transport: Transport, prefix: string = "") {
+  const keys = getObjectProps(services)
 
-  private name: string
+  keys.forEach(key => {
+    const item = services[key]
 
-  getTopicName(): string {
-    return this.name
+    if (typeof item == "object") {
+      const name = prefix + key
+
+      if ("setTransport" in item) {
+        item.setTransport(transport)
+      }
+
+      if ("setTopicName" in item) {
+        item.setTopicName(name)
+        return
+      }
+
+      return prepareLocal(item, transport, name + ".")
+    }
+  })
+}
+
+function getObjectProps(obj) {
+  let props = []
+
+  while (!!obj && obj != Object.prototype) {
+    props = props.concat(Object.getOwnPropertyNames(obj))
+    obj = Object.getPrototypeOf(obj)
   }
 
-  setTopicName(s: string) {
-    this.name = s
-  }
-
-  /**
-   * Send data
-   */
-  trigger(p?: Partial<F>, data?: TD): void {}
-
-  // only required fort ServiceImpl to implement Service interfaces
-  async get(params?: F): Promise<D> {
-    return undefined
-  }
-  async subscribe(consumer: DataConsumer<D>, params?: F, subscriptionKey?: any): Promise<any> {}
-  unsubscribe(params?: F, subscriptionKey?: any) {}
+  return Array.from(new Set(props)).filter(p => p != "constructor")
 }

@@ -1,6 +1,7 @@
 import {connect, NatsConnection} from "nats"
 import {Todo} from "../../../examples/basic/shared"
-import {createRpcServer, LocalTopicImpl} from "../server"
+import {LocalTopicImpl} from "../core"
+import {createRpcServer} from "../server"
 import {Services, TodoService} from "./shared"
 
 async function start() {

@@ -131,12 +131,14 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
       )
     }
 
-    // TODO send request for 1st data!! (same as get?)
-
     subscription.consumers.push({
       consumer,
       subscriptionKey,
     })
+
+    // only required for NATS?
+    const initialData = await this.get(filter)
+    this.receiveData(filter, initialData)
 
     return subscriptionKey
   }
