@@ -42,7 +42,7 @@ export function getServiceItem(services: any, name: string): ServiceItem {
     return null
   }
 
-  const names = name.split(".")
+  const names = name.split("/")
 
   const item = services[names[0]]
 
@@ -53,7 +53,7 @@ export function getServiceItem(services: any, name: string): ServiceItem {
       return null
     }
 
-    return getServiceItem(item as any, names.slice(1).join("."))
+    return getServiceItem(item as any, names.slice(1).join("/"))
   }
 
   return {method: item, object: services}

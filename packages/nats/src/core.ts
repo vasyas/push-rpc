@@ -17,18 +17,28 @@ export class Transport {
   // for servers
   publish<F, D>(topicName: string, filter: F, data: D) {
     // TODO encode filter in subject
-    this.connection.publish(this.serviceName + "." + topicName, this.codec.encode(data))
+    this.connection.publish(this.serviceName + ".rpc-data." + topicName, this.codec.encode(data))
   }
 
   listenCalls(handle: HandleCall) {
-    subscribeAndHandle(this.connection, `${this.serviceName}.>`, handle)
+    subscribeAndHandle(
+      this.connection,
+      `${this.serviceName}.rpc-call.>`,
+      (subject, body, respond) => {
+        const parts = subject.split(".")
+        parts.splice(0, 2)
+
+        const itemName = parts[0]
+        handle(itemName, body, respond)
+      }
+    )
   }
 
   // for clients
 
   async call<F, D>(itemName: string, requestBody: F): Promise<D> {
     const msg = await this.connection.request(
-      this.serviceName + "." + itemName,
+      this.serviceName + ".rpc-call." + itemName,
       this.codec.encode(requestBody)
     )
     return this.codec.decode(msg.data)
@@ -36,7 +46,7 @@ export class Transport {
 
   subscribeTopic<F>(topicName: string, filter: F, handle: (d: any) => void): TopicSubscription {
     // TODO include filter data in subject
-    const subject = this.serviceName + "." + topicName
+    const subject = this.serviceName + ".rpc-data." + topicName
 
     const subscription = subscribeAndHandle(this.connection, subject, (_, data) => handle(data))
 

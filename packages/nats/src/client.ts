@@ -43,7 +43,7 @@ function createRemoteServiceItems(
             cachedItems[name] = createRemoteServiceItems(
               level - 1,
               createServiceItem,
-              itemName + "."
+              itemName + "/"
             )
           else cachedItems[name] = createServiceItem(itemName)
         }

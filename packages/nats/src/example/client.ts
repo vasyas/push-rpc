@@ -15,7 +15,7 @@ async function start() {
     console.log("Got todo items", todos)
   })
 
-  // await services.todo.addTodo({text: "Buy groceries"})
+  await services.todo.addTodo({text: "Buy groceries"})
 }
 
 start()
