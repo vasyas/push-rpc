@@ -1,5 +1,13 @@
 import {getClassMethodNames} from "../../core/src/utils"
-import {DataConsumer, Method, RemoteTopic, Topic, TopicSubscription, Transport} from "./core"
+import {
+  DataConsumer,
+  ITEM_NAME_SEPARATOR,
+  Method,
+  RemoteTopic,
+  Topic,
+  TopicSubscription,
+  Transport,
+} from "./core"
 
 export function createRpcClient(level: number, transport: Transport): Promise<any> {
   return createRemoteServiceItems(level, name => {
@@ -43,7 +51,7 @@ function createRemoteServiceItems(
             cachedItems[name] = createRemoteServiceItems(
               level - 1,
               createServiceItem,
-              itemName + "/"
+              itemName + ITEM_NAME_SEPARATOR
             )
           else cachedItems[name] = createServiceItem(itemName)
         }

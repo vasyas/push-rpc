@@ -11,6 +11,8 @@ export type ServiceItem =
 
 export type HandleCall = (itemName: string, body: any, respond) => void
 
+export const ITEM_NAME_SEPARATOR = "/"
+
 export class Transport {
   constructor(private serviceName: string, private connection: NatsConnection) {}
 
@@ -85,11 +87,18 @@ export class LocalTopicImpl<D, F, TD = D> implements Topic<D, F, TD> {
   /**
    * Send data
    */
-  trigger(p?: Partial<F>, data?: TD): void {
+  trigger(p: Partial<F> = {}, data?: TD): void {
     if (!this.transport)
       throw new Error(`Topic ${this.name} transport is not set, server probably not started`)
+    ;(async () => {
+      if (data === undefined) {
+        data = (await this.supplier(p as any, null)) as any
+      }
 
-    this.transport.publish(this.getTopicName(), p, data)
+      console.log("Publinshing data", data)
+
+      this.transport.publish(this.getTopicName(), p, data)
+    })()
   }
 
   // only required fort ServiceImpl to implement Service interfaces

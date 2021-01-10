@@ -1,4 +1,4 @@
-import {LocalTopicImpl, Method, ServiceItem, Transport} from "./core"
+import {ITEM_NAME_SEPARATOR, LocalTopicImpl, Method, ServiceItem, Transport} from "./core"
 
 export async function createRpcServer(services: any, transport: Transport) {
   prepareLocal(services, transport)
@@ -42,7 +42,7 @@ export function getServiceItem(services: any, name: string): ServiceItem {
     return null
   }
 
-  const names = name.split("/")
+  const names = name.split(ITEM_NAME_SEPARATOR)
 
   const item = services[names[0]]
 
@@ -53,7 +53,7 @@ export function getServiceItem(services: any, name: string): ServiceItem {
       return null
     }
 
-    return getServiceItem(item as any, names.slice(1).join("/"))
+    return getServiceItem(item as any, names.slice(1).join(ITEM_NAME_SEPARATOR))
   }
 
   return {method: item, object: services}
@@ -77,7 +77,7 @@ export function prepareLocal(services: any, transport: Transport, prefix: string
         return
       }
 
-      return prepareLocal(item, transport, name + ".")
+      return prepareLocal(item, transport, name + ITEM_NAME_SEPARATOR)
     }
   })
 }
