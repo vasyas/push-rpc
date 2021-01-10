@@ -1,7 +1,7 @@
 import {connect, NatsConnection} from "nats"
 import {Todo} from "../../../examples/basic/shared"
-import {LocalTopicImpl, Transport} from "../core"
-import {createRpcServer} from "../server"
+import {NatsTransport} from "../nats"
+import {createRpcServer, LocalTopicImpl} from "../server"
 import {Services, TodoService} from "./shared"
 
 async function start() {
@@ -28,7 +28,7 @@ async function start() {
   }
 
   const connection: NatsConnection = await connect()
-  const transport = new Transport("demo", connection)
+  const transport = new NatsTransport("demo", connection)
 
   await createRpcServer(services, transport)
 

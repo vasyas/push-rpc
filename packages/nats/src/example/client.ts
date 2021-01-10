@@ -1,11 +1,11 @@
 import {connect, NatsConnection} from "nats"
-import {Transport} from "../core"
-import {Services} from "./shared"
 import {createRpcClient} from "../client"
+import {NatsTransport} from "../nats"
+import {Services} from "./shared"
 
 async function start() {
   const connection: NatsConnection = await connect()
-  const transport = new Transport("demo", connection)
+  const transport = new NatsTransport("demo", connection)
 
   const services: Services = await createRpcClient(1, transport)
 

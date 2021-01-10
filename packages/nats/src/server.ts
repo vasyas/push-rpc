@@ -1,4 +1,12 @@
-import {ITEM_NAME_SEPARATOR, LocalTopicImpl, Method, ServiceItem, Transport} from "./core"
+import {
+  DataConsumer,
+  DataSupplier,
+  ITEM_NAME_SEPARATOR,
+  Method,
+  ServiceItem,
+  Topic,
+  Transport,
+} from "./core"
 
 export async function createRpcServer(services: any, transport: Transport) {
   prepareLocal(services, transport)
@@ -37,7 +45,7 @@ async function getTopicData(
   respond(response)
 }
 
-export function getServiceItem(services: any, name: string): ServiceItem {
+function getServiceItem(services: any, name: string): ServiceItem {
   if (!name) {
     return null
   }
@@ -59,7 +67,7 @@ export function getServiceItem(services: any, name: string): ServiceItem {
   return {method: item, object: services}
 }
 
-export function prepareLocal(services: any, transport: Transport, prefix: string = "") {
+function prepareLocal(services: any, transport: Transport, prefix: string = "") {
   const keys = getObjectProps(services)
 
   keys.forEach(key => {
@@ -91,4 +99,47 @@ function getObjectProps(obj) {
   }
 
   return Array.from(new Set(props)).filter(p => p != "constructor")
+}
+
+export class LocalTopicImpl<D, F, TD = D> implements Topic<D, F, TD> {
+  constructor(readonly supplier: DataSupplier<D, F>) {}
+
+  private name: string
+  private transport: Transport
+
+  getTopicName(): string {
+    return this.name
+  }
+
+  setTopicName(s: string) {
+    this.name = s
+  }
+
+  setTransport(transport: Transport) {
+    this.transport = transport
+  }
+
+  /**
+   * Send data
+   */
+  trigger(p: Partial<F> = {}, data?: TD): void {
+    if (!this.transport)
+      throw new Error(`Topic ${this.name} transport is not set, server probably not started`)
+    ;(async () => {
+      if (data === undefined) {
+        data = (await this.supplier(p as any, null)) as any
+      }
+
+      this.transport.publish(this.getTopicName(), p, data)
+    })()
+  }
+
+  // only required fort ServiceImpl to implement Service interfaces
+  async get(params?: F): Promise<D> {
+    return undefined
+  }
+
+  async subscribe(consumer: DataConsumer<D>, params?: F, subscriptionKey?: any): Promise<any> {}
+
+  unsubscribe(params?: F, subscriptionKey?: any) {}
 }
