@@ -11,7 +11,7 @@ async function start() {
 
   console.log("Client connected")
 
-  services.todo.todos.subscribe(todos => {
+  await services.todo.todos.subscribe(todos => {
     console.log("Got todo items", todos)
   })
 
