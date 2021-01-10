@@ -1,23 +1,14 @@
-import {JSONCodec, NatsConnection, Subscription as NatsSubscription} from "nats"
 import {getClassMethodNames} from "../../core/src/utils"
-import {DataConsumer, Method, RemoteTopic, Topic} from "./core"
-import {subscribeAndHandle} from "./utils"
+import {DataConsumer, Method, RemoteTopic, Topic, TopicSubscription, Transport} from "./core"
 
-const codec = JSONCodec()
-
-export function createRpcClient(
-  level: number,
-  prefix: string,
-  connection: NatsConnection
-): Promise<any> {
+export function createRpcClient(level: number, transport: Transport): Promise<any> {
   return createRemoteServiceItems(level, name => {
     // start with method
-    const remoteItem = async body => {
-      const msg = await connection.request(prefix + "." + name, codec.encode(body))
-      return codec.decode(msg.data)
+    const remoteItem = body => {
+      return transport.call(name, body)
     }
 
-    const remoteTopic = new RemoteTopicImpl(prefix, name, connection)
+    const remoteTopic = new RemoteTopicImpl(name, transport)
 
     // make remoteItem both topic and remoteMethod
     getClassMethodNames(remoteTopic).forEach(methodName => {
@@ -74,16 +65,7 @@ function createRemoteServiceItems(
 }
 
 export class RemoteTopicImpl<D, F> implements Topic<D, F> {
-  constructor(
-    private prefix: string,
-    private topicName: string,
-    private connection: NatsConnection
-  ) {}
-
-  private getTopicSubject(): string {
-    // TODO include filter params!
-    return this.prefix + "." + this.topicName
-  }
+  constructor(private topicName: string, private transport: Transport) {}
 
   private getFilterKey(filter): string {
     // TODO normalize filter (sort keys)
@@ -92,9 +74,7 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
   }
 
   async get(filter: F = {} as any): Promise<D> {
-    // TODO encode filter in subject instead of passing in body?
-    const msg = await this.connection.request(this.getTopicSubject(), codec.encode(filter))
-    return codec.decode(msg.data)
+    return this.transport.call(this.topicName, filter)
   }
 
   async subscribe<SubscriptionKey = DataConsumer<D>>(
@@ -124,10 +104,10 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
     }
 
     if (!subscription.transportSubscription) {
-      subscription.transportSubscription = subscribeAndHandle(
-        this.connection,
-        this.getTopicSubject(),
-        (_, body) => this.receiveData(filter, body)
+      subscription.transportSubscription = this.transport.subscribeTopic(
+        this.topicName,
+        filter,
+        data => this.receiveData(filter, data)
       )
     }
 
@@ -144,8 +124,6 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
   }
 
   private receiveData = (filter: F, body: any) => {
-    // TODO get params from subject instead of passing?
-
     const subscription = this.subscriptions[this.getFilterKey(filter)]
     subscription.cached = body
 
@@ -165,7 +143,7 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
       if (subscription.consumers.length > 1) {
         subscription.consumers.splice(idx, 1)
       } else {
-        subscription.transportSubscription.unsubscribe() // TODO or .drain?
+        subscription.transportSubscription.unsubscribe()
         delete this.subscriptions[paramsKey]
       }
     }
@@ -180,7 +158,7 @@ export class RemoteTopicImpl<D, F> implements Topic<D, F> {
 interface Subscription<D> {
   cached: D
   consumers: SubscribedConsumer<D>[]
-  transportSubscription: NatsSubscription
+  transportSubscription: TopicSubscription
 }
 
 interface SubscribedConsumer<D> {

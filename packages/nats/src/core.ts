@@ -1,5 +1,6 @@
-import {JSONCodec, NatsConnection} from "nats"
+import {JSONCodec, NatsConnection, Subscription as NatsSubscription} from "nats"
 import {DataConsumer, DataSupplier, LocalTopic, RemoteTopic, Topic} from "../../core/src"
+import {subscribeAndHandle} from "./utils"
 
 export {DataSupplier, DataConsumer, LocalTopic, RemoteTopic, Topic}
 
@@ -8,15 +9,49 @@ export type ServiceItem =
   | {method: Method; object: any}
   | {topic: LocalTopic<never, never>; object: any}
 
+export type HandleCall = (itemName: string, body: any, respond) => void
+
 export class Transport {
   constructor(private serviceName: string, private connection: NatsConnection) {}
 
+  // for servers
   publish<F, D>(topicName: string, filter: F, data: D) {
     // TODO encode filter in subject
     this.connection.publish(this.serviceName + "." + topicName, this.codec.encode(data))
   }
 
+  listenCalls(handle: HandleCall) {
+    subscribeAndHandle(this.connection, `${this.serviceName}.>`, handle)
+  }
+
+  // for clients
+
+  async call<F, D>(itemName: string, requestBody: F): Promise<D> {
+    const msg = await this.connection.request(
+      this.serviceName + "." + itemName,
+      this.codec.encode(requestBody)
+    )
+    return this.codec.decode(msg.data)
+  }
+
+  subscribeTopic<F>(topicName: string, filter: F, handle: (d: any) => void): TopicSubscription {
+    // TODO include filter data in subject
+    const subject = this.serviceName + "." + topicName
+
+    const subscription = subscribeAndHandle(this.connection, subject, (_, data) => handle(data))
+
+    return new TopicSubscription(subscription)
+  }
+
   private codec = JSONCodec()
+}
+
+export class TopicSubscription {
+  constructor(private subscription: NatsSubscription) {}
+
+  public unsubscribe() {
+    this.subscription.unsubscribe() // TODO or .drain?
+  }
 }
 
 export class LocalTopicImpl<D, F, TD = D> implements Topic<D, F, TD> {

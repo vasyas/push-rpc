@@ -1,15 +1,9 @@
-import {NatsConnection} from "nats"
 import {LocalTopicImpl, Method, ServiceItem, Transport} from "./core"
-import {subscribeAndHandle} from "./utils"
 
-export async function createRpcServer(services: any, prefix: string, connection: NatsConnection) {
-  const transport = new Transport(prefix, connection)
-
+export async function createRpcServer(services: any, transport: Transport) {
   prepareLocal(services, transport)
 
-  subscribeAndHandle(connection, `${prefix}.>`, async (subject, body, respond) => {
-    const itemName = subject.substring(prefix.length + 1)
-
+  transport.listenCalls(async (itemName, body, respond) => {
     const item = getServiceItem(services, itemName)
 
     if (!item) return
