@@ -1,5 +1,6 @@
 import {JSONCodec, NatsConnection, Subscription, Subscription as NatsSubscription} from "nats"
-import {HandleCall, TopicSubscription, Transport} from "./core"
+import {dateToIsoString} from "../../core/src/utils"
+import {Filter, HandleCall, TopicSubscription, Transport} from "./core"
 
 export class NatsTransport implements Transport {
   constructor(private serviceName: string, private connection: NatsConnection) {}
@@ -35,8 +36,7 @@ export class NatsTransport implements Transport {
   }
 
   subscribeTopic<F>(topicName: string, filter: F, handle: (d: any) => void): TopicSubscription {
-    // TODO include filter data in subject
-    const subject = this.serviceName + ".rpc-data." + topicName
+    const subject = this.serviceName + ".rpc-data." + topicName + encodeFilterSubject(filter)
 
     const subscription = subscribeAndHandle(this.connection, subject, (_, data) => handle(data))
 
@@ -75,4 +75,31 @@ async function messageLoop(
 
     handle(msg.subject, body, r => msg.respond(codec.encode(r)))
   }
+}
+
+function encodeFilterSubject(filter: Filter) {
+  if (!Object.keys(filter).length) return ""
+
+  const orderedKeys = Object.keys(filter).sort()
+
+  return (
+    "." +
+    orderedKeys
+      .map(key => {
+        const value = filter[key]
+        if (value == null) return "*"
+        if (isLiteral(value)) return value
+        if (value instanceof Date) return dateToIsoString(value)
+
+        throw new Error(
+          `Unsupported ${typeof value}  value under key ${key}, only literal or Dates should be used`
+        )
+      })
+      .join(".")
+  )
+}
+
+function isLiteral(value) {
+  const t = typeof value
+  return t == "bigint" || t == "boolean" || t == "string" || t == "number"
 }

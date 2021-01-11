@@ -21,11 +21,7 @@ export function dateReviver(key, val) {
 }
 
 function websocketDateToString(message) {
-  return convertDateToString(message, d => {
-    const s = d.toISOString()
-
-    return s.substring(0, s.lastIndexOf(".")) + "Z"
-  })
+  return convertDateToString(message, dateToIsoString)
 }
 
 function convertDateToString<T>(message: T, format): T {
@@ -49,6 +45,12 @@ function convertDateToString<T>(message: T, format): T {
   })
 
   return message
+}
+
+export function dateToIsoString(d: Date): string {
+  const s = d.toISOString()
+
+  return s.substring(0, s.lastIndexOf(".")) + "Z"
 }
 
 export const ISO8601 = /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ$/
@@ -136,17 +138,15 @@ export function createDomWebsocket(url, protocols = undefined) {
       ws.onmessage = e => {
         const message = e.data.toString()
 
-        if (message == PONG_MESSAGE)
-          onPong()
-        else
-          h(message)
+        if (message == PONG_MESSAGE) onPong()
+        else h(message)
       }
     },
     onOpen: h => (ws.onopen = h),
     onDisconnected: h => {
       onDisconnected = h
 
-      ws.onclose = ({ code, reason }) => void singleCallDisconnected(code, reason)
+      ws.onclose = ({code, reason}) => void singleCallDisconnected(code, reason)
     },
     onError: h => (ws.onerror = h),
     onPong: h => {

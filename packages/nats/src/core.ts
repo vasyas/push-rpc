@@ -25,3 +25,6 @@ export interface Transport {
 export interface TopicSubscription {
   unsubscribe(): void
 }
+
+// TODO add to topic
+export interface Filter extends Record<string, any> {}

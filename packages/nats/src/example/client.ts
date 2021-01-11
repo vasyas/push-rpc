@@ -18,7 +18,7 @@ async function start() {
     {id: 1}
   )
 
-  await services.todo.update({id: 2, text: "updated"})
+  await services.todo.update({id: 1, text: "updated"})
 }
 
 start()
