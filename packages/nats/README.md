@@ -16,8 +16,8 @@ Push-RPC using NATS.
 ## Notes on Topic subscription
 
 Filter fields are used to limit number of messages deivered to a topic.
-So when subscribing to a topic, specify all possible fields in a filter.
-If some of the fields are empty, pass null.
+So when subscribing to a topic or triggering topic, specify all possible fields in a filter.
+If some fields are empty, pass null.
 
 It means, that filter object type should have app properties required, but possibly
 nullable. IE, good:

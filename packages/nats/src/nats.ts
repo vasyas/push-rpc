@@ -7,8 +7,10 @@ export class NatsTransport implements Transport {
 
   // for servers
   publish<F, D>(topicName: string, filter: F, data: D) {
-    // TODO encode filter in subject
-    this.connection.publish(this.serviceName + ".rpc-data." + topicName, codec.encode(data))
+    this.connection.publish(
+      this.serviceName + ".rpc-data." + topicName + encodeFilterSubject(filter),
+      codec.encode(data)
+    )
   }
 
   listenCalls(handle: HandleCall) {
