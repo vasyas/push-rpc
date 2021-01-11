@@ -1,12 +1,11 @@
 import {JSONCodec, NatsConnection, Subscription, Subscription as NatsSubscription} from "nats"
-import {dateToIsoString} from "../../core/src/utils"
-import {Filter, HandleCall, TopicSubscription, Transport} from "./core"
+import {dateToIsoString, DataFilter, HandleCall, TopicSubscription, Transport} from "../../core/src"
 
 export class NatsTransport implements Transport {
   constructor(private serviceName: string, private connection: NatsConnection) {}
 
   // for servers
-  publish<F, D>(topicName: string, filter: F, data: D) {
+  publish(topicName: string, filter: DataFilter, data: any) {
     this.connection.publish(
       this.serviceName + ".rpc-data." + topicName + encodeFilterSubject(filter),
       codec.encode(data)
@@ -29,7 +28,7 @@ export class NatsTransport implements Transport {
 
   // for clients
 
-  async call<F, D>(itemName: string, requestBody: F): Promise<D> {
+  async call(itemName: string, requestBody: DataFilter): Promise<any> {
     const msg = await this.connection.request(
       this.serviceName + ".rpc-call." + itemName,
       codec.encode(requestBody)
@@ -37,7 +36,11 @@ export class NatsTransport implements Transport {
     return codec.decode(msg.data)
   }
 
-  subscribeTopic<F>(topicName: string, filter: F, handle: (d: any) => void): TopicSubscription {
+  subscribeTopic(
+    topicName: string,
+    filter: DataFilter,
+    handle: (d: any) => void
+  ): TopicSubscription {
     const subject = this.serviceName + ".rpc-data." + topicName + encodeFilterSubject(filter)
 
     const subscription = subscribeAndHandle(this.connection, subject, (_, data) => handle(data))
@@ -79,7 +82,7 @@ async function messageLoop(
   }
 }
 
-function encodeFilterSubject(filter: Filter) {
+function encodeFilterSubject(filter: DataFilter) {
   if (!Object.keys(filter).length) return ""
 
   const orderedKeys = Object.keys(filter).sort()

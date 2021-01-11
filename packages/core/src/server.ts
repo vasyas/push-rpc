@@ -1,161 +1,139 @@
-import * as UUID from "uuid-js"
-import {log} from "./logger"
-import {RpcSession} from "./RpcSession"
-import {createRemote} from "./remote"
-import {prepareLocal} from "./local"
-import {dateReviver} from "./utils"
-import {Middleware, RpcConnectionContext} from "./rpc"
-import {Socket, SocketServer} from "./transport"
+import {Method, ServiceItem, ITEM_NAME_SEPARATOR} from "./utils"
+import {Transport} from "./transport"
+import {DataConsumer, DataSupplier, Topic} from "./topic"
 
-export interface RpcServerOptions {
-  createConnectionContext?(socket: Socket, ...transportDetails: any): Promise<RpcConnectionContext>
-  localMiddleware?: Middleware
-  remoteMiddleware?: Middleware
-  clientLevel?: number
-  messageParser?(data): any[]
-  pingSendTimeout?: number
-  keepAliveTimeout?: number
-  callTimeout?: number
-  syncRemoteCalls?: boolean
+export async function createRpcServer(services: any, transport: Transport) {
+  prepareLocal(services, transport)
 
-  listeners?: {
-    connected?(remoteId: string, connections: number): void
-    disconnected?(remoteId: string, connections: number): void
-    messageIn(remoteId: string, data: string)
-    messageOut(remoteId: string, data: string)
-    subscribed(subscriptions: number)
-    unsubscribed(subscriptions: number)
-  }
-}
+  transport.listenCalls(async (itemName, body, respond) => {
+    const item = getServiceItem(services, itemName)
 
-const defaultOptions: Partial<RpcServerOptions> = {
-  createConnectionContext: async (socket, ...transportDetails) => ({
-    remoteId: UUID.create().toString(),
-  }),
-  localMiddleware: (ctx, next, params, messageType) => next(params),
-  remoteMiddleware: (ctx, next, params, messageType) => next(params),
-  clientLevel: 0,
-  pingSendTimeout: 40 * 1000,
-  keepAliveTimeout: 120 * 1000,
-  callTimeout: 15 * 1000,
-  syncRemoteCalls: false,
-  messageParser: data => JSON.parse(data, dateReviver),
-  listeners: {
-    connected: () => {},
-    disconnected: () => {},
-    subscribed: () => {},
-    unsubscribed: () => {},
-    messageIn: () => {},
-    messageOut: () => {},
-  },
-}
+    if (!item) return
+    // warn about unhandled item
 
-export interface RpcServer {
-  getRemote(remoteId: string): any
-  isConnected(remoteId: string): boolean
-  getConnectedIds(): string[]
-  close(cb): void
-}
-
-export function createRpcServer(
-  local: any,
-  socketServer: SocketServer,
-  opts: RpcServerOptions = {}
-): RpcServer {
-  opts = {
-    ...defaultOptions,
-    ...opts,
-  }
-
-  const sessions: {[clientId: string]: RpcSession} = {}
-
-  prepareLocal(local)
-
-  socketServer.onError(e => {
-    log.error("RPC WS server error", e)
+    if ("method" in item) {
+      // local method request
+      invokeMethod(item, body, respond)
+    } else {
+      // get data from topic
+      getTopicData(item as any, body, respond)
+    }
   })
+}
 
-  function getTotalSubscriptions() {
-    return Object.values(sessions)
-      .map(s => s.subscriptions.length)
-      .reduce((p, c) => p + c, 0)
+async function invokeMethod(item: {method: Method; object: any}, req: any, respond) {
+  const ctx = null
+  const response = await item.method.call(item.object, req, ctx)
+  respond(response)
+}
+
+async function getTopicData(
+  item: {topic: LocalTopicImpl<never, any>; object: any},
+  filter: any,
+  respond
+) {
+  // TODO should have access to LocalTopic supplier
+
+  const ctx = null
+  const response = await item.topic.supplier(filter, ctx)
+  respond(response)
+}
+
+function getServiceItem(services: any, name: string): ServiceItem {
+  if (!name) {
+    return null
   }
 
-  function isConnected(remoteId) {
-    return !!sessions[remoteId]
+  const names = name.split(ITEM_NAME_SEPARATOR)
+
+  const item = services[names[0]]
+
+  if (typeof item == "object") {
+    if ("getTopicName" in item) return {topic: item as any, object: services}
+
+    if (!item) {
+      return null
+    }
+
+    return getServiceItem(item as any, names.slice(1).join(ITEM_NAME_SEPARATOR))
   }
 
-  socketServer.onConnection(async (socket, ...transportDetails) => {
-    let connectionContext
+  return {method: item, object: services}
+}
 
-    try {
-      connectionContext = await opts.createConnectionContext(socket, ...transportDetails)
-    } catch (e) {
-      log.warn("Failed to create connection context", e)
-      socket.disconnect()
-      return
-    }
+function prepareLocal(services: any, transport: Transport, prefix: string = "") {
+  const keys = getObjectProps(services)
 
-    const {remoteId} = connectionContext
+  keys.forEach(key => {
+    const item = services[key]
 
-    const session = new RpcSession(
-      local,
-      opts.clientLevel,
-      {
-        messageIn: data => opts.listeners.messageIn(remoteId, data),
-        messageOut: data => opts.listeners.messageOut(remoteId, data),
-        subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
-        unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
-      },
-      connectionContext,
-      opts.localMiddleware,
-      opts.remoteMiddleware,
-      opts.messageParser,
-      opts.pingSendTimeout,
-      opts.keepAliveTimeout,
-      opts.callTimeout,
-      opts.syncRemoteCalls
-    )
+    if (typeof item == "object") {
+      const name = prefix + key
 
-    session.open(socket)
-
-    if (sessions[remoteId]) {
-      log.warn("Prev session active, discarding", remoteId)
-      sessions[remoteId].disconnect()
-    }
-    sessions[remoteId] = session
-
-    opts.listeners.connected(remoteId, Object.keys(sessions).length)
-
-    socket.onDisconnected(async (code, reason) => {
-      await session.handleDisconnected()
-
-      if (sessions[remoteId] == session) {
-        delete sessions[remoteId]
-
-        log.debug(`Client disconnected, ${remoteId}`, {code, reason})
-      } else {
-        log.debug(`Disconnected prev session, ${remoteId}`, {code, reason})
+      if ("setTransport" in item) {
+        item.setTransport(transport)
       }
 
-      opts.listeners.disconnected(remoteId, Object.keys(sessions).length)
-    })
+      if ("setTopicName" in item) {
+        item.setTopicName(name)
+        return
+      }
 
-    socket.onError(e => {
-      log.warn(`Communication error, client ${remoteId}`, e)
-    })
-  }, isConnected)
+      return prepareLocal(item, transport, name + ITEM_NAME_SEPARATOR)
+    }
+  })
+}
 
-  return {
-    close: cb => socketServer.close(cb),
+function getObjectProps(obj) {
+  let props = []
 
-    /** These remote are not reconnecting - they should not be saved */
-    getRemote: clientId => {
-      if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
-
-      return createRemote(opts.clientLevel, sessions[clientId])
-    },
-    isConnected,
-    getConnectedIds: () => Object.keys(sessions),
+  while (!!obj && obj != Object.prototype) {
+    props = props.concat(Object.getOwnPropertyNames(obj))
+    obj = Object.getPrototypeOf(obj)
   }
+
+  return Array.from(new Set(props)).filter(p => p != "constructor")
+}
+
+export class LocalTopicImpl<D, F, TD = D> implements Topic<D, F, TD> {
+  constructor(readonly supplier: DataSupplier<D, F>) {}
+
+  private name: string
+  private transport: Transport
+
+  getTopicName(): string {
+    return this.name
+  }
+
+  setTopicName(s: string) {
+    this.name = s
+  }
+
+  setTransport(transport: Transport) {
+    this.transport = transport
+  }
+
+  /**
+   * Send data
+   */
+  trigger(p: Partial<F> = {}, data?: TD): void {
+    if (!this.transport)
+      throw new Error(`Topic ${this.name} transport is not set, server probably not started`)
+    ;(async () => {
+      if (data === undefined) {
+        data = (await this.supplier(p as any, null)) as any
+      }
+
+      this.transport.publish(this.getTopicName(), p, data)
+    })()
+  }
+
+  // only required fort ServiceImpl to implement Service interfaces
+  async get(params?: F): Promise<D> {
+    return undefined
+  }
+
+  async subscribe(consumer: DataConsumer<D>, params?: F, subscriptionKey?: any): Promise<any> {}
+
+  unsubscribe(params?: F, subscriptionKey?: any) {}
 }

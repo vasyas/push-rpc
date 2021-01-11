@@ -1,22 +1,17 @@
-export interface Socket {
-  onOpen(h: () => void)
-  onError(h: (e) => void)
-  onPong(h: () => void)
-  onPing(h: () => void)
+import {DataFilter} from "./topic"
 
-  disconnect()
-  onDisconnected(h: (code, reason) => void)
+export type HandleCall = (itemName: string, body: any, respond: (responseBody: any) => void) => void
 
-  send(data: string)
-  onMessage(h: (message: string) => void)
-  ping(data: string)
+export interface Transport {
+  // for servers
+  publish(topicName: string, filter: DataFilter, data: any)
+  listenCalls(handle: HandleCall)
+
+  // for clients
+  call(itemName: string, requestBody: DataFilter): Promise<any>
+  subscribeTopic(topicName: string, filter: DataFilter, handle: (d: any) => void): TopicSubscription
 }
 
-export interface SocketServer {
-  onError(h: (e) => void): void
-  onConnection(
-    h: (socket: Socket, ...transportDetails: any) => Promise<void>,
-    isConnected: (remoteId: string) => boolean
-  ): void
-  close(cb): void
+export interface TopicSubscription {
+  unsubscribe(): void
 }

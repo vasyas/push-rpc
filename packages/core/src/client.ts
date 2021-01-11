@@ -1,217 +1,169 @@
-import {RpcSession} from "./RpcSession"
-import {log} from "./logger"
-import {dateReviver} from "./utils"
-import {Middleware, RpcConnectionContext} from "./rpc"
-import {Socket} from "./transport"
+import {getClassMethodNames} from "./utils"
+import {TopicSubscription, Transport} from "./transport"
+import {DataConsumer, RemoteTopic, Topic} from "./topic"
+import {ITEM_NAME_SEPARATOR, Method} from "./utils"
 
-export interface RpcClientListeners {
-  connected(): void
-  disconnected({code, reason}): void
+export function createRpcClient(level: number, transport: Transport): Promise<any> {
+  return createRemoteServiceItems(level, name => {
+    // start with method
+    const remoteItem = body => {
+      return transport.call(name, body)
+    }
 
-  messageIn(data: string): void
-  messageOut(data: string): void
-  subscribed(subscriptions: number): void
-  unsubscribed(subscriptions: number): void
+    const remoteTopic = new RemoteTopicImpl(name, transport)
+
+    // make remoteItem both topic and remoteMethod
+    getClassMethodNames(remoteTopic).forEach(methodName => {
+      remoteItem[methodName] = (...args) => remoteTopic[methodName].apply(remoteTopic, args)
+    })
+
+    return remoteItem
+  })
 }
 
-export interface RpcClient<R> {
-  remote: R
-  disconnect(): void
-}
-
-export interface RpcClientOptions {
-  local: any
-  listeners: RpcClientListeners
-  reconnect: boolean
-  createContext(): RpcConnectionContext
-  localMiddleware: Middleware
-  remoteMiddleware: Middleware
-  messageParser(data): any[]
-  pingSendTimeout: number
-  keepAliveTimeout: number
-  callTimeout: number
-  syncRemoteCalls: boolean
-}
-
-const defaultOptions: RpcClientOptions = {
-  local: {},
-  listeners: {
-    connected: () => {},
-    disconnected: () => {},
-
-    messageIn: () => {},
-    messageOut: () => {},
-    subscribed: () => {},
-    unsubscribed: () => {},
-  },
-  reconnect: false,
-  createContext: () => ({remoteId: null}),
-  localMiddleware: (ctx, next, params, messageType) => next(params),
-  remoteMiddleware: (ctx, next, params, messageType) => next(params),
-  messageParser: data => JSON.parse(data, dateReviver),
-  pingSendTimeout: null,
-  keepAliveTimeout: null,
-  callTimeout: 30 * 1000,
-  syncRemoteCalls: false,
-}
-
-export function createRpcClient<R = any>(
+function createRemoteServiceItems(
   level,
-  createSocket: () => Socket,
-  options: Partial<RpcClientOptions> = {}
-): Promise<RpcClient<R>> {
-  const opts: RpcClientOptions = {...defaultOptions, ...options}
+  createServiceItem: (name) => RemoteTopic<any, any> | Method,
+  prefix = ""
+): any {
+  const cachedItems = {}
 
-  const session = new RpcSession(
-    opts.local,
-    level,
-    opts.listeners,
-    opts.createContext(),
-    opts.localMiddleware,
-    opts.remoteMiddleware,
-    opts.messageParser,
-    opts.pingSendTimeout,
-    opts.keepAliveTimeout,
-    opts.callTimeout,
-    opts.syncRemoteCalls
+  return new Proxy(
+    {},
+    {
+      get(target, name) {
+        // skip internal props
+        if (typeof name != "string") return target[name]
+
+        // and promise-alike
+        if (name == "then") return undefined
+
+        if (!cachedItems[name]) {
+          const itemName = prefix + name
+
+          if (level > 0)
+            cachedItems[name] = createRemoteServiceItems(
+              level - 1,
+              createServiceItem,
+              itemName + ITEM_NAME_SEPARATOR
+            )
+          else cachedItems[name] = createServiceItem(itemName)
+        }
+
+        return cachedItems[name]
+      },
+
+      set(target, name, value) {
+        cachedItems[name] = value
+        return true
+      },
+
+      // Used in resubscribe
+      ownKeys() {
+        return Object.keys(cachedItems)
+      },
+    }
   )
-
-  const client = {
-    disconnectedMark: false,
-    remote: session.remote,
-    disconnect: () => {
-      client.disconnectedMark = true
-      session.disconnect()
-    },
-  }
-
-  return (opts.reconnect ? startConnectionLoop : connect)(
-    session,
-    createSocket,
-    opts.listeners,
-    client
-  ).then(() => client)
 }
 
-function startConnectionLoop(
-  session: RpcSession,
-  createSocket: () => Socket,
-  listeners: RpcClientListeners,
-  client: {disconnectedMark: boolean}
-): Promise<void> {
-  return new Promise(resolve => {
-    let onFirstConnection = resolve
-    const errorDelay = {value: 0}
+export class RemoteTopicImpl<D, F> implements Topic<D, F> {
+  constructor(private topicName: string, private transport: Transport) {}
 
-    const l = {
-      ...listeners,
-      connected: () => {
-        // first reconnect after succesfull connection is immediate
-        errorDelay.value = 0
-        listeners.connected()
-      },
+  private getFilterKey(filter): string {
+    // TODO normalize filter (sort keys)
+    const filterKey = JSON.stringify(filter)
+    return filterKey
+  }
+
+  async get(filter: F = {} as any): Promise<D> {
+    return this.transport.call(this.topicName, filter)
+  }
+
+  async subscribe<SubscriptionKey = DataConsumer<D>>(
+    consumer: DataConsumer<D>,
+    filter: F = {} as any,
+    subscriptionKey: SubscriptionKey = consumer as any
+  ): Promise<SubscriptionKey> {
+    if (filter === null) {
+      throw new Error(
+        "Subscribe with null filter is not supported, use empty object to get all data"
+      )
     }
 
-    connectionLoop(
-      session,
-      createSocket,
-      l,
-      () => {
-        onFirstConnection()
-        onFirstConnection = () => {}
-      },
-      errorDelay,
-      client,
-    )
-  })
-}
+    const filterKey = this.getFilterKey(filter)
 
-function connectionLoop(
-  session: RpcSession,
-  createSocket: () => Socket,
-  listeners: RpcClientListeners,
-  resolve,
-  errorDelay,
-  client: {disconnectedMark: boolean}
-): void {
-  function reconnect() {
-    const timer = setTimeout(
-      () => connectionLoop(session, createSocket, listeners, resolve, errorDelay, client),
-      errorDelay.value
-    )
+    // already have cached value with this params?
+    const subscription: Subscription<D> = this.subscriptions[filterKey] || {
+      cached: undefined,
+      consumers: [],
+      transportSubscription: null,
+    }
+    this.subscriptions[filterKey] = subscription
 
-    // 2nd and further reconnects are with random delays
-    errorDelay.value = Math.round(Math.random() * 15 * 1000)
+    // can supply value early without network round trip
+    if (subscription?.cached !== undefined) {
+      consumer(subscription.cached)
+    }
 
-    if (timer.unref) {
-      timer.unref()
+    if (!subscription.transportSubscription) {
+      subscription.transportSubscription = this.transport.subscribeTopic(
+        this.topicName,
+        filter,
+        data => this.receiveData(filter, data)
+      )
+    }
+
+    subscription.consumers.push({
+      consumer,
+      subscriptionKey,
+    })
+
+    // only required for NATS?
+    const initialData = await this.get(filter)
+    this.receiveData(filter, initialData)
+
+    return subscriptionKey
+  }
+
+  private receiveData = (filter: F, body: any) => {
+    const subscription = this.subscriptions[this.getFilterKey(filter)]
+    subscription.cached = body
+
+    subscription.consumers.forEach(c => {
+      c.consumer(body)
+    })
+  }
+
+  unsubscribe(params: F = {} as any, subscriptionKey = undefined) {
+    const paramsKey = this.getFilterKey(params)
+
+    const subscription = this.subscriptions[paramsKey]
+    if (!subscription) return
+
+    const idx = subscription.consumers.findIndex(s => s.subscriptionKey == subscriptionKey)
+    if (idx >= 0) {
+      if (subscription.consumers.length > 1) {
+        subscription.consumers.splice(idx, 1)
+      } else {
+        subscription.transportSubscription.unsubscribe()
+        delete this.subscriptions[paramsKey]
+      }
     }
   }
 
-  const l = {
-    ...listeners,
-    disconnected: ({code, reason}) => {
-      if (!client.disconnectedMark) {
-        reconnect()
-      }
+  private subscriptions: {[filterKey: string]: Subscription<D>} = {}
 
-      listeners.disconnected({code, reason})
-    },
-  }
-
-  connect(session, createSocket, l)
-    .then(resolve)
-    .catch(() => {
-      if (!client.disconnectedMark) {
-        reconnect()
-      }
-    })
+  // this is only to easy using for remote services during tests
+  trigger(p?: F, data?: D): void {}
 }
 
-function connect(
-  session: RpcSession,
-  createSocket: () => Socket,
-  listeners: RpcClientListeners
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const socket = createSocket()
+interface Subscription<D> {
+  cached: D
+  consumers: SubscribedConsumer<D>[]
+  transportSubscription: TopicSubscription
+}
 
-    let connected = false
-
-    const timer = setTimeout(() => {
-      if (!connected) reject("Connection timeout")
-    }, 10 * 1000) // 10s connection timeout
-
-    if (timer.unref) {
-      timer.unref()
-    }
-
-    socket.onOpen(() => {
-      connected = true
-      listeners.connected()
-      session.open(socket)
-      resolve()
-    })
-
-    socket.onDisconnected((code, reason) => {
-      session.handleDisconnected()
-      if (connected) {
-        listeners.disconnected({code, reason})
-      }
-    })
-
-    socket.onError(e => {
-      if (!connected) {
-        reject(e)
-      }
-
-      log.warn("RPC connection error", e.message)
-
-      try {
-        socket.disconnect()
-      } catch (e) {
-        // ignore
-      }
-    })
-  })
+interface SubscribedConsumer<D> {
+  consumer: DataConsumer<D>
+  subscriptionKey: any
 }

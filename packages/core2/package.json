@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "uuid-js": "^0.7.5"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",

@@ -1,5 +1,5 @@
 import {connect, NatsConnection} from "nats"
-import {createRpcClient} from "../client"
+import {createRpcClient} from "../../../core/src/client"
 import {NatsTransport} from "../nats"
 import {Services} from "./shared"
 
