@@ -5,12 +5,11 @@ export interface Services {
 }
 
 export interface TodoService {
-  addTodo({text}, ctx?): Promise<void>
-  todos: Topic<Todo[]>
+  update({id, text}, ctx?): Promise<void>
+  todos: Topic<Todo, {id: number}>
 }
 
 export interface Todo {
-  id: string
+  id: number
   text: string
-  status: "open" | "closed"
 }

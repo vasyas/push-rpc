@@ -1,26 +1,28 @@
 import {connect, NatsConnection} from "nats"
-import {Todo} from "../../../examples/basic/shared"
 import {NatsTransport} from "../nats"
 import {createRpcServer, LocalTopicImpl} from "../server"
-import {Services, TodoService} from "./shared"
+import {Services, TodoService, Todo} from "./shared"
 
 async function start() {
-  let storage: Todo[] = []
+  let storage: Todo[] = [
+    {
+      id: 1,
+      text: "first",
+    },
+    {
+      id: 2,
+      text: "second",
+    },
+  ]
 
   class TodoServiceImpl implements TodoService {
-    async addTodo({text}) {
-      storage.push({
-        id: "" + Math.random(),
-        text,
-        status: "open",
-      })
+    async update({id, text}) {
+      storage.find(t => t.id == id).text = text
 
-      console.log("New todo item added")
-
-      this.todos.trigger()
+      this.todos.trigger({id})
     }
 
-    todos = new LocalTopicImpl(async () => storage)
+    todos = new LocalTopicImpl(async ({id}) => storage.find(t => t.id == id))
   }
 
   const services: Services = {
