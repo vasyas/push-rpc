@@ -1,7 +1,7 @@
 import {JSONCodec, NatsConnection, Subscription, Subscription as NatsSubscription} from "nats"
-import {HandleCall, TopicSubscription} from "./core"
+import {HandleCall, TopicSubscription, Transport} from "./core"
 
-export class NatsTransport {
+export class NatsTransport implements Transport {
   constructor(private serviceName: string, private connection: NatsConnection) {}
 
   // for servers
