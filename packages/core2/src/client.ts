@@ -1,5 +1,5 @@
 import {RpcSession} from "./RpcSession"
-import {log} from "./logger"
+import {log} from "../../core/src/logger"
 import {dateReviver} from "./utils"
 import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket} from "./transport"
@@ -121,7 +121,7 @@ function startConnectionLoop(
         onFirstConnection = () => {}
       },
       errorDelay,
-      client,
+      client
     )
   })
 }

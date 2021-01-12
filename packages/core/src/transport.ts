@@ -1,6 +1,11 @@
 import {DataFilter} from "./topic"
 
-export type HandleCall = (itemName: string, body: any, respond: (responseBody: any) => void) => void
+export type HandleCall = (
+  itemName: string,
+  body: any,
+  respondSuccess: (body: any) => void,
+  respondError: (body: any) => void
+) => void
 
 export interface Transport {
   // for servers

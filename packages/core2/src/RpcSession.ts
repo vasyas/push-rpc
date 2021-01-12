@@ -1,5 +1,5 @@
 import {LocalTopicImpl} from "./local"
-import {log} from "./logger"
+import {log} from "../../core/src/logger"
 import {createRemote, RemoteTopicImpl} from "./remote"
 import {
   getServiceItem,

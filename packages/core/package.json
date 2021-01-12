@@ -9,12 +9,14 @@
     "test": "mocha -r ts-node/register tests/**/*.ts"
   },
   "license": "MIT",
-  "dependencies": {
-  },
+  "dependencies": {},
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "cac588b8c118843655324a23250020d7f6f1f090"
+  "gitHead": "cac588b8c118843655324a23250020d7f6f1f090",
+  "devDependencies": {
+    "nats": "^2.0.0-215"
+  }
 }

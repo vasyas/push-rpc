@@ -5,3 +5,5 @@ export {Topic, DataFilter, RemoteTopic, DataConsumer, DataSupplier} from "./topi
 export {TopicSubscription, Transport, HandleCall} from "./transport"
 
 export {dateToIsoString, ITEM_NAME_SEPARATOR, Method, ServiceItem} from "./utils"
+
+export {setLogger} from "./logger"

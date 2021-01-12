@@ -1,5 +1,5 @@
 import * as UUID from "uuid-js"
-import {log} from "./logger"
+import {log} from "../../core/src/logger"
 import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"

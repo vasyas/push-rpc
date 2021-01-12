@@ -21,7 +21,23 @@ export class NatsTransport implements Transport {
         parts.splice(0, 2)
 
         const itemName = parts[0]
-        handle(itemName, body, respond)
+        handle(
+          itemName,
+          body,
+          body => respond(body),
+          error => {
+            const err = Object.getOwnPropertyNames(error)
+              .filter(prop => prop != "stack" && prop != "message" && prop != "code")
+              .reduce((r, key) => ({...r, [key]: error[key]}), {})
+
+            respond({
+              _rpcError: {
+                ...err,
+                message: error.message,
+              },
+            })
+          }
+        )
       }
     )
   }
@@ -33,7 +49,10 @@ export class NatsTransport implements Transport {
       this.serviceName + ".rpc-call." + itemName,
       codec.encode(requestBody)
     )
-    return codec.decode(msg.data)
+    const response = codec.decode(msg.data)
+
+    processRpcError(response)
+    return response
   }
 
   subscribeTopic(
@@ -107,4 +126,12 @@ function encodeFilterSubject(filter: DataFilter) {
 function isLiteral(value) {
   const t = typeof value
   return t == "bigint" || t == "boolean" || t == "string" || t == "number"
+}
+
+function processRpcError(response) {
+  if (response._rpcError) {
+    const error = new Error(response._rpcError.message)
+    Object.assign(error, response.rpcError)
+    throw error
+  }
 }

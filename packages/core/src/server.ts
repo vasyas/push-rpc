@@ -1,3 +1,4 @@
+import {log} from "./logger"
 import {Method, ServiceItem, ITEM_NAME_SEPARATOR} from "./utils"
 import {Transport} from "./transport"
 import {DataConsumer, DataSupplier, Topic} from "./topic"
@@ -5,7 +6,7 @@ import {DataConsumer, DataSupplier, Topic} from "./topic"
 export async function createRpcServer(services: any, transport: Transport) {
   prepareLocal(services, transport)
 
-  transport.listenCalls(async (itemName, body, respond) => {
+  transport.listenCalls(async (itemName, body, success, error) => {
     const item = getServiceItem(services, itemName)
 
     if (!item) return
@@ -13,30 +14,48 @@ export async function createRpcServer(services: any, transport: Transport) {
 
     if ("method" in item) {
       // local method request
-      invokeMethod(item, body, respond)
+      invokeMethod(itemName, item, body, success, error)
     } else {
       // get data from topic
-      getTopicData(item as any, body, respond)
+      getTopicData(itemName, item as any, body, success, error)
     }
   })
 }
 
-async function invokeMethod(item: {method: Method; object: any}, req: any, respond) {
+async function invokeMethod(
+  itemName: string,
+  item: {method: Method; object: any},
+  req: any,
+  success,
+  error
+) {
   const ctx = null
-  const response = await item.method.call(item.object, req, ctx)
-  respond(response)
+
+  try {
+    const response = await item.method.call(item.object, req, ctx)
+    success(response)
+  } catch (e) {
+    log.error(`While invoking method ${itemName}`, e)
+    error(e)
+  }
 }
 
 async function getTopicData(
+  itemName: string,
   item: {topic: LocalTopicImpl<never, any>; object: any},
   filter: any,
-  respond
+  success,
+  error
 ) {
-  // TODO should have access to LocalTopic supplier
-
   const ctx = null
-  const response = await item.topic.supplier(filter, ctx)
-  respond(response)
+
+  try {
+    const response = await item.topic.supplier(filter, ctx)
+    success(response)
+  } catch (e) {
+    log.error(`While getting data from topic ${itemName}`, e)
+    error(e)
+  }
 }
 
 function getServiceItem(services: any, name: string): ServiceItem {
