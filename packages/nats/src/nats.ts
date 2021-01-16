@@ -1,8 +1,27 @@
 import {JSONCodec, NatsConnection, Subscription, Subscription as NatsSubscription} from "nats"
 import {dateToIsoString, DataFilter, HandleCall, TopicSubscription, Transport} from "../../core/src"
 
+export interface NatsTransportOptions {
+  callTimeout: number
+}
+
+const defaultTransportOptions: NatsTransportOptions = {
+  callTimeout: 5 * 1000,
+}
+
 export class NatsTransport implements Transport {
-  constructor(private serviceName: string, private connection: NatsConnection) {}
+  constructor(
+    private serviceName: string,
+    private connection: NatsConnection,
+    options: Partial<NatsTransportOptions> = {}
+  ) {
+    this.options = {
+      ...defaultTransportOptions,
+      ...options,
+    }
+  }
+
+  private options: NatsTransportOptions
 
   // for servers
   publish(topicName: string, filter: DataFilter, data: any) {
@@ -47,7 +66,10 @@ export class NatsTransport implements Transport {
   async call(itemName: string, requestBody: DataFilter): Promise<any> {
     const msg = await this.connection.request(
       this.serviceName + ".rpc-call." + itemName,
-      codec.encode(requestBody)
+      codec.encode(requestBody),
+      {
+        timeout: this.options.callTimeout,
+      }
     )
     const response = codec.decode(msg.data)
 

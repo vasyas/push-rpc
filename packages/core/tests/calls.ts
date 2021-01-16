@@ -51,8 +51,7 @@ describe("calls", () => {
     }
   })
 
-  /*
-  it("timeout", async () => {
+  it.only("timeout", async () => {
     const callTimeout = 2 * 1000
 
     await startTestServer({
@@ -71,10 +70,9 @@ describe("calls", () => {
       await client.test.longOp()
       assert.fail()
     } catch (e) {
-      assert.equal(e.message, "Timeout")
+      assert.equal(e.message.toLowerCase(), "timeout")
     }
   }).timeout(5000)
-   */
 
   it("binds this object", async () => {
     const resp = {r: "asf"}
