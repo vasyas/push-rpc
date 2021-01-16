@@ -1,12 +1,12 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer} from "./testUtils"
+import {startTestServer, createTestClient} from "./testUtils"
 
 describe("Item lookup", () => {
   it("first level", async () => {
     await startTestServer({
       async hello() {
         return "yes"
-      }
+      },
     })
 
     const client = await createTestClient(0)
@@ -20,8 +20,8 @@ describe("Item lookup", () => {
       obj: {
         async hello() {
           return "yes"
-        }
-      }
+        },
+      },
     })
 
     const client = await createTestClient()

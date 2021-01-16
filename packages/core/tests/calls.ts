@@ -51,7 +51,7 @@ describe("calls", () => {
     }
   })
 
-  it.only("timeout", async () => {
+  it("timeout", async () => {
     const callTimeout = 2 * 1000
 
     await startTestServer({
