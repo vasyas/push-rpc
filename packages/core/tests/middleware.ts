@@ -73,7 +73,8 @@ describe("middleware", () => {
       assert.equal(invocationType, InvocationType.Get)
     })
 
-    it("local topic subscribe", async () => {
+    // so far get is issued by client
+    it.skip("local topic subscribe", async () => {
       let invocationType
 
       await startTestServer(
