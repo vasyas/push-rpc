@@ -37,7 +37,7 @@ export function composeMiddleware(...middleware: Middleware[]): Middleware {
 
 export enum InvocationType {
   Call = "Call",
-  Supply = "Supply",
+  Get = "Get",
 }
 
 export type Middleware = (

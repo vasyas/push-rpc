@@ -69,7 +69,7 @@ describe("middleware", () => {
     const client = await createTestClient(0)
     const r = await client.item.get()
     assert.equal(r, "1")
-    assert.equal(invocationType, InvocationType.Supply)
+    assert.equal(invocationType, InvocationType.Get)
   })
 
   /*

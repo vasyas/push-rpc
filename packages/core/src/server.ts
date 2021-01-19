@@ -75,7 +75,7 @@ function getServiceItem(services: any, name: string): ServiceItem {
       // TODO a better way to access supplier
       return {
         target: (p, ctx) => (item as LocalTopicImpl<any, any>).supplier(p, ctx),
-        invocationType: InvocationType.Supply,
+        invocationType: InvocationType.Get,
       }
 
     if (!item) {
