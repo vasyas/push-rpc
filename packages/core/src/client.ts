@@ -1,20 +1,51 @@
-import {getClassMethodNames} from "./utils"
-import {TopicSubscription, Transport} from "./transport"
 import {DataConsumer, RemoteTopic, Topic} from "./topic"
-import {ITEM_NAME_SEPARATOR} from "./utils"
+import {TopicSubscription, Transport} from "./transport"
+import {getClassMethodNames, InvocationType, ITEM_NAME_SEPARATOR, Middleware} from "./utils"
 
-export function createRpcClient(level: number, transport: Transport): Promise<any> {
+export interface RpcClientOptions {
+  middleware?: Middleware
+}
+
+const defaultOptions: Partial<RpcClientOptions> = {
+  middleware: (ctx, next, params) => next(params),
+}
+
+export function createRpcClient(
+  level: number,
+  transport: Transport,
+  options?: RpcClientOptions
+): Promise<any> {
+  options = {
+    ...defaultOptions,
+    ...options,
+  }
+
   return createRemoteServiceItems(level, name => {
     // start with method
-    const remoteItem = body => {
-      return transport.call(name, body)
+    const remoteItem = req => {
+      const ctx = {}
+      const impl = (p = req) => transport.call(name, p)
+      return options.middleware(ctx, impl, req, InvocationType.Call)
     }
 
     const remoteTopic = new RemoteTopicImpl(name, transport)
 
     // make remoteItem both topic and remoteMethod
     getClassMethodNames(remoteTopic).forEach(methodName => {
-      remoteItem[methodName] = (...args) => remoteTopic[methodName].apply(remoteTopic, args)
+      remoteItem[methodName] = req => {
+        const ctx = {}
+        const impl = (p = req) => remoteTopic[methodName].call(remoteTopic, p)
+
+        const types = {
+          subscribe: InvocationType.Subscribe,
+          unsubscribe: InvocationType.Unsubscribe,
+          get: InvocationType.Get,
+        }
+
+        const invocationType = types[methodName]
+
+        return options.middleware(ctx, impl, req, invocationType)
+      }
     })
 
     return remoteItem

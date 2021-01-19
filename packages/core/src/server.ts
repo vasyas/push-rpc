@@ -25,8 +25,10 @@ export async function createRpcServer(
 
   transport.listenCalls(async (itemName, body, success, error) => {
     const item = getServiceItem(services, itemName)
-    if (!item) return
-    // warn about unhandled item
+    if (!item) {
+      log.warn(`Unknown item ${itemName}`)
+      return
+    }
 
     invokeItem(itemName, item, body, options.middleware, success, error)
   })

@@ -62,7 +62,7 @@ describe("calls", () => {
       },
     })
 
-    const client = await createTestClient(1, {
+    const client = await createTestClient(1, null, {
       callTimeout,
     })
 

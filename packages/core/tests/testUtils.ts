@@ -23,12 +23,12 @@ afterEach(async () => {
   serverConnection = null
 })
 
-export async function createTestClient(level = 1, transportOptions?) {
+export async function createTestClient(level = 1, options?, transportOptions?) {
   if (!clientConnection) {
     clientConnection = await connect()
   }
 
   const transport = new NatsTransport("test", clientConnection, transportOptions)
 
-  return await createRpcClient(level, transport)
+  return await createRpcClient(level, transport, options)
 }
