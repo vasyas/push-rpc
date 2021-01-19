@@ -32,3 +32,7 @@ export async function createTestClient(level = 1, options?, transportOptions?) {
 
   return await createRpcClient(level, transport, options)
 }
+
+export function adelay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
