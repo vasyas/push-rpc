@@ -1,6 +1,7 @@
 import {assert} from "chai"
-import {composeMiddleware, LocalTopicImpl, MessageType} from "../src"
-import {Middleware} from "../src/rpc"
+import {Middleware} from "../src"
+import {LocalTopicImpl} from "../src/server"
+import {composeMiddleware, InvocationType} from "../src/utils"
 import {createTestClient, startTestServer} from "./testUtils"
 
 describe("middleware", () => {
@@ -19,21 +20,47 @@ describe("middleware", () => {
 
     const composed = composeMiddleware(m1, m2)
 
-    const r = await composed(null, async p => p, 0, MessageType.Call)
+    const r = await composed(null, async p => p, 0, InvocationType.Call)
 
     assert.equal(r, 3)
   })
 
+  it("local update context", async () => {
+    let ctx
+    let invocationType
+
+    await startTestServer(
+      {
+        async call(req, _ctx) {
+          ctx = _ctx
+        },
+      },
+      {
+        middleware: (ctx, next, params, _invocationType) => {
+          invocationType = _invocationType
+          ctx.attribute = 1
+          return next(params)
+        },
+      }
+    )
+
+    const client = await createTestClient(0)
+    await client.call(1)
+
+    assert.equal(invocationType, InvocationType.Call)
+    assert.equal(ctx.attribute, 1)
+  })
+
   it("local get topic", async () => {
-    let mwMessageType = null
+    let invocationType = null
 
     await startTestServer(
       {
         item: new LocalTopicImpl(async () => "1"),
       },
       {
-        localMiddleware: (ctx, next, params, messageType) => {
-          mwMessageType = messageType
+        middleware: (ctx, next, params, _invocationType) => {
+          invocationType = _invocationType
           return next(params)
         },
       }
@@ -42,9 +69,10 @@ describe("middleware", () => {
     const client = await createTestClient(0)
     const r = await client.item.get()
     assert.equal(r, "1")
-    assert.equal(mwMessageType, MessageType.Get)
+    assert.equal(invocationType, InvocationType.Supply)
   })
 
+  /*
   it("remote get topic", async () => {
     let mwMessageType = null
 
@@ -162,4 +190,6 @@ describe("middleware", () => {
       assert.equal(e.message, "msg")
     }
   })
+
+   */
 })

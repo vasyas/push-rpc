@@ -6,7 +6,8 @@
   "scripts": {
     "prepublishOnly": "yarn build && yarn test",
     "build": "tsc",
-    "test": "mocha -r ts-node/register tests/**/*.ts"
+    "test": "mocha -r ts-node/register tests/**/*.ts",
+    "nats:docker": "docker run -p 4222:4222 -p 8222:8222 -p 6222:6222 -ti nats:latest"
   },
   "license": "MIT",
   "repository": "https://github.com/vasyas/push-rpc.git",

@@ -1,61 +1,64 @@
 import {log} from "./logger"
-import {Method, ServiceItem, ITEM_NAME_SEPARATOR} from "./utils"
-import {Transport} from "./transport"
 import {DataConsumer, DataSupplier, Topic} from "./topic"
+import {Transport} from "./transport"
+import {InvocationType, ITEM_NAME_SEPARATOR, Middleware} from "./utils"
 
-export async function createRpcServer(services: any, transport: Transport) {
+export interface RpcServerOptions {
+  middleware?: Middleware
+}
+
+const defaultOptions: Partial<RpcServerOptions> = {
+  middleware: (ctx, next, params) => next(params),
+}
+
+export async function createRpcServer(
+  services: any,
+  transport: Transport,
+  options: RpcServerOptions = {}
+) {
+  options = {
+    ...defaultOptions,
+    ...options,
+  }
+
   prepareLocal(services, transport)
 
   transport.listenCalls(async (itemName, body, success, error) => {
     const item = getServiceItem(services, itemName)
-
     if (!item) return
     // warn about unhandled item
 
-    if ("method" in item) {
-      // local method request
-      invokeMethod(itemName, item, body, success, error)
-    } else {
-      // get data from topic
-      getTopicData(itemName, item as any, body, success, error)
-    }
+    invokeItem(itemName, item, body, options.middleware, success, error)
   })
 }
 
-async function invokeMethod(
+async function invokeItem(
   itemName: string,
-  item: {method: Method; object: any},
+  item: ServiceItem,
   req: any,
+  middleware: Middleware,
   success,
   error
 ) {
-  const ctx = null
+  const ctx = createContext()
 
   try {
-    const response = await item.method.call(item.object, req, ctx)
+    const impl = (p = req) => item.target(p, ctx)
+    const response = await middleware(ctx, impl, req, item.invocationType)
     success(response)
   } catch (e) {
-    log.error(`While invoking method ${itemName}`, e)
+    log.error(`While invoking ${itemName}`, e)
     error(e)
   }
 }
 
-async function getTopicData(
-  itemName: string,
-  item: {topic: LocalTopicImpl<never, any>; object: any},
-  filter: any,
-  success,
-  error
-) {
-  const ctx = null
+function createContext() {
+  return {}
+}
 
-  try {
-    const response = await item.topic.supplier(filter, ctx)
-    success(response)
-  } catch (e) {
-    log.error(`While getting data from topic ${itemName}`, e)
-    error(e)
-  }
+type ServiceItem = {
+  invocationType: InvocationType
+  target: (req, ctx) => Promise<any>
 }
 
 function getServiceItem(services: any, name: string): ServiceItem {
@@ -68,7 +71,12 @@ function getServiceItem(services: any, name: string): ServiceItem {
   const item = services[names[0]]
 
   if (typeof item == "object") {
-    if ("getTopicName" in item) return {topic: item as any, object: services}
+    if ("getTopicName" in item)
+      // TODO a better way to access supplier
+      return {
+        target: (p, ctx) => (item as LocalTopicImpl<any, any>).supplier(p, ctx),
+        invocationType: InvocationType.Supply,
+      }
 
     if (!item) {
       return null
@@ -77,7 +85,10 @@ function getServiceItem(services: any, name: string): ServiceItem {
     return getServiceItem(item as any, names.slice(1).join(ITEM_NAME_SEPARATOR))
   }
 
-  return {method: item, object: services}
+  return {
+    target: (p, ctx) => item.call(services, p, ctx),
+    invocationType: InvocationType.Call,
+  }
 }
 
 function prepareLocal(services: any, transport: Transport, prefix: string = "") {

@@ -6,13 +6,13 @@ import {createRpcServer} from "../src/server"
 let clientConnection: NatsConnection = null
 let serverConnection: NatsConnection = null
 
-export async function startTestServer(services) {
+export async function startTestServer(services, options?) {
   if (!serverConnection) {
     serverConnection = await connect()
   }
 
   const transport = new NatsTransport("test", serverConnection)
-  await createRpcServer(services, transport)
+  await createRpcServer(services, transport, options)
 }
 
 afterEach(async () => {
