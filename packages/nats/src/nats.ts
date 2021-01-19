@@ -151,7 +151,7 @@ function isLiteral(value) {
 }
 
 function processRpcError(response) {
-  if (response._rpcError) {
+  if (response?._rpcError) {
     const error = new Error(response._rpcError.message)
     Object.assign(error, response.rpcError)
     throw error
