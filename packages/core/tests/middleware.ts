@@ -73,33 +73,6 @@ describe("middleware", () => {
       assert.equal(invocationType, InvocationType.Get)
     })
 
-    // so far get is issued by client
-    it.skip("local topic subscribe", async () => {
-      let invocationType
-
-      await startTestServer(
-        {
-          item: new LocalTopicImpl(async () => "1"),
-        },
-        {
-          middleware: (ctx, next, params, _invocationType) => {
-            invocationType = _invocationType
-            return next(params)
-          },
-        }
-      )
-
-      let r = null
-
-      const client = await createTestClient(0)
-      await client.item.subscribe(data => (r = data))
-
-      await new Promise(r => setTimeout(r, 50))
-
-      assert.equal(r, "1")
-      assert.equal(invocationType, InvocationType.Subscribe)
-    })
-
     it("local param update", async () => {
       await startTestServer(
         {
@@ -177,28 +150,5 @@ describe("middleware", () => {
       assert.equal(r, "1")
       assert.equal(invocationType, InvocationType.Get)
     })
-  })
-
-  it("remote topic subscribe", async () => {
-    let invocationType = null
-
-    await startTestServer({
-      item: new LocalTopicImpl(async () => "1"),
-    })
-
-    let r = null
-
-    const client = await createTestClient(0, {
-      middleware: (ctx, next, params, _invocationType) => {
-        invocationType = _invocationType
-        return next(params)
-      },
-    })
-    await client.item.subscribe(data => (r = data))
-
-    await new Promise(r => setTimeout(r, 50))
-
-    assert.equal(r, "1")
-    assert.equal(invocationType, InvocationType.Subscribe)
   })
 })

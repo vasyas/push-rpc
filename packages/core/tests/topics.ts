@@ -2,7 +2,7 @@ import {assert} from "chai"
 import {LocalTopicImpl} from "../src"
 import {adelay, createTestClient, startTestServer} from "./testUtils"
 
-describe.only("Topics", () => {
+describe("Topics", () => {
   it("error in supplier breaks subscribe", async () => {
     await startTestServer({
       item: new LocalTopicImpl(async () => {
@@ -88,7 +88,7 @@ describe.only("Topics", () => {
 
    */
 
-  it("trigger filter", async () => {
+  it.only("trigger filter", async () => {
     interface Item {
       key: string
     }
@@ -137,7 +137,7 @@ describe.only("Topics", () => {
     item2 = null
 
     server.test.item.trigger(null)
-    await adelay(50)
+    await adelay(1000 * 50)
     assert.deepEqual(item1, {key: "1"})
     assert.deepEqual(item2, {key: "2"})
   })

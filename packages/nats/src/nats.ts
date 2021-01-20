@@ -84,6 +84,8 @@ export class NatsTransport implements Transport {
   ): TopicSubscription {
     const subject = this.serviceName + ".rpc-data." + topicName + encodeFilterSubject(filter)
 
+    console.log("Subscribe to topic " + subject)
+
     const subscription = subscribeAndHandle(this.connection, subject, (_, data) => handle(data))
 
     return new NatsTopicSubscription(subscription)
