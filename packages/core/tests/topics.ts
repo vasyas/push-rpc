@@ -1,18 +1,17 @@
 import {assert} from "chai"
 import {createRpcClient, LocalTopicImpl, MessageType} from "../src"
 import {groupReducer} from "../src/local"
+import {RemoteTopicImpl} from "../src/remote"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 import {createNodeWebsocket} from "../../websocket/src/server"
 
 describe("Topics", () => {
   it("error in supplier breaks subscribe", async () => {
-    await startTestServer(
-      {
-        item: new LocalTopicImpl(async () => {
-          throw new Error("AA")
-        }),
-      }
-    )
+    await startTestServer({
+      item: new LocalTopicImpl(async () => {
+        throw new Error("AA")
+      }),
+    })
 
     const client = await createTestClient(0)
 
@@ -349,5 +348,48 @@ describe("Topics", () => {
     server.test.item.trigger({}, 1)
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(item, "a")
+  })
+
+  before(() => {
+    // monkey patch RemoteTopicImpl to be able to test
+    RemoteTopicImpl.prototype["getConsumers"] = function() {
+      return this.consumers
+    }
+  })
+
+  after(() => {
+    delete RemoteTopicImpl.prototype["getConsumers"]
+  })
+
+  it("unsubscribe topics on disconnect", async () => {
+    const item = {r: "1"}
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl<typeof item, {}>(async () => item),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client, disconnect} = await createRpcClient(
+      1,
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: false}
+    )
+
+    await client.test.item.subscribe(a => {})
+
+    assert.equal(Object.keys(server.test.item["subscriptions"]).length, 1)
+    assert.equal(Object.keys(client.test.item.getConsumers()).length, 1)
+
+    disconnect()
+
+    await new Promise(r => setTimeout(r, 50))
+
+    // RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
+    assert.equal(Object.keys(client.test.item.getConsumers()).length, 1)
+
+    assert.equal(Object.keys(server.test.item["subscriptions"]).length, 0)
   })
 })
