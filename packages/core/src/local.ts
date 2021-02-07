@@ -102,7 +102,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     }
   }
 
-  private subscriptions: {[key: string]: Subscription<F, D, TD>} = {}
+  protected subscriptions: {[key: string]: Subscription<F, D, TD>} = {}
 
   isSubscribed(): boolean {
     return !!this.subscriptions.length
