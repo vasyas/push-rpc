@@ -368,6 +368,7 @@ export class RpcSession {
       this.subscriptions.push({topic, params})
       this.listeners.subscribed(this.subscriptions.length)
     } catch (e) {
+      log.error(`Unable to subscribe to topic ${topic.getTopicName()}`, e)
       this.sendError(messageId, e)
     }
   }
