@@ -361,7 +361,7 @@ describe("Topics", () => {
     delete RemoteTopicImpl.prototype["getConsumers"]
   })
 
-  it("unsubscribe topics on disconnect", async () => {
+  it.skip("unsubscribe topics on disconnect", async () => {
     const item = {r: "1"}
 
     const server = {
@@ -387,7 +387,7 @@ describe("Topics", () => {
 
     await new Promise(r => setTimeout(r, 50))
 
-    // RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
+    // client's RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
     assert.equal(Object.keys(client.test.item.getConsumers()).length, 1)
 
     assert.equal(Object.keys(server.test.item["subscriptions"]).length, 0)
