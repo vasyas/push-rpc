@@ -90,6 +90,25 @@ export class RpcSession {
     this.listeners.messageIn(msg)
   }
 
+  private resolveDisconnect = () => {}
+
+  disconnect() {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => {
+        // if not disconnected in 5s, just ignore it
+        log.debug(`Wait for disconnect timed out for ${this.connectionContext.remoteId}`)
+        resolve()
+      }, 5 * 1000)
+
+      this.resolveDisconnect = () => {
+        clearTimeout(timer)
+        setImmediate(resolve)
+      }
+
+      this.socket.disconnect()
+    })
+  }
+
   async handleDisconnected() {
     // stop timers
     clearTimeout(this.pingTimer)
@@ -109,6 +128,9 @@ export class RpcSession {
 
     this.queue = []
     this.runningCalls = {}
+
+    this.resolveDisconnect()
+    this.resolveDisconnect = () => {}
   }
 
   sendPing = async () => {
@@ -127,10 +149,6 @@ export class RpcSession {
       log.debug(`Keep alive period expired, closing socket ${this.connectionContext.remoteId}`)
       this.disconnect()
     }
-  }
-
-  disconnect() {
-    this.socket.disconnect()
   }
 
   handleMessage(data) {

@@ -35,10 +35,49 @@ describe("connection", () => {
       1,
       () => createNodeWebsocket(`wss://echo.websocket.org`),
       {
-        reconnect: true
+        reconnect: true,
       }
     )
 
     rpcClient.disconnect()
+  })
+
+  it("disconnect of prev connection happens before reconnect", async () => {
+    let connectionsHistory = []
+
+    const rpcServer = await startTestServer(
+      {
+        test: {
+          async call() {},
+        },
+      },
+      {
+        createConnectionContext: async (socket, ...transportDetails) => ({
+          remoteId: "1",
+        }),
+        listeners: {
+          connected(remoteId: string, connections: number) {
+            connectionsHistory.push("C")
+          },
+          disconnected(remoteId: string, connections: number) {
+            connectionsHistory.push("D")
+          },
+          messageOut(remoteId: string, data: string) {},
+          messageIn(remoteId: string, data: string) {},
+          unsubscribed(subscriptions: number) {},
+          subscribed(subscriptions: number) {},
+        },
+      }
+    )
+
+    await createTestClient()
+    await createTestClient()
+
+    await new Promise(r => setTimeout(r, 500))
+
+    await rpcServer.disconnectClient("1")
+
+    assert.equal(rpcServer.getConnectedIds().length, 0)
+    assert.deepEqual(connectionsHistory, ["C", "D", "C", "D"])
   })
 })

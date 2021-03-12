@@ -55,6 +55,7 @@ export interface RpcServer {
   isConnected(remoteId: string): boolean
   getConnectedIds(): string[]
   close(cb): void
+  disconnectClient(remoteId: string): Promise<void>
 }
 
 export function createRpcServer(
@@ -98,6 +99,11 @@ export function createRpcServer(
 
     const {remoteId} = connectionContext
 
+    if (sessions[remoteId]) {
+      log.warn("Prev session active, disconnecting", remoteId)
+      await sessions[remoteId].disconnect()
+    }
+
     const session = new RpcSession(
       local,
       opts.clientLevel,
@@ -116,20 +122,13 @@ export function createRpcServer(
       opts.callTimeout,
       opts.syncRemoteCalls
     )
+    sessions[remoteId] = session
 
     session.open(socket)
-
-    if (sessions[remoteId]) {
-      log.warn("Prev session active, discarding", remoteId)
-      sessions[remoteId].disconnect()
-    }
-    sessions[remoteId] = session
 
     opts.listeners.connected(remoteId, Object.keys(sessions).length)
 
     socket.onDisconnected(async (code, reason) => {
-      await session.handleDisconnected()
-
       if (sessions[remoteId] == session) {
         delete sessions[remoteId]
 
@@ -139,6 +138,8 @@ export function createRpcServer(
       }
 
       opts.listeners.disconnected(remoteId, Object.keys(sessions).length)
+
+      await session.handleDisconnected()
     })
 
     socket.onError(e => {
@@ -157,5 +158,10 @@ export function createRpcServer(
     },
     isConnected,
     getConnectedIds: () => Object.keys(sessions),
+    disconnectClient: async clientId => {
+      if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
+
+      await sessions[clientId].disconnect()
+    },
   }
 }
