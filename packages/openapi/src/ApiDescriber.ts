@@ -1,5 +1,12 @@
 import * as path from "path"
-import {EnumDeclaration, InterfaceDeclaration, ObjectFlags, PropertySignature, Type} from "ts-morph"
+import {
+  EnumDeclaration,
+  InterfaceDeclaration,
+  JSDocableNode,
+  ObjectFlags,
+  PropertySignature,
+  Type,
+} from "ts-morph"
 
 // consider also lukeautry/tsoa
 
@@ -208,8 +215,15 @@ export class ApiDescriber {
       }
     }
 
+    const declarations = type.getSymbol().getDeclarations() || []
+    // console.log(declarations[0].getText(true))
+
+    const decl = (declarations?.[0] as unknown) as JSDocableNode
+    const comment = (decl?.getJsDocs?.() || []).map(d => d.getInnerText()).join("\n")
+
     return {
       type: "object",
+      description: comment || undefined,
       properties,
     }
   }

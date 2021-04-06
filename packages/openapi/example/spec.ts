@@ -29,11 +29,13 @@ export type User = {
 
 export type AdminOrClient = Admin | Client
 
+/** Client Status */
 export enum ClientStatus {
   Active = "Active",
   Blocked = "Blocked",
 }
 
+/** Generic Page */
 export interface Page<T> {
   total: number
   rows: T[]
