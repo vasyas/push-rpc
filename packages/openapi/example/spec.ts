@@ -42,6 +42,7 @@ export interface AuthService {
 }
 
 export interface ClientService {
+  /**Get client by id*/
   getClient(req: {id: number}, ctx?): Promise<Client>
   getClients(_?, ctx?): Promise<Page<Client>>
 

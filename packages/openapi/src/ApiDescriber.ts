@@ -17,6 +17,11 @@ export class ApiDescriber {
       const params = method.getParameters()
       const requestType = params.length && params[0].getType()
 
+      const comment = method
+        .getJsDocs()
+        .map(d => d.getInnerText())
+        .join("\n")
+
       // should be Promise<smth>, get smth
       const returnType =
         method.getReturnType().getTypeArguments().length &&
@@ -24,7 +29,8 @@ export class ApiDescriber {
 
       paths[prefix + method.getName()] = {
         post: {
-          description: `Method ${method.getName()}`,
+          summary: `Method ${method.getName()}`,
+          description: comment || undefined,
           requestBody: this.requestBody(requestType, requestType && !params[0].isOptional()),
           responses: this.operationResponses(returnType),
         },
