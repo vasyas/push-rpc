@@ -231,9 +231,12 @@ export class ApiDescriber {
   private enumSchema(type: Type) {
     const declaration = type.getSymbol().getValueDeclaration() as EnumDeclaration
 
+    const comment = (declaration?.getJsDocs?.() || []).map(d => d.getInnerText()).join("\n")
+
     if (!declaration.getMembers) {
       return {
         type: "string",
+        description: comment || undefined,
         enum: [type.getSymbolOrThrow().getEscapedName()],
       }
     }
@@ -242,6 +245,7 @@ export class ApiDescriber {
 
     return {
       type: "string",
+      description: comment || undefined,
       enum: members.map(m => m.getValue()),
     }
   }
