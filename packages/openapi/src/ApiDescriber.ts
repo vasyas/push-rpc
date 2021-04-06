@@ -256,9 +256,15 @@ export class ApiDescriber {
     // special case - convert union of literals to enum,
     const literalsOnly = !unionTypes.some(type => !type.isLiteral())
 
+    const targetSymbol = type.getAliasSymbol() || type.getSymbol()
+    const declarations = targetSymbol?.getDeclarations?.() || []
+    const declaration = (declarations?.[0] as unknown) as JSDocableNode
+    const comment = (declaration?.getJsDocs?.() || []).map(d => d.getInnerText()).join("\n")
+
     if (literalsOnly) {
       return {
         type: "string",
+        description: comment || undefined,
         enum: Array.from(
           new Set(
             unionTypes.map(type => {
@@ -275,6 +281,7 @@ export class ApiDescriber {
 
     return {
       anyOf: unionTypes.map(t => this.schema(t)),
+      description: comment || undefined,
     }
   }
 
