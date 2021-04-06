@@ -215,11 +215,11 @@ export class ApiDescriber {
       }
     }
 
-    const declarations = type.getSymbol().getDeclarations() || []
-    // console.log(declarations[0].getText(true))
+    const targetSymbol = type.getAliasSymbol() || type.getSymbol()
+    const declarations = targetSymbol?.getDeclarations?.() || []
 
-    const decl = (declarations?.[0] as unknown) as JSDocableNode
-    const comment = (decl?.getJsDocs?.() || []).map(d => d.getInnerText()).join("\n")
+    const declaration = (declarations?.[0] as unknown) as JSDocableNode
+    const comment = (declaration?.getJsDocs?.() || []).map(d => d.getInnerText()).join("\n")
 
     return {
       type: "object",

@@ -27,6 +27,7 @@ export type User = {
   account: AdminOrClient
 }
 
+/** Just to test alternatives */
 export type AdminOrClient = Admin | Client
 
 /** Client Status */
