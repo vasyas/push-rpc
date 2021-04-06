@@ -34,7 +34,7 @@ export class ApiDescriber {
     for (const prop of i.getProperties()) {
       const type = prop.getTypeNodeOrThrow().getType()
 
-      if (type.isInterface()) {
+      if (type.isInterface() || type.isObject()) {
         const declaration = type.getSymbolOrThrow().getDeclarations()[0]
 
         const nestedPaths = this.describeInterface(

@@ -19,7 +19,7 @@ export interface Admin {
   id: number
 }
 
-export interface User {
+export type User = {
   login: string
   account: AdminOrClient
 }
@@ -49,6 +49,6 @@ export interface ClientService {
   client: Topic<Client, {id: number}>
 }
 
-export interface UserService {
+export type UserService = {
   getAllUsers(_?, ctx?): Promise<User[]>
 }
