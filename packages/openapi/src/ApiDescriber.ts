@@ -56,9 +56,15 @@ export class ApiDescriber {
         const responseType = type.getTypeArguments()[0]
         const requestType = type.getTypeArguments()[1]
 
+        const comment = prop
+          .getJsDocs()
+          .map(d => d.getInnerText())
+          .join("\n")
+
         paths[prefix + prop.getName()] = {
           put: {
-            description: `Topic ${prop.getName()}`,
+            summary: `Topic ${prop.getName()}`,
+            description: comment || undefined,
             requestBody: this.requestBody(requestType, true),
             responses: this.operationResponses(responseType),
           },

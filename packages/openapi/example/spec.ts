@@ -20,6 +20,7 @@ export interface Admin {
 }
 
 export type User = {
+  /** User's login */
   login: string
   account: AdminOrClient
 }
