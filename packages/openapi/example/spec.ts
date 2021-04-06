@@ -19,9 +19,11 @@ export interface Admin {
   id: number
 }
 
+/** System user */
 export type User = {
   /** User's login */
   login: string
+  /** Related account */
   account: AdminOrClient
 }
 

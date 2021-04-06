@@ -192,6 +192,13 @@ export class ApiDescriber {
           properties[prop.getName()] = {
             ...this.schema(typeMapping.map(propertyType), typeMapping),
           }
+
+          const comment = propertySignature
+            .getJsDocs()
+            .map(d => d.getInnerText())
+            .join("\n")
+
+          properties[prop.getName()].description = comment || undefined
         } else {
           console.warn(`Unable to get type for property ${prop.getName()}`)
         }
