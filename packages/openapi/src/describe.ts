@@ -1,6 +1,6 @@
 import * as yaml from "js-yaml"
 import * as path from "path"
-import {Project} from "ts-morph"
+import {Project, TypeLiteralNode} from "ts-morph"
 import {ApiDescriber} from "./ApiDescriber"
 
 function loadProject(tsConfigFilePath) {
@@ -37,12 +37,15 @@ export function generateOpenAPI({tsConfig, template, baseDir, skip, entryFile, e
   const file = project.getSourceFile(path.join(baseDir, entryFile))
   if (!file) throw new Error(`Cannot find entry file ${entryFile}`)
 
-  const entryInterface = file.getInterface(entryType)
-  if (!entryInterface) throw new Error(`Cannot find entry type ${entryType}`)
+  const entryTypeNode = file.getTypeAlias(entryType)
+    ? (file.getTypeAlias(entryType).getTypeNode() as TypeLiteralNode)
+    : file.getInterface(entryType)
+
+  if (!entryTypeNode) throw new Error(`Cannot find entry interface or type alias ${entryType}`)
 
   const apiDescriber = new ApiDescriber(baseDir, skip)
 
-  const paths = apiDescriber.describeInterface(entryInterface)
+  const paths = apiDescriber.describeEntryType(entryTypeNode)
 
   return {
     ...template,

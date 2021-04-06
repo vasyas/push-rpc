@@ -1,11 +1,11 @@
 import * as path from "path"
 import {
   EnumDeclaration,
-  InterfaceDeclaration,
   JSDocableNode,
   ObjectFlags,
   PropertySignature,
   Type,
+  TypeElementMemberedNode,
 } from "ts-morph"
 
 // consider also lukeautry/tsoa
@@ -13,14 +13,14 @@ import {
 export class ApiDescriber {
   constructor(private baseDir: string, private skipPrefix?: string) {}
 
-  describeInterface(i: InterfaceDeclaration, prefix = "/"): any {
+  describeEntryType(type: TypeElementMemberedNode, prefix = "/"): any {
     if (this.skipPrefix && prefix.startsWith(this.skipPrefix)) {
       return {}
     }
 
     let paths = {}
 
-    for (const method of i.getMethods()) {
+    for (const method of type.getMethods()) {
       const params = method.getParameters()
       const requestType = params.length && params[0].getType()
 
@@ -44,14 +44,14 @@ export class ApiDescriber {
       }
     }
 
-    for (const prop of i.getProperties()) {
+    for (const prop of type.getProperties()) {
       const type = prop.getTypeNodeOrThrow().getType()
 
       if (type.isInterface() || type.isObject()) {
         const declaration = type.getSymbolOrThrow().getDeclarations()[0]
 
-        const nestedPaths = this.describeInterface(
-          declaration as InterfaceDeclaration,
+        const nestedPaths = this.describeEntryType(
+          (declaration as unknown) as TypeElementMemberedNode,
           prefix + prop.getName() + "/"
         )
 
