@@ -5123,11 +5123,6 @@ typedoc-default-themes@^0.12.10:
   resolved "https://registry.yarnpkg.com/typedoc-default-themes/-/typedoc-default-themes-0.12.10.tgz#614c4222fe642657f37693ea62cad4dafeddf843"
   integrity sha512-fIS001cAYHkyQPidWXmHuhs8usjP5XVJjWB8oZGqkTowZaz3v7g3KDZeeqE82FBrmkAnIBOY3jgy7lnPnqATbA==
 
-typedoc-github-wiki-theme@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/typedoc-github-wiki-theme/-/typedoc-github-wiki-theme-0.2.0.tgz#a5239032774e1b27b6c13bfab334b20bfd6aec1e"
-  integrity sha512-2nl+fUO7PiPrssYEvvHkcXNnCgW8ZWvWmQ9q3FMdyE35MtLH0542OEvvJ7ygjh+yzvAcNrTfOxhWypGXOo/49A==
-
 typedoc-plugin-markdown@^3.7.2:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/typedoc-plugin-markdown/-/typedoc-plugin-markdown-3.7.2.tgz#87f3f13c074f4c67e1902063a1846c328d690069"

@@ -1,4 +1,14 @@
+@push-rpc/http
+
 # @push-rpc/http
+
+## Table of contents
+
+### Functions
+
+- [createExpressHttpMiddleware](README.md#createexpresshttpmiddleware)
+- [createHttpClient](README.md#createhttpclient)
+- [createKoaHttpMiddleware](README.md#createkoahttpmiddleware)
 
 ## Functions
 
@@ -20,7 +30,7 @@
 | `onConnection` | *any* |
 | `onError` | *any* |
 
-Defined in: [server.ts:50](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/http/src/server.ts#L50)
+Defined in: [server.ts:50](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/http/src/server.ts#L50)
 
 ___
 
@@ -37,7 +47,7 @@ ___
 
 **Returns:** Socket
 
-Defined in: [client.ts:5](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/http/src/client.ts#L5)
+Defined in: [client.ts:5](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/http/src/client.ts#L5)
 
 ___
 
@@ -59,4 +69,4 @@ ___
 | `onConnection` | *any* |
 | `onError` | *any* |
 
-Defined in: [server.ts:5](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/http/src/server.ts#L5)
+Defined in: [server.ts:5](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/http/src/server.ts#L5)
