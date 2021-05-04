@@ -127,11 +127,13 @@ Server will send empty todo list on client connecting and then will send updated
 
 # API
 
-[core](api-docs/core/README.md)
+[@push-rpc/core](api-docs/core/README.md)
 
-[websocket](api-docs/websocket/README.md)
+[@push-rpc/websocket](api-docs/websocket/README.md)
 
-[http](api-docs/http/README.md)
+[@push-rpc/http](api-docs/http/README.md)
+
+[@push-rpc/tcp](api-docs/tcp/README.md)
 
 # Protocol Details
 
