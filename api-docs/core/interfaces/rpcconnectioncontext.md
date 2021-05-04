@@ -31,7 +31,7 @@
 
 • `Optional` **protocol**: *string*
 
-Defined in: [rpc.ts:60](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/rpc.ts#L60)
+Defined in: [rpc.ts:60](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L60)
 
 ___
 
@@ -39,4 +39,4 @@ ___
 
 • **remoteId**: *string*
 
-Defined in: [rpc.ts:59](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/rpc.ts#L59)
+Defined in: [rpc.ts:59](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L59)

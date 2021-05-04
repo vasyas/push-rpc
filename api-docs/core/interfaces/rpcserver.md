@@ -26,7 +26,7 @@
 
 **Returns:** *void*
 
-Defined in: [server.ts:57](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/server.ts#L57)
+Defined in: [server.ts:57](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L57)
 
 ___
 
@@ -42,7 +42,7 @@ ___
 
 **Returns:** *Promise*<void\>
 
-Defined in: [server.ts:58](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/server.ts#L58)
+Defined in: [server.ts:58](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L58)
 
 ___
 
@@ -52,7 +52,7 @@ ___
 
 **Returns:** *string*[]
 
-Defined in: [server.ts:56](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/server.ts#L56)
+Defined in: [server.ts:56](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L56)
 
 ___
 
@@ -68,7 +68,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [server.ts:54](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/server.ts#L54)
+Defined in: [server.ts:54](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L54)
 
 ___
 
@@ -84,4 +84,4 @@ ___
 
 **Returns:** *boolean*
 
-Defined in: [server.ts:55](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/core/src/server.ts#L55)
+Defined in: [server.ts:55](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L55)

@@ -1,6 +1,11 @@
 import * as WebSocket from "ws"
 import {Socket, SocketServer} from "@push-rpc/core"
 
+/**
+ * Create Push-RPC SocketServer using WebSocket transport.
+ *
+ * Uses [ws](https://github.com/websockets/ws) NPM package under the hood.
+ */
 export function createWebsocketServer(
   options: WebSocket.ServerOptions = {noServer: true}
 ): SocketServer & {wss: WebSocket.Server} {
@@ -18,7 +23,12 @@ export function createWebsocketServer(
   }
 }
 
-export function createNodeWebsocket(url, protocol?) {
+/**
+ * Create Push-RPC Socket using WebSocket transport.
+ *
+ * Uses [ws](https://github.com/websockets/ws) NPM package under the hood.
+ */
+export function createNodeWebsocket(url: string, protocol?: string | string[]) {
   return wrapWebsocket(new WebSocket(url, protocol))
 }
 

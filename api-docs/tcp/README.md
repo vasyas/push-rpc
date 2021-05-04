@@ -25,7 +25,7 @@
 
 **Returns:** Socket
 
-Defined in: [client.ts:4](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/tcp/src/client.ts#L4)
+Defined in: [client.ts:4](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/tcp/src/client.ts#L4)
 
 ___
 
@@ -41,7 +41,7 @@ ___
 
 **Returns:** SocketServer
 
-Defined in: [server.ts:5](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/tcp/src/server.ts#L5)
+Defined in: [server.ts:5](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/tcp/src/server.ts#L5)
 
 ___
 
@@ -57,4 +57,4 @@ ___
 
 **Returns:** Socket
 
-Defined in: [client.ts:11](https://github.com/vasyas/typescript-rpc/blob/c658db8/packages/tcp/src/client.ts#L11)
+Defined in: [client.ts:11](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/tcp/src/client.ts#L11)
