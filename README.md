@@ -127,9 +127,11 @@ Server will send empty todo list on client connecting and then will send updated
 
 # API
 
-Core
-Websocket
-Http
+[core](api-docs/core/README.md)
+
+[websocket](api-docs/websocket/README.md)
+
+[http](api-docs/http/README.md)
 
 # Protocol Details
 

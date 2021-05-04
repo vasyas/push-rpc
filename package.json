@@ -7,7 +7,8 @@
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
     "test": "lerna run test",
-    "publish": ""
+    "publish": "",
+    "api-doc": "typedoc --out api-docs/websocket --tsconfig ./packages/websocket/tsconfig.json --readme none packages/websocket/src/index.ts"
   },
   "name": "push-rpc",
   "version": "1.1.0",
@@ -24,6 +25,9 @@
     "mocha": "^6.2.0",
     "prettier": "^1.19.1",
     "ts-node": "^8.3.0",
+    "typedoc": "^0.20.36",
+    "typedoc-github-wiki-theme": "^0.2.0",
+    "typedoc-plugin-markdown": "^3.7.2",
     "typescript": "^3.6.2"
   },
   "dependencies": {}
