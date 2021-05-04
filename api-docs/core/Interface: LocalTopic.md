@@ -1,5 +1,3 @@
-[@push-rpc/core](../README.md) / LocalTopic
-
 # Interface: LocalTopic<D, P, TD\>
 
 ## Type parameters
@@ -14,13 +12,7 @@
 
 * **LocalTopic**
 
-  ↳ [*Topic*](topic.md)
-
-## Table of contents
-
-### Methods
-
-- [trigger](localtopic.md#trigger)
+  ↳ [*Topic*](../wiki/Interface:%20Topic)
 
 ## Methods
 
@@ -37,4 +29,4 @@
 
 **Returns:** *void*
 
-Defined in: [rpc.ts:54](https://github.com/vasyas/typescript-rpc/blob/4afbec1/packages/core/src/rpc.ts#L54)
+Defined in: [rpc.ts:54](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/core/src/rpc.ts#L54)

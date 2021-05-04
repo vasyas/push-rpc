@@ -1,13 +1,4 @@
-@push-rpc/websocket
-
 # @push-rpc/websocket
-
-## Table of contents
-
-### Functions
-
-- [createNodeWebsocket](README.md#createnodewebsocket)
-- [createWebsocketServer](README.md#createwebsocketserver)
 
 ## Functions
 
@@ -24,7 +15,7 @@
 
 **Returns:** Socket
 
-Defined in: [server.ts:21](https://github.com/vasyas/typescript-rpc/blob/4afbec1/packages/websocket/src/server.ts#L21)
+Defined in: [server.ts:21](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/websocket/src/server.ts#L21)
 
 ___
 
@@ -40,4 +31,4 @@ ___
 
 **Returns:** SocketServer & { `wss`: WebSocket.Server  }
 
-Defined in: [server.ts:4](https://github.com/vasyas/typescript-rpc/blob/4afbec1/packages/websocket/src/server.ts#L4)
+Defined in: [server.ts:4](https://github.com/vasyas/typescript-rpc/blob/a0baed0/packages/websocket/src/server.ts#L4)
