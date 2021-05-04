@@ -1,11 +1,7 @@
 A framework for organizing bidirectional client-server communication based on JSON, 
-with server-initiated data push.
+including server-initiated data push.
 
 Client establishes connection to server and then client and server exchange JSON packets. 
-
-Structure of the JSON packets is based on [WAMP](https://wamp-proto.org/), but not strictly conform to it. 
-Instead, it conforms to [OCPP-J RPC Framework](https://ru.scribd.com/document/328580830/OCPP-1-6-JSON-Specification). 
-More precisely, Push-RPC protocol is a superset of OCPP-J RPC protocol, with additional push capabilities.     
 
 Push-RPC allows you to:
 - Bi-directionally invoke remote methods on server and client
@@ -14,12 +10,12 @@ Push-RPC allows you to:
 - Create type-safe contracts of remote APIs using TypeScript code shared between client and server 
 - Create local proxies for remote objects, including support for transferring Date object
 - Supported client envs: Node.JS (with `isomorphic-fetch`), browser, React Native.
-- Client-initiated ping/pong (missing feature in Browser websocket)
+- Client-initiated ping/pong for WS transport (missing feature in Browser websocket)
 
 Supports multiple pluggable transports:
 - [WebSocket](https://github.com/vasyas/push-rpc/tree/master/websocket) (recommended)
 - [Plain TCP](https://github.com/vasyas/push-rpc/tree/master/tcp)
-- [HTTP REST-like](https://github.com/vasyas/push-rpc/tree/master/http).
+- [HTTP REST-like](https://github.com/vasyas/push-rpc/tree/master/http), includes generating OpenAPI schema. 
 
 # Possible Applications
 
@@ -27,6 +23,10 @@ Supports multiple pluggable transports:
 - OCPP-J clients and servers
 - IoT devices connecting to servers 
 - General client/server apps using WebSockets for communications
+
+Not a good place for Push-RPC:
+- Communications between microservices. MSs usually require a lot more things besides transport, including discovery, 
+  HA and so on. And it would be better to use some Service Mesh framework like Istio or NATS+TypedSubjects.   
 
 # Getting Started
 
@@ -44,6 +44,9 @@ yarn add ws
 You can use standard browser WebSockets on the client, or use `ws` npm package.
 
 ### Example code
+
+Basic server & client with contract defined in shared code.
+You can find more examples at https://github.com/vasyas/push-rpc/tree/master/packages/examples
 
 shared.ts:
 ```
@@ -124,7 +127,9 @@ Server will send empty todo list on client connecting and then will send updated
 
 # API
 
-TBD
+Core
+Websocket
+Http
 
 # Protocol Details
 
@@ -225,10 +230,6 @@ Will generate response RESULT message with the same ID. <br>
 </tbody>
 </table>
 
- 
-## Possible new features
-- Binary data transfer
-- Generating OpenAPI (Swagger) YAMLs with API description
  
 ## FAQ
 
