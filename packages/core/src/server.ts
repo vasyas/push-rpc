@@ -17,6 +17,7 @@ export interface RpcServerOptions {
   keepAliveTimeout?: number
   callTimeout?: number
   syncRemoteCalls?: boolean
+  delayCalls?: number
 
   listeners?: {
     connected?(remoteId: string, connections: number): void
@@ -39,6 +40,7 @@ const defaultOptions: Partial<RpcServerOptions> = {
   keepAliveTimeout: 120 * 1000,
   callTimeout: 15 * 1000,
   syncRemoteCalls: false,
+  delayCalls: 0,
   messageParser: data => JSON.parse(data, dateReviver),
   listeners: {
     connected: () => {},
@@ -120,7 +122,8 @@ export function createRpcServer(
       opts.pingSendTimeout,
       opts.keepAliveTimeout,
       opts.callTimeout,
-      opts.syncRemoteCalls
+      opts.syncRemoteCalls,
+      opts.delayCalls
     )
     sessions[remoteId] = session
 

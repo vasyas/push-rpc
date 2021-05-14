@@ -38,37 +38,37 @@ describe("sync", () => {
     let clientResponse
     let serverResponse
 
-    const rpcServer = await startTestServer({
-      callServer() {
-        console.log("Server called")
-        return new Promise(resolve => {
-          resolveServerCall = resolve
-        })
+    const rpcServer = await startTestServer(
+      {
+        callServer() {
+          console.log("Server called")
+          return new Promise(resolve => {
+            resolveServerCall = resolve
+          })
+        },
       },
-    }, {
-      syncRemoteCalls: true,
-      listeners: {
-        connected: (id, total) => {
-          setTimeout(async () => {
-            const client = await rpcServer.getRemote(id)
-            console.log("Try to call client")
-            clientResponse = await client.callClient()
-          }, 100)
-        },
-        disconnected: (id, total) => {
-        },
-        messageIn: (remoteId, data) => {
-          console.log("IN", data)
-        },
-        messageOut: (remoteId, data) => {
-          console.log("OUT", data)
-        },
-        subscribed: () => {
-        },
-        unsubscribed: () => {
+      {
+        syncRemoteCalls: true,
+        listeners: {
+          connected: (id, total) => {
+            setTimeout(async () => {
+              const client = await rpcServer.getRemote(id)
+              console.log("Try to call client")
+              clientResponse = await client.callClient()
+            }, 100)
+          },
+          disconnected: (id, total) => {},
+          messageIn: (remoteId, data) => {
+            console.log("IN", data)
+          },
+          messageOut: (remoteId, data) => {
+            console.log("OUT", data)
+          },
+          subscribed: () => {},
+          unsubscribed: () => {},
         },
       }
-    })
+    )
 
     const client = {
       callClient() {
@@ -76,7 +76,7 @@ describe("sync", () => {
         return new Promise(resolve => {
           resolveClientCall = resolve
         })
-      }
+      },
     }
 
     const server = await createTestClient(0, {local: client})
@@ -145,4 +145,35 @@ describe("sync", () => {
     })
 
   // wait before asnwer before _accepting_ new call
+
+  it("wait some time before sending next call", async () => {
+    let resolveCall
+    let callNo
+
+    await startTestServer({
+      call(_callNo) {
+        callNo = _callNo
+
+        return new Promise(resolve => {
+          resolveCall = resolve
+        })
+      },
+    })
+
+    const client = await createTestClient(0, {syncRemoteCalls: true, delayCalls: 150})
+
+    client.call(1)
+    client.call(2)
+
+    await new Promise(r => setTimeout(r, 100))
+    assert.equal(callNo, 1)
+    resolveCall()
+
+    await new Promise(r => setTimeout(r, 100))
+    assert.equal(callNo, 1)
+
+    await new Promise(r => setTimeout(r, 100)) // 200 ms from last response
+    assert.equal(callNo, 2)
+    resolveCall()
+  })
 })

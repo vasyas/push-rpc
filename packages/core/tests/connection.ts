@@ -31,12 +31,12 @@ describe("connection", () => {
   }).timeout(5000)
 
   it("disconnect will stop reconnection loop", async () => {
+    await startTestServer({})
+
     const rpcClient = await createRpcClient(
       1,
-      () => createNodeWebsocket(`wss://echo.websocket.org`),
-      {
-        reconnect: true,
-      }
+      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
     )
 
     rpcClient.disconnect()

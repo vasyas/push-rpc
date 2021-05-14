@@ -31,7 +31,8 @@ export class RpcSession {
     private pingSendTimeout: number,
     private keepAliveTimeout: number,
     private callTimeout: number,
-    private syncRemoteCalls: boolean
+    private syncRemoteCalls: boolean,
+    private delayCalls: number
   ) {
     this.remote = createRemote(remoteLevel, this)
   }
@@ -48,6 +49,8 @@ export class RpcSession {
 
   private queue: Call[] = []
   private runningCalls: {[messageId: string]: Call} = {}
+
+  private lastResponseAt: number = 0
 
   open(socket: Socket) {
     this.socket = socket
@@ -71,7 +74,8 @@ export class RpcSession {
         delete this.runningCalls[PING_MESSAGE_ID]
       }
 
-      this.sendCall()
+      this.lastResponseAt = Date.now()
+      this.flushPendingCalls()
     })
 
     if (this.pingSendTimeout) {
@@ -279,14 +283,23 @@ export class RpcSession {
           reject,
         })
 
-        this.sendCall()
+        this.flushPendingCalls()
       })
     }
 
     return this.remoteMiddleware(null, sendMessage, params, type)
   }
 
-  private sendCall() {
+  private flushPendingCalls() {
+    if (this.delayCalls) {
+      const delay = this.lastResponseAt + this.delayCalls - Date.now()
+
+      if (delay > 0) {
+        setTimeout(() => this.flushPendingCalls(), delay)
+        return
+      }
+    }
+
     if (!!Object.keys(this.runningCalls).length && this.syncRemoteCalls) {
       return
     }
@@ -343,7 +356,8 @@ export class RpcSession {
       }
     }
 
-    this.sendCall()
+    this.lastResponseAt = Date.now()
+    this.flushPendingCalls()
   }
 
   private async invokeLocal(id, name, localMethod, localMethodObject, params) {

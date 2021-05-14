@@ -31,6 +31,7 @@ export interface RpcClientOptions {
   keepAliveTimeout: number
   callTimeout: number
   syncRemoteCalls: boolean
+  delayCalls: number
 }
 
 const defaultOptions: RpcClientOptions = {
@@ -53,6 +54,7 @@ const defaultOptions: RpcClientOptions = {
   keepAliveTimeout: null,
   callTimeout: 30 * 1000,
   syncRemoteCalls: false,
+  delayCalls: 0,
 }
 
 export function createRpcClient<R = any>(
@@ -73,7 +75,8 @@ export function createRpcClient<R = any>(
     opts.pingSendTimeout,
     opts.keepAliveTimeout,
     opts.callTimeout,
-    opts.syncRemoteCalls
+    opts.syncRemoteCalls,
+    opts.delayCalls
   )
 
   const client = {
@@ -121,7 +124,7 @@ function startConnectionLoop(
         onFirstConnection = () => {}
       },
       errorDelay,
-      client,
+      client
     )
   })
 }
