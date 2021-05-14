@@ -24,7 +24,7 @@
 
 • **remote**: R
 
-Defined in: [client.ts:18](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L18)
+Defined in: [client.ts:18](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L18)
 
 ## Methods
 
@@ -34,4 +34,4 @@ Defined in: [client.ts:18](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a
 
 **Returns:** *void*
 
-Defined in: [client.ts:19](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L19)
+Defined in: [client.ts:19](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L19)

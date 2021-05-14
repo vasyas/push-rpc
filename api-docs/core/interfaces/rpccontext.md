@@ -31,7 +31,7 @@
 
 • **item**: ServiceItem
 
-Defined in: [rpc.ts:67](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L67)
+Defined in: [rpc.ts:67](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L67)
 
 ___
 
@@ -39,7 +39,7 @@ ___
 
 • `Optional` **itemName**: *string*
 
-Defined in: [rpc.ts:69](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L69)
+Defined in: [rpc.ts:69](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L69)
 
 ___
 
@@ -47,7 +47,7 @@ ___
 
 • `Optional` **messageId**: *string*
 
-Defined in: [rpc.ts:68](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L68)
+Defined in: [rpc.ts:68](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L68)
 
 ___
 
@@ -57,7 +57,7 @@ ___
 
 Inherited from: [RpcConnectionContext](rpcconnectioncontext.md).[protocol](rpcconnectioncontext.md#protocol)
 
-Defined in: [rpc.ts:60](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L60)
+Defined in: [rpc.ts:60](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L60)
 
 ___
 
@@ -65,7 +65,7 @@ ___
 
 • **remote**: Remote
 
-Defined in: [rpc.ts:65](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L65)
+Defined in: [rpc.ts:65](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L65)
 
 ___
 
@@ -75,4 +75,4 @@ ___
 
 Inherited from: [RpcConnectionContext](rpcconnectioncontext.md).[remoteId](rpcconnectioncontext.md#remoteid)
 
-Defined in: [rpc.ts:59](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/rpc.ts#L59)
+Defined in: [rpc.ts:59](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L59)

@@ -21,7 +21,7 @@
 
 **Returns:** *void*
 
-Defined in: [client.ts:8](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L8)
+Defined in: [client.ts:8](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L8)
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [client.ts:9](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L9)
+Defined in: [client.ts:9](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L9)
 
 ___
 
@@ -53,7 +53,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [client.ts:11](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L11)
+Defined in: [client.ts:11](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L11)
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [client.ts:12](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L12)
+Defined in: [client.ts:12](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L12)
 
 ___
 
@@ -85,7 +85,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [client.ts:13](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L13)
+Defined in: [client.ts:13](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L13)
 
 ___
 
@@ -101,4 +101,4 @@ ___
 
 **Returns:** *void*
 
-Defined in: [client.ts:14](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/client.ts#L14)
+Defined in: [client.ts:14](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/client.ts#L14)

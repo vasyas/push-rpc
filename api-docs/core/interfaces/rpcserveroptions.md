@@ -8,6 +8,7 @@
 
 - [callTimeout](rpcserveroptions.md#calltimeout)
 - [clientLevel](rpcserveroptions.md#clientlevel)
+- [delayCalls](rpcserveroptions.md#delaycalls)
 - [keepAliveTimeout](rpcserveroptions.md#keepalivetimeout)
 - [listeners](rpcserveroptions.md#listeners)
 - [localMiddleware](rpcserveroptions.md#localmiddleware)
@@ -26,7 +27,7 @@
 
 • `Optional` **callTimeout**: *number*
 
-Defined in: [server.ts:18](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L18)
+Defined in: [server.ts:18](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L18)
 
 ___
 
@@ -34,7 +35,15 @@ ___
 
 • `Optional` **clientLevel**: *number*
 
-Defined in: [server.ts:14](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L14)
+Defined in: [server.ts:14](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L14)
+
+___
+
+### delayCalls
+
+• `Optional` **delayCalls**: *number*
+
+Defined in: [server.ts:20](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L20)
 
 ___
 
@@ -42,7 +51,7 @@ ___
 
 • `Optional` **keepAliveTimeout**: *number*
 
-Defined in: [server.ts:17](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L17)
+Defined in: [server.ts:17](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L17)
 
 ___
 
@@ -61,7 +70,7 @@ ___
 | `subscribed` | (`subscriptions`: *number*) => *any* |
 | `unsubscribed` | (`subscriptions`: *number*) => *any* |
 
-Defined in: [server.ts:21](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L21)
+Defined in: [server.ts:22](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L22)
 
 ___
 
@@ -69,7 +78,7 @@ ___
 
 • `Optional` **localMiddleware**: [*Middleware*](../README.md#middleware)
 
-Defined in: [server.ts:12](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L12)
+Defined in: [server.ts:12](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L12)
 
 ___
 
@@ -77,7 +86,7 @@ ___
 
 • `Optional` **pingSendTimeout**: *number*
 
-Defined in: [server.ts:16](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L16)
+Defined in: [server.ts:16](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L16)
 
 ___
 
@@ -85,7 +94,7 @@ ___
 
 • `Optional` **remoteMiddleware**: [*Middleware*](../README.md#middleware)
 
-Defined in: [server.ts:13](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L13)
+Defined in: [server.ts:13](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L13)
 
 ___
 
@@ -93,7 +102,7 @@ ___
 
 • `Optional` **syncRemoteCalls**: *boolean*
 
-Defined in: [server.ts:19](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L19)
+Defined in: [server.ts:19](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L19)
 
 ## Methods
 
@@ -110,7 +119,7 @@ Defined in: [server.ts:19](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a
 
 **Returns:** *Promise*<[*RpcConnectionContext*](rpcconnectioncontext.md)<any\>\>
 
-Defined in: [server.ts:11](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L11)
+Defined in: [server.ts:11](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L11)
 
 ___
 
@@ -126,4 +135,4 @@ ___
 
 **Returns:** *any*[]
 
-Defined in: [server.ts:15](https://github.com/vasyas/typescript-rpc/blob/4c1eb2a/packages/core/src/server.ts#L15)
+Defined in: [server.ts:15](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/server.ts#L15)
