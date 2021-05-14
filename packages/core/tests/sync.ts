@@ -146,7 +146,7 @@ describe("sync", () => {
 
   // wait before asnwer before _accepting_ new call
 
-  it("wait some time before sending next call", async () => {
+  it("delay before sending next call", async () => {
     let resolveCall
     let callNo
 
@@ -169,11 +169,39 @@ describe("sync", () => {
     assert.equal(callNo, 1)
     resolveCall()
 
-    await new Promise(r => setTimeout(r, 100))
-    assert.equal(callNo, 1)
-
     await new Promise(r => setTimeout(r, 100)) // 200 ms from last response
     assert.equal(callNo, 2)
     resolveCall()
+  })
+
+  it("wait before sending next call after receiving response", async () => {
+    let callNo
+
+    const server = await startTestServer({
+      async call(_callNo) {
+        callNo = _callNo
+      },
+    })
+
+    const client = await createTestClient(0, {
+      syncRemoteCalls: true,
+      delayCalls: 150,
+      local: {
+        async test() {
+          console.log("Client local")
+        },
+      },
+    })
+
+    const remoteClient = server.getRemote(server.getConnectedIds()[0])
+
+    await remoteClient.test()
+    client.call(1)
+
+    await new Promise(r => setTimeout(r, 100))
+    assert.isUndefined(callNo)
+
+    await new Promise(r => setTimeout(r, 100)) // 200 ms since response
+    assert.equal(callNo, 1)
   })
 })

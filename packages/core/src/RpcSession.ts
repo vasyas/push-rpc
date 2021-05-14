@@ -50,7 +50,7 @@ export class RpcSession {
   private queue: Call[] = []
   private runningCalls: {[messageId: string]: Call} = {}
 
-  private lastResponseAt: number = 0
+  private lastSendAt: number = 0
 
   open(socket: Socket) {
     this.socket = socket
@@ -74,7 +74,6 @@ export class RpcSession {
         delete this.runningCalls[PING_MESSAGE_ID]
       }
 
-      this.lastResponseAt = Date.now()
       this.flushPendingCalls()
     })
 
@@ -253,6 +252,8 @@ export class RpcSession {
   }
 
   send(type: MessageType, id: string, ...params) {
+    this.lastSendAt = Date.now()
+
     const data = message(type, id, ...params)
     this.listeners.messageOut(data)
     this.socket.send(data)
@@ -292,7 +293,7 @@ export class RpcSession {
 
   private flushPendingCalls() {
     if (this.delayCalls) {
-      const delay = this.lastResponseAt + this.delayCalls - Date.now()
+      const delay = this.lastSendAt + this.delayCalls - Date.now()
 
       if (delay > 0) {
         setTimeout(() => this.flushPendingCalls(), delay)
@@ -309,6 +310,8 @@ export class RpcSession {
       call.startedAt = Date.now()
 
       if (call.type == "ping") {
+        this.lastSendAt = Date.now()
+
         this.runningCalls[PING_MESSAGE_ID] = call
         this.socket.ping(JSON.stringify(call.params))
         this.listeners.messageOut("PING")
@@ -356,7 +359,6 @@ export class RpcSession {
       }
     }
 
-    this.lastResponseAt = Date.now()
     this.flushPendingCalls()
   }
 
