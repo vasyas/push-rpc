@@ -48,14 +48,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     if (!this.consumers[paramsKey]) return
 
-    // only if all unsubscribed?
     this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
-
-    // unsubscribe all
-    if (subscriptionKey == undefined) {
-      this.deleteAllSubscriptions(paramsKey)
-      return
-    }
 
     const subscriptions = this.consumers[paramsKey]
 

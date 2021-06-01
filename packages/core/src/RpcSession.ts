@@ -412,9 +412,14 @@ export class RpcSession {
 
     const paramsKey = JSON.stringify(params)
 
-    this.subscriptions = this.subscriptions.filter(
-      s => s.topic != topic || JSON.stringify(s.params) != paramsKey
+    const idx = this.subscriptions.findIndex(
+      s => s.topic == topic || JSON.stringify(s.params) == paramsKey
     )
+
+    if (idx >= 0) {
+      this.subscriptions.splice(idx, 1)
+    }
+
     this.listeners.unsubscribed(this.subscriptions.length)
   }
 }
