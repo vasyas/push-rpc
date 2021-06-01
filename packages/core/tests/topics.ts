@@ -361,11 +361,11 @@ describe("Topics", () => {
     delete RemoteTopicImpl.prototype["getConsumers"]
   })
 
-  it.skip("unsubscribe topics on disconnect", async () => {
+  it("unsubscribe topics on disconnect", async () => {
     const item = {r: "1"}
 
     const server = {
-      test: {
+      testUnsub: {
         item: new LocalTopicImpl<typeof item, {}>(async () => item),
       },
     }
@@ -378,18 +378,18 @@ describe("Topics", () => {
       {reconnect: false}
     )
 
-    await client.test.item.subscribe(a => {})
+    await client.testUnsub.item.subscribe(a => {})
 
-    assert.equal(Object.keys(server.test.item["subscriptions"]).length, 1)
-    assert.equal(Object.keys(client.test.item.getConsumers()).length, 1)
+    assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 1)
+    assert.equal(Object.keys(client.testUnsub.item.getConsumers()).length, 1)
 
     disconnect()
 
     await new Promise(r => setTimeout(r, 50))
 
     // client's RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
-    assert.equal(Object.keys(client.test.item.getConsumers()).length, 1)
+    assert.equal(Object.keys(client.testUnsub.item.getConsumers()).length, 1)
 
-    assert.equal(Object.keys(server.test.item["subscriptions"]).length, 0)
+    assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 0)
   })
 })
