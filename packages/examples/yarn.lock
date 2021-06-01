@@ -938,6 +938,21 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@push-rpc/core@^1.2.9":
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.2.9.tgz#bba413b22ed9dedb915a5b4dd9ee345f44fa00f1"
+  integrity sha512-z1SsRu+NRG1GNXsEGMxoMzyH9WFWLIgoMBwa3phFh3i0CatFFM/+HMNHr8cw6S6oH3TVNUzG2VWgUln6Sz5gpA==
+  dependencies:
+    uuid-js "^0.7.5"
+
+"@push-rpc/websocket@^1.2.9":
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/@push-rpc/websocket/-/websocket-1.2.9.tgz#73bf1301df2efdb31a769c97bd3a9624486bea2c"
+  integrity sha512-SQQMImwcYtOD4CoNkJIApr2nkHPSlw6Zt2gs9IjWWawXcItw7OAfwrWBNh3c9mPpNgAp3bMkO81ALDZFEwk/Hg==
+  dependencies:
+    "@push-rpc/core" "^1.2.9"
+    ws "^7.2.0"
+
 "@types/q@^1.5.1":
   version "1.5.4"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.4.tgz#15925414e0ad2cd765bfef58842f7e26a7accb24"
@@ -3089,9 +3104,9 @@ lodash.uniq@^4.5.0:
   integrity sha1-0CJTc662Uq3BvILklFM5qEJ1R3M=
 
 lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.4:
-  version "4.17.19"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
-  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 log-symbols@^2.2.0:
   version "2.2.0"
