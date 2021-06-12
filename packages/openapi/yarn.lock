@@ -31,10 +31,10 @@
     "@nodelib/fs.scandir" "2.1.3"
     fastq "^1.6.0"
 
-"@push-rpc/core@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.2.0.tgz#1adf0c55d7b28e72459f61677f0076537d1608df"
-  integrity sha512-CPRmQRNSlWu1t0WQ6WE6OuGEXk8+TrNRAoRtnd+wjxaOVChmhsrSQ9QT4Fklwev8uUcdi2JSEdNHQh84JVN/8A==
+"@push-rpc/core@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.3.2.tgz#33f898a35d04124bd5238011859b4f8377b6408a"
+  integrity sha512-fZA20sO32Azj1n0kd565Yrlvxi2m7uOn1Hwej27hk+5QMh780+wuQXaeNdNb/vmhq78tHIabPiSM3iSKPkR6Xg==
   dependencies:
     uuid-js "^0.7.5"
 
@@ -221,9 +221,9 @@ find-replace@^3.0.0:
     array-back "^3.0.1"
 
 glob-parent@^5.1.0:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.1.tgz#b6c1ef417c4e5663ea498f1c45afac6916bbc229"
-  integrity sha512-FnI+VGOpnlGHWZxthPGR+QhR78fuiK0sNLkHQv+bL9fQi57lNNdquIbna/WrfROrolq8GK5Ek6BiMwqL/voRYQ==
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
+  integrity sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==
   dependencies:
     is-glob "^4.0.1"
 
