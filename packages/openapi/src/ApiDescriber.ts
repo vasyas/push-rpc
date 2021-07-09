@@ -47,19 +47,7 @@ export class ApiDescriber {
     for (const prop of type.getProperties()) {
       const type = prop.getTypeNodeOrThrow().getType()
 
-      if (type.isInterface() || type.isObject()) {
-        const declaration = type.getSymbolOrThrow().getDeclarations()[0]
-
-        const nestedPaths = this.describeEntryType(
-          (declaration as unknown) as TypeElementMemberedNode,
-          prefix + prop.getName() + "/"
-        )
-
-        paths = {
-          ...paths,
-          ...nestedPaths,
-        }
-      } else if (type.getSymbol().getName() == "Topic") {
+      if (type.getSymbol().getName() == "Topic") {
         const responseType = type.getTypeArguments()[0]
         const requestType = type.getTypeArguments()[1]
 
@@ -75,6 +63,18 @@ export class ApiDescriber {
             requestBody: this.requestBody(requestType, true),
             responses: this.operationResponses(responseType),
           },
+        }
+      } else if (type.isInterface() || type.isObject()) {
+        const declaration = type.getSymbolOrThrow().getDeclarations()[0]
+
+        const nestedPaths = this.describeEntryType(
+          (declaration as unknown) as TypeElementMemberedNode,
+          prefix + prop.getName() + "/"
+        )
+
+        paths = {
+          ...paths,
+          ...nestedPaths,
         }
       } else {
         console.warn(`Unsupported property type`, {prop: prop.getName(), type: type.getText()})
