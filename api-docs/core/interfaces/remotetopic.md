@@ -37,7 +37,7 @@
 
 **Returns:** *Promise*<D\>
 
-Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L45)
+Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L45)
 
 ___
 
@@ -55,7 +55,7 @@ ___
 
 **Returns:** *Promise*<any\>
 
-Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L43)
+Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L43)
 
 ___
 
@@ -72,4 +72,4 @@ ___
 
 **Returns:** *any*
 
-Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L44)
+Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L44)

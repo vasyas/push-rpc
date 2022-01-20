@@ -35,7 +35,7 @@ describe("connection", () => {
 
     const rpcClient = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 

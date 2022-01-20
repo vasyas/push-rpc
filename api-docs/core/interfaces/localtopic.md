@@ -37,4 +37,4 @@
 
 **Returns:** *void*
 
-Defined in: [rpc.ts:54](https://github.com/vasyas/typescript-rpc/blob/567818c/packages/core/src/rpc.ts#L54)
+Defined in: [rpc.ts:54](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L54)

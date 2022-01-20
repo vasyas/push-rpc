@@ -15,7 +15,7 @@ describe("Topic bugs", () => {
 
     const client = await createRpcClient(
       0,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {}
     )
 
@@ -50,7 +50,7 @@ describe("Topic bugs", () => {
 
     const client = await createRpcClient(
       0,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {}
     )
 

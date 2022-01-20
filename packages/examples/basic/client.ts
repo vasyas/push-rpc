@@ -5,7 +5,7 @@ import {Services} from "./shared"
 setLogger(console)
 ;(async () => {
   const services: Services = (
-    await createRpcClient(1, () => createNodeWebsocket("ws://localhost:5555"))
+    await createRpcClient(1, async () => createNodeWebsocket("ws://localhost:5555"))
   ).remote
 
   console.log("Client connected")

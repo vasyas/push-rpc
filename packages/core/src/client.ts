@@ -59,7 +59,7 @@ const defaultOptions: RpcClientOptions = {
 
 export function createRpcClient<R = any>(
   level,
-  createSocket: () => Socket,
+  createSocket: () => Promise<Socket>,
   options: Partial<RpcClientOptions> = {}
 ): Promise<RpcClient<R>> {
   const opts: RpcClientOptions = {...defaultOptions, ...options}
@@ -98,7 +98,7 @@ export function createRpcClient<R = any>(
 
 function startConnectionLoop(
   session: RpcSession,
-  createSocket: () => Socket,
+  createSocket: () => Promise<Socket>,
   listeners: RpcClientListeners,
   client: {disconnectedMark: boolean}
 ): Promise<void> {
@@ -131,7 +131,7 @@ function startConnectionLoop(
 
 function connectionLoop(
   session: RpcSession,
-  createSocket: () => Socket,
+  createSocket: () => Promise<Socket>,
   listeners: RpcClientListeners,
   resolve,
   errorDelay,
@@ -173,48 +173,52 @@ function connectionLoop(
 
 function connect(
   session: RpcSession,
-  createSocket: () => Socket,
+  createSocket: () => Promise<Socket>,
   listeners: RpcClientListeners
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const socket = createSocket()
+  return new Promise(async (resolve, reject) => {
+    try {
+      const socket = await createSocket()
 
-    let connected = false
+      let connected = false
 
-    const timer = setTimeout(() => {
-      if (!connected) reject("Connection timeout")
-    }, 10 * 1000) // 10s connection timeout
+      const timer = setTimeout(() => {
+        if (!connected) reject(new Error("Connection timeout"))
+      }, 10 * 1000) // 10s connection timeout
 
-    if (timer.unref) {
-      timer.unref()
+      if (timer.unref) {
+        timer.unref()
+      }
+
+      socket.onOpen(() => {
+        connected = true
+        listeners.connected()
+        session.open(socket)
+        resolve()
+      })
+
+      socket.onDisconnected((code, reason) => {
+        session.handleDisconnected()
+        if (connected) {
+          listeners.disconnected({code, reason})
+        }
+      })
+
+      socket.onError(e => {
+        if (!connected) {
+          reject(e)
+        }
+
+        log.warn("RPC connection error", e.message)
+
+        try {
+          socket.disconnect()
+        } catch (e) {
+          // ignore
+        }
+      })
+    } catch (e) {
+      reject(e)
     }
-
-    socket.onOpen(() => {
-      connected = true
-      listeners.connected()
-      session.open(socket)
-      resolve()
-    })
-
-    socket.onDisconnected((code, reason) => {
-      session.handleDisconnected()
-      if (connected) {
-        listeners.disconnected({code, reason})
-      }
-    })
-
-    socket.onError(e => {
-      if (!connected) {
-        reject(e)
-      }
-
-      log.warn("RPC connection error", e.message)
-
-      try {
-        socket.disconnect()
-      } catch (e) {
-        // ignore
-      }
-    })
   })
 }

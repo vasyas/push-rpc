@@ -103,7 +103,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -159,7 +159,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -200,7 +200,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -243,7 +243,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -289,7 +289,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -332,7 +332,7 @@ describe("Topics", () => {
 
     const {remote: client} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
 
@@ -374,7 +374,7 @@ describe("Topics", () => {
 
     const {remote: client, disconnect} = await createRpcClient(
       1,
-      () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: false}
     )
 
