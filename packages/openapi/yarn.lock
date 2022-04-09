@@ -31,6 +31,13 @@
     "@nodelib/fs.scandir" "2.1.3"
     fastq "^1.6.0"
 
+"@push-rpc/core@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.4.0.tgz#4c9177d5bc9075a19021b8a8f16cf540d2f718b2"
+  integrity sha512-2IEFbtk8PduYVKeDAt+makLK84GxthoWHKwJkLKLgbfEnguLZLDZG2CDyr+oM1JYgHFkYcQDcftuDkq69EPGFQ==
+  dependencies:
+    uuid-js "^0.7.5"
+
 "@ts-morph/common@~0.7.0":
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.7.0.tgz#fe50e04666e8ee6bbc61dd101679c4cdb08aad7d"
@@ -317,10 +324,10 @@ mkdirp@^1.0.4:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-moment@^2.22.1:
-  version "2.24.0"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
-  integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
+moment@^2.29.2:
+  version "2.29.2"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.2.tgz#00910c60b20843bcba52d37d58c628b47b1f20e4"
+  integrity sha512-UgzG4rvxYpN15jgCmVJwac49h9ly9NurikMWGPdVxm8GZD6XjkKPxDTjQQ43gtGgnV3X0cAyWDdP2Wexoquifg==
 
 multimatch@^5.0.0:
   version "5.0.0"
@@ -411,6 +418,11 @@ unc-path-regex@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/unc-path-regex/-/unc-path-regex-0.1.2.tgz#e73dd3d7b0d7c5ed86fbac6b0ae7d8c6a69d50fa"
   integrity sha1-5z3T17DXxe2G+6xrCufYxqadUPo=
+
+uuid-js@^0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/uuid-js/-/uuid-js-0.7.5.tgz#6c886d02a53d2d40dcf25d91a170b4a7b25b94d0"
+  integrity sha1-bIhtAqU9LUDc8l2RoXC0p7JblNA=
 
 wordwrapjs@^3.0.0:
   version "3.0.0"
