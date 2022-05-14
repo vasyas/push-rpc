@@ -34,4 +34,65 @@ describe("Misc", () => {
     assert.equal(typeof param, "object")
     assert.isArray(param)
   })
+
+  it("Circular reference in params", async () => {
+    let param
+
+    await startTestServer({
+      async hello(p) {
+        param = p
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    const msg = {
+      some: "string",
+      ref: null,
+    }
+    msg.ref = msg
+
+    await client.hello(msg)
+
+    assert.equal(param.some, msg.some)
+  })
+
+  it("Circular reference in response", async () => {
+    const msg = {
+      some: "string",
+      ref: null,
+    }
+    msg.ref = msg
+
+    await startTestServer({
+      async hello() {
+        return msg
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    const r = await client.hello()
+
+    assert.equal(r.some, msg.some)
+  })
+
+  // and multiple objects
+  it("multiple dates in response", async () => {
+    const msg = {
+      date1: new Date(),
+      date2: new Date(),
+    }
+
+    await startTestServer({
+      async hello() {
+        return msg
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    const r = await client.hello()
+    console.log(r)
+  })
 })

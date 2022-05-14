@@ -11,6 +11,7 @@ import {
 } from "./rpc"
 import {Socket} from "./transport"
 import {createMessageId, message} from "./utils"
+import * as jsonCircularStringify from "json-stringify-safe"
 
 export interface RpcSessionListeners {
   messageIn(data: string): void
@@ -371,7 +372,7 @@ export class RpcSession {
 
       this.send(MessageType.Result, id, r)
     } catch (e) {
-      log.error(`Unable to call method ${name} with params ${JSON.stringify(params)}. `, e)
+      log.error(`Unable to call method ${name} with params ${jsonCircularStringify(params)}. `, e)
       this.sendError(id, e)
     }
   }
@@ -454,7 +455,7 @@ function cloneParams(p) {
   if (!p) return p
   if (typeof p == "object") {
     if (p instanceof Date) return p
-    return JSON.parse(JSON.stringify(p))
+    return JSON.parse(jsonCircularStringify(p))
   }
   return p
 }

@@ -1,4 +1,5 @@
 import * as UUID from "uuid-js"
+import * as jsonCircularStringify from "json-stringify-safe"
 import {DataConsumer, MessageType, Middleware, RemoteTopic} from "./rpc"
 import {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"
 
@@ -28,8 +29,11 @@ function websocketDateToString(message) {
   })
 }
 
-function convertDateToString<T>(message: T, format): T {
+function convertDateToString<T>(message: T, format, cache = []): T {
   if (!message) return message
+  if (cache.indexOf(message) >= 0) return message
+
+  cache.push(message)
 
   Object.keys(message).forEach(key => {
     const prop = message[key]
@@ -38,13 +42,14 @@ function convertDateToString<T>(message: T, format): T {
 
     if (prop instanceof Date) {
       message[key] = format(prop)
-      return
+      return // continue?
     }
 
-    if (!Array.isArray(prop)) return convertDateToString(prop, format)
+    // continue
+    if (!Array.isArray(prop)) return convertDateToString(prop, format, cache)
 
     for (let i = 0; i < prop.length; i++) {
-      convertDateToString(prop[i], format)
+      convertDateToString(prop[i], format, cache)
     }
   })
 
@@ -64,7 +69,7 @@ export function setCreateMessageId(f: () => string) {
 export function message(type: MessageType, id: string, ...params) {
   websocketDateToString(params)
 
-  return JSON.stringify([type, id, ...params])
+  return jsonCircularStringify([type, id, ...params])
 }
 
 export function getClassMethodNames(obj) {
@@ -136,17 +141,15 @@ export function createDomWebsocket(url, protocols = undefined) {
       ws.onmessage = e => {
         const message = e.data.toString()
 
-        if (message == PONG_MESSAGE)
-          onPong()
-        else
-          h(message)
+        if (message == PONG_MESSAGE) onPong()
+        else h(message)
       }
     },
     onOpen: h => (ws.onopen = h),
     onDisconnected: h => {
       onDisconnected = h
 
-      ws.onclose = ({ code, reason }) => void singleCallDisconnected(code, reason)
+      ws.onclose = ({code, reason}) => void singleCallDisconnected(code, reason)
     },
     onError: h => (ws.onerror = h),
     onPong: h => {
