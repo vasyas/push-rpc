@@ -1,7 +1,7 @@
 {
   "name": "@push-rpc/examples",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -14,8 +14,8 @@
     "ws": "^7.2.0"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.4.0",
-    "@push-rpc/websocket": "^1.4.0",
+    "@push-rpc/core": "^1.4.1",
+    "@push-rpc/websocket": "^1.4.1",
     "uuid-js": "^0.7.5"
   },
   "browserslist": [

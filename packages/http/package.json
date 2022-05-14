@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/http",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -16,7 +16,7 @@
     "koa-body": "^4.1.1"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.4.0",
+    "@push-rpc/core": "^1.4.1",
     "uuid-js": "^0.7.5"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
