@@ -57,7 +57,7 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
+      
     )
 
     let item1
@@ -90,7 +90,7 @@ describe("Topics", () => {
 
     let socket
 
-    const {remote: client} = await createRpcClient(
+    const {remote: client, disconnect} = await createRpcClient(
       1,
       () => {
         socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
@@ -124,6 +124,8 @@ describe("Topics", () => {
     server.test.item.trigger()
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(receivedItem, item)
+
+    disconnect()
   })
 
   it("trigger filter", async () => {
@@ -142,7 +144,7 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
+      
     )
 
     let item1
@@ -198,7 +200,7 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
+      
     )
 
     let item1
@@ -239,7 +241,6 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
     )
 
     let item1
@@ -284,7 +285,6 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
     )
 
     let item1
@@ -320,7 +320,6 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
     )
 
     let count = 0
@@ -366,7 +365,7 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
+      
     )
 
     let item = null
@@ -409,7 +408,7 @@ describe("Topics", () => {
     const {remote: client} = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: true}
+      
     )
 
     let item = null
