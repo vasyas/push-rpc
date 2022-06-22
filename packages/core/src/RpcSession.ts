@@ -337,6 +337,10 @@ export class RpcSession {
     }
   }
 
+  public getConnectionContext(): RpcConnectionContext {
+    return this.connectionContext
+  }
+
   private callRemoteResponse(data) {
     const [messageType, id, ...other] = data
 
@@ -381,7 +385,7 @@ export class RpcSession {
     try {
       const callContext = this.createContext(id, topic.getTopicName())
 
-      const getFromTopic = (p = params) => topic.getData(p, callContext)
+      const getFromTopic = (p = params) => topic.getData(p, callContext, this.getConnectionContext())
       const r = await this.localMiddleware(callContext, getFromTopic, params, MessageType.Get)
 
       this.send(MessageType.Result, id, r)

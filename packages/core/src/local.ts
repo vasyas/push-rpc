@@ -1,5 +1,5 @@
 import {DataConsumer, DataSupplier, MessageType, Topic, TopicImpl} from "./rpc"
-import {lastValueReducer, ThrottleArgsReducer, throttle} from "./throttle"
+import {lastValueReducer, throttle, ThrottleArgsReducer} from "./throttle"
 import {createMessageId, PromiseCache} from "./utils"
 import {RpcSession} from "./RpcSession"
 
@@ -52,16 +52,11 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
 
   private dataSupplierCache = new PromiseCache<F, D>()
 
-  async getData(filter: F, ctx: any): Promise<D> {
-    try {
-      return await this.dataSupplierCache.invoke(
-        {filter, ctx},
-        () => this.supplier(filter, ctx)
-      )
-    } catch (e) {
-      console.log(e)
-      return null;
-    }
+  async getData(filter: F, callContext: unknown, connectionContext: unknown): Promise<D> {
+    return await this.dataSupplierCache.invoke(
+      {filter, connectionContext},
+      () => this.supplier(filter, callContext)
+    )
   }
 
   private throttled(f) {
@@ -74,7 +69,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     const key = JSON.stringify(filter)
     const thisTopic = this
 
-    const data = await this.getData(filter, ctx)
+    const data = await this.getData(filter, ctx, session.getConnectionContext())
 
     const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
       filter,
@@ -85,7 +80,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
           const data: D =
             suppliedData !== undefined
               ? await thisTopic.opts.triggerMapper(suppliedData, filter)
-              : await thisTopic.getData(filter, session.createContext())
+              : await thisTopic.getData(filter, session.createContext(), session.getConnectionContext())
 
           session.send(MessageType.Data, createMessageId(), thisTopic.getTopicName(), filter, data)
         })
