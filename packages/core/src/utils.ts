@@ -175,3 +175,25 @@ export function createDomWebsocket(url, protocols = undefined) {
     },
   }
 }
+
+export class PromiseCache<F, D> {
+  invoke(cacheKey: unknown, supplier: () => Promise<D>): Promise<D> {
+    const key = JSON.stringify(cacheKey)
+
+    if (!this.cache[key]) {
+      this.cache[key] = supplier()
+        .then(r => {
+          delete this.cache[key]
+          return r
+        })
+        .catch(e => {
+          delete this.cache[key]
+          throw new e
+        })
+    }
+
+    return this.cache[key]
+  }
+
+  private cache: {[key: string]: Promise<D>} = {}
+}

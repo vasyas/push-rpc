@@ -1,6 +1,6 @@
 import {DataConsumer, DataSupplier, MessageType, Topic, TopicImpl} from "./rpc"
 import {lastValueReducer, ThrottleArgsReducer, throttle} from "./throttle"
-import {createMessageId} from "./utils"
+import {createMessageId, PromiseCache} from "./utils"
 import {RpcSession} from "./RpcSession"
 
 // Intentionally skipped type checks b/c types are checked with isArray
@@ -50,10 +50,18 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     }
   }
 
-  async getData(filter: F, ctx: any): Promise<D> {
-    // cache
+  private dataSupplierCache = new PromiseCache<F, D>()
 
-    return await this.supplier(filter, ctx)
+  async getData(filter: F, ctx: any): Promise<D> {
+    try {
+      return await this.dataSupplierCache.invoke(
+        {filter, ctx},
+        () => this.supplier(filter, ctx)
+      )
+    } catch (e) {
+      console.log(e)
+      return null;
+    }
   }
 
   private throttled(f) {
