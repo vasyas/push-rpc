@@ -51,6 +51,8 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
   }
 
   async getData(filter: F, ctx: any): Promise<D> {
+    // cache
+
     return await this.supplier(filter, ctx)
   }
 
@@ -62,9 +64,9 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
 
   async subscribeSession(session: RpcSession, filter: F, messageId, ctx) {
     const key = JSON.stringify(filter)
-    const localTopic = this
+    const thisTopic = this
 
-    const data = await this.supplier(filter, ctx)
+    const data = await this.getData(filter, ctx)
 
     const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
       filter,
@@ -74,10 +76,10 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
         this.sessions.forEach(async session => {
           const data: D =
             suppliedData !== undefined
-              ? await localTopic.opts.triggerMapper(suppliedData, filter)
-              : await localTopic.supplier(filter, session.createContext())
+              ? await thisTopic.opts.triggerMapper(suppliedData, filter)
+              : await thisTopic.getData(filter, session.createContext())
 
-          session.send(MessageType.Data, createMessageId(), localTopic.getTopicName(), filter, data)
+          session.send(MessageType.Data, createMessageId(), thisTopic.getTopicName(), filter, data)
         })
       }),
     }
