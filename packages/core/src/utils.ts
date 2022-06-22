@@ -188,7 +188,7 @@ export class PromiseCache<F, D> {
         })
         .catch(e => {
           delete this.cache[key]
-          throw new e
+          throw e
         })
     }
 
