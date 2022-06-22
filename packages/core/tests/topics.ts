@@ -39,6 +39,44 @@ describe("Topics", () => {
     assert.deepEqual(r, item)
   })
 
+  it("concurrent get cache", async () => {
+    const item = {r: "1"}
+    let supplied = 0
+
+    const server = {
+      test: {
+        item: new LocalTopicImpl<typeof item, {}>(async () => {
+          supplied++
+          return item
+        }),
+      },
+    }
+
+    await startTestServer(server)
+
+    const {remote: client} = await createRpcClient(
+      1,
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {reconnect: true}
+    )
+
+    let item1
+    client.test.item.get({}).then(item => {
+      item1 = item
+    })
+
+    let item2
+    client.test.item.get({}).then(item => {
+      item2 = item
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(item1, item)
+    assert.deepEqual(item2, item)
+
+    assert.equal(supplied, 1)
+  })
+
   it("resubscribe", async () => {
     const item = {r: "1"}
 
@@ -228,17 +266,13 @@ describe("Topics", () => {
     assert.deepEqual(item2, item)
   })
 
-  it("subscribe server cache", async () => {
+  it("concurrent subscribe cache", async () => {
     const item = {r: "1"}
     let supplied = 0
 
     const server = {
       test: {
         item: new LocalTopicImpl<typeof item, {}>(async () => {
-          console.log("Data Supplier")
-
-          // await new Promise(resolve => setTimeout(resolve, 10))
-
           supplied++
           return item
         }),
