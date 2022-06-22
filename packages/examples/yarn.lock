@@ -938,6 +938,22 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@push-rpc/core@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.4.1.tgz#197381dee3fde1cdc07b479190922c5dabff42cb"
+  integrity sha512-Cc+Pnd5rfM4t81ucaxMos8KPUEXm5cSQrXSKLs9fau1cADsaOoZx4jGuzTw+G8L358kKoWx95asrdTgt329bZw==
+  dependencies:
+    json-stringify-safe "^5.0.1"
+    uuid-js "^0.7.5"
+
+"@push-rpc/websocket@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@push-rpc/websocket/-/websocket-1.4.1.tgz#41e0879fb601c9a0854f24fbe43686c585fe5244"
+  integrity sha512-4CSL/a8ZFI0iMEJcstQMXxPxaUYApns5WfIV8SbltQsIjuhHUwHIL4ml4GLaHHBc06b2RIVno3EajZx+I2rVQA==
+  dependencies:
+    "@push-rpc/core" "^1.4.1"
+    ws "^7.2.0"
+
 "@types/q@^1.5.1":
   version "1.5.4"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.4.tgz#15925414e0ad2cd765bfef58842f7e26a7accb24"
@@ -2995,10 +3011,10 @@ json-schema@0.2.3:
   resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.2.3.tgz#b480c892e59a2f05954ce727bd3f2a4e882f9e13"
   integrity sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM=
 
-json-stringify-safe@~5.0.1:
+json-stringify-safe@^5.0.1, json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
-  integrity sha1-Epai1Y/UXxmg9s4B1lcB4sc1tus=
+  integrity sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==
 
 json5@^1.0.1:
   version "1.0.1"
@@ -3089,9 +3105,9 @@ lodash.uniq@^4.5.0:
   integrity sha1-0CJTc662Uq3BvILklFM5qEJ1R3M=
 
 lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.4:
-  version "4.17.19"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
-  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 log-symbols@^2.2.0:
   version "2.2.0"
