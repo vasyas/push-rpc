@@ -264,7 +264,7 @@ export class RpcSession {
     const now = Date.now()
 
     for (const messageId of Object.keys(this.runningCalls)) {
-      const expireCallBefore = now - this.callTimeout
+      const expireCallBefore = now - this.runningCalls[messageId].timeout
 
       if (this.runningCalls[messageId].startedAt < expireCallBefore) {
         const {reject} = this.runningCalls[messageId]
@@ -283,6 +283,7 @@ export class RpcSession {
           params: cloneParams(p),
           resolve,
           reject,
+          timeout: this.callTimeout
         })
 
         this.flushPendingCalls()
@@ -385,7 +386,8 @@ export class RpcSession {
     try {
       const callContext = this.createContext(id, topic.getTopicName())
 
-      const getFromTopic = (p = params) => topic.getData(p, callContext, this.getConnectionContext())
+      const getFromTopic = (p = params) =>
+        topic.getData(p, callContext, this.getConnectionContext())
       const r = await this.localMiddleware(callContext, getFromTopic, params, MessageType.Get)
 
       this.send(MessageType.Result, id, r)
@@ -443,6 +445,7 @@ interface Call {
   type: MessageType.Call | MessageType.Get | "ping"
   name: string
   params: object
+  timeout: number
 
   resolve(r?): void
   reject(r?): void
