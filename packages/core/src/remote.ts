@@ -1,4 +1,4 @@
-import {DataConsumer, LocalTopic, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
+import {CallOptions, DataConsumer, LocalTopic, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
 import {RpcSession} from "./RpcSession"
 import {createMessageId, getClassMethodNames} from "./utils"
 
@@ -16,7 +16,8 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
   async subscribe<SubscriptionKey = DataConsumer<D>>(
     consumer: DataConsumer<D>,
     filter: F = {} as any,
-    subscriptionKey: SubscriptionKey = consumer as any
+    subscriptionKey: SubscriptionKey = consumer as any,
+    callOpts?: CallOptions
   ): Promise<SubscriptionKey> {
     if (filter === null) {
       throw new Error(
@@ -34,7 +35,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
     this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
     try {
-      await this.session.callRemote(this.topicName, filter, MessageType.Subscribe)
+      await this.session.callRemote(this.topicName, filter, MessageType.Subscribe, callOpts)
     } catch (e) {
       this.unsubscribe(filter, subscriptionKey)
       throw e
@@ -67,8 +68,8 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
     delete this.cached[paramsKey]
   }
 
-  get(params: F = {} as any): Promise<D> {
-    return this.session.callRemote(this.topicName, params, MessageType.Get) as Promise<D>
+  get(params: F = {} as any, callOpts?: CallOptions): Promise<D> {
+    return this.session.callRemote(this.topicName, params, MessageType.Get, callOpts) as Promise<D>
   }
 
   resubscribe() {
@@ -95,8 +96,8 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 export function createRemote(level: number, session: RpcSession) {
   return createRemoteServiceItems(level, name => {
     // start with method
-    const remoteItem = params => {
-      return session.callRemote(name, params, MessageType.Call)
+    const remoteItem = (params, callOpts?) => {
+      return session.callRemote(name, params, MessageType.Call, callOpts)
     }
 
     const remoteTopic = new RemoteTopicImpl(name, session)

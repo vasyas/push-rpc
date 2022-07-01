@@ -74,6 +74,29 @@ describe("calls", () => {
     }
   }).timeout(5000)
 
+  it("per-call timeout override default", async () => {
+    const callTimeout = 2 * 1000
+
+    await startTestServer({
+      test: {
+        async longOp() {
+          await new Promise(r => setTimeout(r, 2 * callTimeout))
+        },
+      },
+    })
+
+    const client = await createTestClient(1, {
+      callTimeout: 10 * 1000,
+    })
+
+    try {
+      await client.test.longOp({}, {timeout: 1 * 1000})
+      assert.fail()
+    } catch (e) {
+      assert.equal(e.message, "Timeout")
+    }
+  }).timeout(5000)
+
   it("binds this object", async () => {
     const resp = {r: "asf"}
 

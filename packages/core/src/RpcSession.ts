@@ -2,6 +2,7 @@ import {LocalTopicImpl} from "./local"
 import {log} from "./logger"
 import {createRemote, RemoteTopicImpl} from "./remote"
 import {
+  CallOptions,
   getServiceItem,
   MessageType,
   Method,
@@ -139,7 +140,7 @@ export class RpcSession {
 
   sendPing = async () => {
     try {
-      await this.callRemote("", "ping", "ping")
+      await this.callRemote("", "ping", "ping", null)
       this.pingTimer = setTimeout(this.sendPing, this.pingSendTimeout)
     } catch (e) {
       log.debug(`Ping send failed ${this.connectionContext.remoteId}`)
@@ -274,7 +275,7 @@ export class RpcSession {
     }
   }
 
-  callRemote(name, params, type) {
+  callRemote(name, params, type, callOpts: CallOptions) {
     const sendMessage = p => {
       return new Promise((resolve, reject) => {
         this.queue.push({
@@ -283,7 +284,7 @@ export class RpcSession {
           params: cloneParams(p),
           resolve,
           reject,
-          timeout: this.callTimeout
+          timeout: callOpts?.timeout || this.callTimeout
         })
 
         this.flushPendingCalls()
