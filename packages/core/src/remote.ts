@@ -1,4 +1,12 @@
-import {CallOptions, DataConsumer, LocalTopic, MessageType, Method, RemoteTopic, TopicImpl} from "./rpc"
+import {
+  CallOptions,
+  DataConsumer,
+  LocalTopic,
+  MessageType,
+  Method,
+  RemoteTopic,
+  TopicImpl,
+} from "./rpc"
 import {RpcSession} from "./RpcSession"
 import {createMessageId, getClassMethodNames} from "./utils"
 
@@ -125,8 +133,8 @@ function createRemoteServiceItems(
         // skip internal props
         if (typeof name != "string") return target[name]
 
-        // and promise-alike
-        if (name == "then") return undefined
+        // and other props
+        if (["then", "toJSON"].indexOf(name) >= 0) return undefined
 
         if (!cachedItems[name]) {
           const itemName = prefix + name
