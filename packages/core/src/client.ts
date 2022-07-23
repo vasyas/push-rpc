@@ -16,7 +16,7 @@ export interface RpcClientListeners {
 
 export interface RpcClient<R> {
   remote: R
-  disconnect(): void
+  disconnect(): Promise<void>
 }
 
 export interface RpcClientOptions {
@@ -82,9 +82,9 @@ export function createRpcClient<R = any>(
   const client = {
     disconnectedMark: false,
     remote: session.remote,
-    disconnect: () => {
+    disconnect: async () => {
       client.disconnectedMark = true
-      session.disconnect()
+      await session.disconnect()
     },
   }
 
