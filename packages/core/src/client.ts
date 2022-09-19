@@ -143,8 +143,15 @@ function connectionLoop(
   client: {disconnectedMark: boolean},
   reconnectDelay: number
 ): void {
+  let reconnectTimer: NodeJS.Timer = null
+
   function reconnect() {
-    const timer = setTimeout(
+    if (reconnectTimer) {
+      log.warn("Spot duplicate reconnect timer")
+      clearTimeout(reconnectTimer)
+    }
+
+    reconnectTimer = setTimeout(
       () =>
         connectionLoop(
           session,
@@ -161,8 +168,8 @@ function connectionLoop(
     // 2nd and further reconnects are with random delays
     errorDelay.value = Math.round(Math.random() * 15 * 1000)
 
-    if (timer.unref) {
-      timer.unref()
+    if (reconnectTimer.unref) {
+      reconnectTimer.unref()
     }
   }
 
