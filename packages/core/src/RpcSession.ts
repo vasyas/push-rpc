@@ -128,7 +128,7 @@ export class RpcSession {
 
     // timeout pending calls
     ;[...this.queue, ...Object.values(this.runningCalls)].forEach(call => {
-      call.reject(new Error("Timeout"))
+      call.reject(new Error("Timeout" + call.type + "-" + call.name))
     })
 
     this.queue = []

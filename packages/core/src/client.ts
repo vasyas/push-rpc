@@ -23,6 +23,7 @@ export interface RpcClientOptions {
   local: any
   listeners: RpcClientListeners
   reconnect: boolean
+  reconnectDelay: number
   createContext(): RpcConnectionContext
   localMiddleware: Middleware
   remoteMiddleware: Middleware
@@ -46,6 +47,7 @@ const defaultOptions: RpcClientOptions = {
     unsubscribed: () => {},
   },
   reconnect: false,
+  reconnectDelay: 0,
   createContext: () => ({remoteId: null}),
   localMiddleware: (ctx, next, params, messageType) => next(params),
   remoteMiddleware: (ctx, next, params, messageType) => next(params),
@@ -92,7 +94,8 @@ export function createRpcClient<R = any>(
     session,
     createSocket,
     opts.listeners,
-    client
+    client,
+    opts.reconnectDelay
   ).then(() => client)
 }
 
@@ -100,7 +103,8 @@ function startConnectionLoop(
   session: RpcSession,
   createSocket: () => Promise<Socket>,
   listeners: RpcClientListeners,
-  client: {disconnectedMark: boolean}
+  client: {disconnectedMark: boolean},
+  reconnectDelay: number
 ): Promise<void> {
   return new Promise(resolve => {
     let onFirstConnection = resolve
@@ -124,7 +128,8 @@ function startConnectionLoop(
         onFirstConnection = () => {}
       },
       errorDelay,
-      client
+      client,
+      reconnectDelay
     )
   })
 }
@@ -133,14 +138,24 @@ function connectionLoop(
   session: RpcSession,
   createSocket: () => Promise<Socket>,
   listeners: RpcClientListeners,
-  resolve,
-  errorDelay,
-  client: {disconnectedMark: boolean}
+  resolve: () => void,
+  errorDelay: {value: number},
+  client: {disconnectedMark: boolean},
+  reconnectDelay: number
 ): void {
   function reconnect() {
     const timer = setTimeout(
-      () => connectionLoop(session, createSocket, listeners, resolve, errorDelay, client),
-      errorDelay.value
+      () =>
+        connectionLoop(
+          session,
+          createSocket,
+          listeners,
+          resolve,
+          errorDelay,
+          client,
+          reconnectDelay
+        ),
+      reconnectDelay + errorDelay.value
     )
 
     // 2nd and further reconnects are with random delays
