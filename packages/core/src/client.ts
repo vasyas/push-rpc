@@ -14,11 +14,6 @@ export interface RpcClientListeners {
   unsubscribed(subscriptions: number): void
 }
 
-export interface RpcClient<R> {
-  remote: R
-  disconnect(): Promise<void>
-}
-
 export interface RpcClientOptions {
   local: any
   listeners: RpcClientListeners
@@ -59,7 +54,123 @@ const defaultOptions: RpcClientOptions = {
   delayCalls: 0,
 }
 
-export function createRpcClient<R = any>(
+export class RpcClient<R> {
+  public remote: R
+
+  constructor(
+    private session: RpcSession,
+    private createSocket: () => Promise<Socket>,
+    private opts: RpcClientOptions
+  ) {
+    this.remote = session.remote
+  }
+
+  private disconnectedMark = false
+
+  async disconnect(): Promise<void> {
+    this.disconnectedMark = true
+    await this.session.disconnect()
+  }
+
+  /**
+   * Connect this to server
+   *
+   * Resolves on successful connection, rejects on connection error or connection timeout (10s)
+   */
+  async connect(onDisconnected: () => void = () => {}): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const socket = await this.createSocket()
+
+        let connected = false
+
+        const timer = setTimeout(() => {
+          if (!connected) reject(new Error("Connection timeout"))
+        }, 10 * 1000) // 10s connection timeout
+
+        if (timer.unref) {
+          timer.unref()
+        }
+
+        socket.onOpen(() => {
+          connected = true
+          this.opts.listeners.connected()
+          this.session.open(socket)
+          resolve()
+        })
+
+        socket.onDisconnected((code, reason) => {
+          this.session.handleDisconnected()
+
+          if (connected) {
+            onDisconnected()
+            this.opts.listeners.disconnected({code, reason})
+          }
+        })
+
+        socket.onError(e => {
+          if (!connected) {
+            reject(e)
+          }
+
+          log.warn("RPC connection error", e.message)
+
+          try {
+            socket.disconnect()
+          } catch (e) {
+            // ignore
+          }
+        })
+      } catch (e) {
+        reject(e)
+      }
+    })
+  }
+
+  /**
+   * Connect to the server, on each disconnect try to disconnect.
+   * Resolves at first successful connect. Reconnection loop continues even after resolution
+   * Never rejects
+   */
+  connectionLoop() {
+    return new Promise(async resolve => {
+      let onFirstConnection = resolve
+      let errorDelay = 0
+
+      while (true) {
+        // connect, and wait for ...
+        await new Promise(resolve => {
+          // 1. ...disconnected
+          const connectionPromise = this.connect(resolve)
+          // 2. ... unable to establish connection
+          connectionPromise.catch(() => resolve())
+
+          // in addition
+          connectionPromise.then(() => {
+            // first reconnect after successful connection is done without delay
+            errorDelay = 0
+
+            // signal about first connection
+            onFirstConnection()
+            onFirstConnection = () => {}
+          })
+        })
+
+        if (this.disconnectedMark) {
+          return
+        }
+
+        await new Promise(r => {
+          setTimeout(r, this.opts.reconnectDelay + errorDelay)
+        })
+
+        errorDelay = Math.round(Math.random() * 15 * 1000)
+      }
+    })
+  }
+}
+
+export async function createRpcClient<R = any>(
   level,
   createSocket: () => Promise<Socket>,
   options: Partial<RpcClientOptions> = {}
@@ -81,166 +192,13 @@ export function createRpcClient<R = any>(
     opts.delayCalls
   )
 
-  const client = {
-    disconnectedMark: false,
-    remote: session.remote,
-    disconnect: async () => {
-      client.disconnectedMark = true
-      await session.disconnect()
-    },
+  const client = new RpcClient<R>(session, createSocket, opts)
+
+  if (opts.reconnect) {
+    await client.connectionLoop()
+  } else {
+    await client.connect()
   }
 
-  return (opts.reconnect ? startConnectionLoop : connect)(
-    session,
-    createSocket,
-    opts.listeners,
-    client,
-    opts.reconnectDelay
-  ).then(() => client)
-}
-
-function startConnectionLoop(
-  session: RpcSession,
-  createSocket: () => Promise<Socket>,
-  listeners: RpcClientListeners,
-  client: {disconnectedMark: boolean},
-  reconnectDelay: number
-): Promise<void> {
-  return new Promise(resolve => {
-    let onFirstConnection = resolve
-    const errorDelay = {value: 0}
-
-    const l = {
-      ...listeners,
-      connected: () => {
-        // first reconnect after succesfull connection is immediate
-        errorDelay.value = 0
-        listeners.connected()
-      },
-    }
-
-    connectionLoop(
-      session,
-      createSocket,
-      l,
-      () => {
-        onFirstConnection()
-        onFirstConnection = () => {}
-      },
-      errorDelay,
-      client,
-      reconnectDelay
-    )
-  })
-}
-
-function connectionLoop(
-  session: RpcSession,
-  createSocket: () => Promise<Socket>,
-  listeners: RpcClientListeners,
-  resolve: () => void,
-  errorDelay: {value: number},
-  client: {disconnectedMark: boolean},
-  reconnectDelay: number
-): void {
-  let reconnectTimer: NodeJS.Timer = null
-
-  function reconnect() {
-    if (reconnectTimer) {
-      log.warn("Spot duplicate reconnect timer")
-      clearTimeout(reconnectTimer)
-    }
-
-    reconnectTimer = setTimeout(
-      () =>
-        connectionLoop(
-          session,
-          createSocket,
-          listeners,
-          resolve,
-          errorDelay,
-          client,
-          reconnectDelay
-        ),
-      reconnectDelay + errorDelay.value
-    )
-
-    // 2nd and further reconnects are with random delays
-    errorDelay.value = Math.round(Math.random() * 15 * 1000)
-
-    if (reconnectTimer.unref) {
-      reconnectTimer.unref()
-    }
-  }
-
-  const l = {
-    ...listeners,
-    disconnected: ({code, reason}) => {
-      if (!client.disconnectedMark) {
-        reconnect()
-      }
-
-      listeners.disconnected({code, reason})
-    },
-  }
-
-  connect(session, createSocket, l)
-    .then(resolve)
-    .catch(() => {
-      if (!client.disconnectedMark) {
-        reconnect()
-      }
-    })
-}
-
-function connect(
-  session: RpcSession,
-  createSocket: () => Promise<Socket>,
-  listeners: RpcClientListeners
-): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const socket = await createSocket()
-
-      let connected = false
-
-      const timer = setTimeout(() => {
-        if (!connected) reject(new Error("Connection timeout"))
-      }, 10 * 1000) // 10s connection timeout
-
-      if (timer.unref) {
-        timer.unref()
-      }
-
-      socket.onOpen(() => {
-        connected = true
-        listeners.connected()
-        session.open(socket)
-        resolve()
-      })
-
-      socket.onDisconnected((code, reason) => {
-        session.handleDisconnected()
-        if (connected) {
-          listeners.disconnected({code, reason})
-        }
-      })
-
-      socket.onError(e => {
-        if (!connected) {
-          reject(e)
-        }
-
-        log.warn("RPC connection error", e.message)
-
-        try {
-          socket.disconnect()
-        } catch (e) {
-          // ignore
-        }
-      })
-    } catch (e) {
-      reject(e)
-    }
-  })
+  return client
 }

@@ -54,10 +54,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item1
@@ -90,7 +88,7 @@ describe("Topics", () => {
 
     let socket
 
-    const {remote: client, disconnect} = await createRpcClient(
+    const client = await createRpcClient(
       1,
       () => {
         socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
@@ -101,7 +99,7 @@ describe("Topics", () => {
 
     let receivedItem
 
-    await client.test.item.subscribe(item => {
+    await client.remote.test.item.subscribe(item => {
       receivedItem = item
     })
 
@@ -125,7 +123,7 @@ describe("Topics", () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(receivedItem, item)
 
-    disconnect()
+    client.disconnect()
   })
 
   it("trigger filter", async () => {
@@ -141,10 +139,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item1
@@ -197,10 +193,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item1
@@ -238,9 +232,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item1
@@ -282,9 +275,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item1
@@ -317,9 +309,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let count = 0
@@ -362,10 +353,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item = null
@@ -405,10 +394,8 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(
-      1,
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      
+    const {remote: client} = await createRpcClient(1, async () =>
+      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
     let item = null
@@ -447,23 +434,23 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client, disconnect} = await createRpcClient(
+    const client = await createRpcClient(
       1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: false}
     )
 
-    await client.testUnsub.item.subscribe(a => {})
+    await client.remote.testUnsub.item.subscribe(a => {})
 
     assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 1)
-    assert.equal(Object.keys(client.testUnsub.item.getConsumers()).length, 1)
+    assert.equal(Object.keys(client.remote.testUnsub.item.getConsumers()).length, 1)
 
-    disconnect()
+    client.disconnect()
 
     await new Promise(r => setTimeout(r, 50))
 
     // client's RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
-    assert.equal(Object.keys(client.testUnsub.item.getConsumers()).length, 1)
+    assert.equal(Object.keys(client.remote.testUnsub.item.getConsumers()).length, 1)
 
     assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 0)
   })
