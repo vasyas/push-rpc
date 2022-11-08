@@ -80,4 +80,51 @@ describe("connection", () => {
     assert.equal(rpcServer.getConnectedIds().length, 0)
     assert.deepEqual(connectionsHistory, ["C", "D", "C", "D"])
   })
+
+  it.only("server returns http error on handshake doesn't break connection loop", async () => {
+    let verified = false
+
+    await startTestServer(
+      {},
+      {},
+      {
+        verifyClient: (info, done) => {
+          done(verified)
+        },
+      }
+    )
+
+    let connected = false,
+      failed = false
+
+    const clientPromise = createRpcClient(
+      1,
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {
+        reconnect: true,
+        errorDelayMaxDuration: 100,
+      }
+    )
+
+    clientPromise.then(
+      client => {
+        connected = true
+        return client
+      },
+      () => {
+        failed = true
+      }
+    )
+
+    await new Promise(r => setTimeout(r, 300))
+
+    // still trying to reconnect
+    assert.isFalse(connected)
+    assert.isFalse(failed)
+
+    // let it go to finish the test
+    verified = true
+
+    await clientPromise.then(client => client.disconnect())
+  })
 })

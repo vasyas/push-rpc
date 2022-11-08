@@ -1,6 +1,7 @@
 import {createRpcClient, createRpcServer, RpcClientOptions, RpcServer} from "../src"
 import {RpcServerOptions} from "../src/server"
 import {createNodeWebsocket, createWebsocketServer} from "../../websocket/src/server"
+import * as WebSocket from "ws"
 
 export const TEST_PORT = 5555
 
@@ -15,9 +16,13 @@ const listeners = {
   disconnected: id => console.log("Disconnected", id),
 }
 
-export function startTestServer(local, opts: RpcServerOptions = {}): Promise<RpcServer> {
+export function startTestServer(
+  local,
+  opts: RpcServerOptions = {},
+  wssOpts: WebSocket.ServerOptions = {}
+): Promise<RpcServer> {
   return new Promise(resolve => {
-    const socketServer = createWebsocketServer({port: TEST_PORT})
+    const socketServer = createWebsocketServer({...wssOpts, port: TEST_PORT})
     wss = socketServer.wss
 
     const rpcServer = createRpcServer(local, socketServer, {listeners, ...opts})

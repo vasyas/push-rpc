@@ -19,6 +19,7 @@ export interface RpcClientOptions {
   listeners: RpcClientListeners
   reconnect: boolean
   reconnectDelay: number
+  errorDelayMaxDuration: number
   createContext(): RpcConnectionContext
   localMiddleware: Middleware
   remoteMiddleware: Middleware
@@ -43,6 +44,7 @@ const defaultOptions: RpcClientOptions = {
   },
   reconnect: false,
   reconnectDelay: 0,
+  errorDelayMaxDuration: 15 * 1000,
   createContext: () => ({remoteId: null}),
   localMiddleware: (ctx, next, params, messageType) => next(params),
   remoteMiddleware: (ctx, next, params, messageType) => next(params),
@@ -142,18 +144,21 @@ export class RpcClient<R> {
         await new Promise(resolve => {
           // 1. ...disconnected
           const connectionPromise = this.connect(resolve)
-          // 2. ... unable to establish connection
-          connectionPromise.catch(() => resolve())
 
-          // in addition
-          connectionPromise.then(() => {
-            // first reconnect after successful connection is done without delay
-            errorDelay = 0
+          connectionPromise.then(
+            () => {
+              // first reconnect after successful connection is done without delay
+              errorDelay = 0
 
-            // signal about first connection
-            onFirstConnection()
-            onFirstConnection = () => {}
-          })
+              // signal about first connection
+              onFirstConnection()
+              onFirstConnection = () => {}
+            },
+            () => {
+              // 2. ... unable to establish connection
+              resolve()
+            }
+          )
         })
 
         if (this.disconnectedMark) {
@@ -164,7 +169,7 @@ export class RpcClient<R> {
           setTimeout(r, this.opts.reconnectDelay + errorDelay)
         })
 
-        errorDelay = Math.round(Math.random() * 15 * 1000)
+        errorDelay = Math.round(Math.random() * this.opts.errorDelayMaxDuration)
       }
     })
   }
