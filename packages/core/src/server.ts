@@ -166,5 +166,8 @@ export function createRpcServer(
 
       await sessions[clientId].disconnect()
     },
-  }
+
+    // for debug only
+    __sessions: sessions,
+  } as any
 }
