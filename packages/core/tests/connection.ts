@@ -81,7 +81,7 @@ describe("connection", () => {
     assert.deepEqual(connectionsHistory, ["C", "D", "C", "D"])
   })
 
-  it.only("server returns http error on handshake doesn't break connection loop", async () => {
+  it("server returns http error on handshake doesn't break connection loop", async () => {
     let verified = false
 
     await startTestServer(
@@ -126,5 +126,18 @@ describe("connection", () => {
     verified = true
 
     await clientPromise.then(client => client.disconnect())
+  })
+
+  it("connection ready right after connect", async () => {
+    const rpcServer = await startTestServer({
+      test: {
+        async call() {},
+      },
+    })
+
+    const client = await createTestClient()
+
+    await client.test.call()
+    assert.equal(rpcServer.getConnectedIds().length, 1)
   })
 })
