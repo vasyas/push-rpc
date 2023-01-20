@@ -107,7 +107,7 @@ export class RpcSession {
 
       this.resolveDisconnect = () => {
         clearTimeout(timer)
-        setImmediate(resolve)
+        setTimeout(resolve, 0)
       }
 
       this.socket.disconnect()
@@ -284,7 +284,7 @@ export class RpcSession {
           params: cloneParams(p),
           resolve,
           reject,
-          timeout: callOpts?.timeout || this.callTimeout
+          timeout: callOpts?.timeout || this.callTimeout,
         })
 
         this.flushPendingCalls()
