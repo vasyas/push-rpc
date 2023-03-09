@@ -28,7 +28,7 @@ Uses [ws](https://github.com/websockets/ws) NPM package under the hood.
 
 **Returns:** Socket
 
-Defined in: [server.ts:31](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/websocket/src/server.ts#L31)
+Defined in: [server.ts:31](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/websocket/src/server.ts#L31)
 
 ___
 
@@ -48,4 +48,4 @@ Uses [ws](https://github.com/websockets/ws) NPM package under the hood.
 
 **Returns:** SocketServer & { `wss`: WebSocket.Server  }
 
-Defined in: [server.ts:9](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/websocket/src/server.ts#L9)
+Defined in: [server.ts:9](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/websocket/src/server.ts#L9)

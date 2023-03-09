@@ -30,6 +30,7 @@ LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in S
 
 ### Properties
 
+- [dataSupplierCache](localtopicimpl.md#datasuppliercache)
 - [name](localtopicimpl.md#name)
 - [subscriptions](localtopicimpl.md#subscriptions)
 
@@ -72,15 +73,23 @@ LocalTopicImpl should implement Topic (and RemoteTopic) so it could be used in S
 
 Overrides: TopicImpl.constructor
 
-Defined in: [local.ts:21](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L21)
+Defined in: [local.ts:21](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L21)
 
 ## Properties
+
+### dataSupplierCache
+
+• `Private` **dataSupplierCache**: *PromiseCache*<F, D\>
+
+Defined in: [local.ts:53](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L53)
+
+___
 
 ### name
 
 • `Private` **name**: *string*
 
-Defined in: [local.ts:35](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L35)
+Defined in: [local.ts:35](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L35)
 
 ___
 
@@ -90,7 +99,7 @@ ___
 
 #### Type declaration:
 
-Defined in: [local.ts:105](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L105)
+Defined in: [local.ts:110](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L110)
 
 ## Methods
 
@@ -108,24 +117,25 @@ Defined in: [local.ts:105](https://github.com/vasyas/typescript-rpc/blob/a0bd7db
 
 Implementation of: [Topic](../interfaces/topic.md)
 
-Defined in: [local.ts:113](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L113)
+Defined in: [local.ts:118](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L118)
 
 ___
 
 ### getData
 
-▸ **getData**(`filter`: F, `ctx`: *any*): *Promise*<D\>
+▸ **getData**(`filter`: F, `callContext`: *unknown*, `connectionContext`: *unknown*): *Promise*<D\>
 
 #### Parameters:
 
 | Name | Type |
 | :------ | :------ |
 | `filter` | F |
-| `ctx` | *any* |
+| `callContext` | *unknown* |
+| `connectionContext` | *unknown* |
 
 **Returns:** *Promise*<D\>
 
-Defined in: [local.ts:53](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L53)
+Defined in: [local.ts:55](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L55)
 
 ___
 
@@ -135,7 +145,7 @@ ___
 
 **Returns:** *string*
 
-Defined in: [local.ts:37](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L37)
+Defined in: [local.ts:37](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L37)
 
 ___
 
@@ -145,7 +155,7 @@ ___
 
 **Returns:** *boolean*
 
-Defined in: [local.ts:107](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L107)
+Defined in: [local.ts:112](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L112)
 
 ___
 
@@ -161,7 +171,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [local.ts:41](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L41)
+Defined in: [local.ts:41](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L41)
 
 ___
 
@@ -181,7 +191,7 @@ ___
 
 Implementation of: [Topic](../interfaces/topic.md)
 
-Defined in: [local.ts:116](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L116)
+Defined in: [local.ts:121](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L121)
 
 ___
 
@@ -200,7 +210,7 @@ ___
 
 **Returns:** *Promise*<D\>
 
-Defined in: [local.ts:63](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L63)
+Defined in: [local.ts:68](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L68)
 
 ___
 
@@ -216,7 +226,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [local.ts:57](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L57)
+Defined in: [local.ts:62](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L62)
 
 ___
 
@@ -235,7 +245,7 @@ ___
 
 Implementation of: [Topic](../interfaces/topic.md)
 
-Defined in: [local.ts:45](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L45)
+Defined in: [local.ts:45](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L45)
 
 ___
 
@@ -254,7 +264,7 @@ ___
 
 Implementation of: [Topic](../interfaces/topic.md)
 
-Defined in: [local.ts:117](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L117)
+Defined in: [local.ts:122](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L122)
 
 ___
 
@@ -271,4 +281,4 @@ ___
 
 **Returns:** *void*
 
-Defined in: [local.ts:91](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/local.ts#L91)
+Defined in: [local.ts:96](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/local.ts#L96)

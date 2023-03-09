@@ -35,25 +35,26 @@
 
 ### get
 
-▸ **get**(`params?`: P): *Promise*<D\>
+▸ **get**(`params?`: P, `callOpts?`: CallOptions): *Promise*<D\>
 
 #### Parameters:
 
 | Name | Type |
 | :------ | :------ |
 | `params?` | P |
+| `callOpts?` | CallOptions |
 
 **Returns:** *Promise*<D\>
 
 Inherited from: [RemoteTopic](remotetopic.md)
 
-Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L45)
+Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L45)
 
 ___
 
 ### subscribe
 
-▸ **subscribe**(`consumer`: [*DataConsumer*](../README.md#dataconsumer)<D\>, `params?`: P, `subscriptionKey?`: *any*): *Promise*<any\>
+▸ **subscribe**(`consumer`: [*DataConsumer*](../README.md#dataconsumer)<D\>, `params?`: P, `subscriptionKey?`: *any*, `callOpts?`: CallOptions): *Promise*<any\>
 
 #### Parameters:
 
@@ -62,12 +63,13 @@ ___
 | `consumer` | [*DataConsumer*](../README.md#dataconsumer)<D\> |
 | `params?` | P |
 | `subscriptionKey?` | *any* |
+| `callOpts?` | CallOptions |
 
 **Returns:** *Promise*<any\>
 
 Inherited from: [RemoteTopic](remotetopic.md)
 
-Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L43)
+Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L43)
 
 ___
 
@@ -86,7 +88,7 @@ ___
 
 Inherited from: [LocalTopic](localtopic.md)
 
-Defined in: [rpc.ts:54](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L54)
+Defined in: [rpc.ts:58](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L58)
 
 ___
 
@@ -105,4 +107,4 @@ ___
 
 Inherited from: [RemoteTopic](remotetopic.md)
 
-Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L44)
+Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L44)

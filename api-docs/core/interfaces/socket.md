@@ -24,7 +24,7 @@
 
 **Returns:** *any*
 
-Defined in: [transport.ts:7](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L7)
+Defined in: [transport.ts:7](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L7)
 
 ___
 
@@ -40,7 +40,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:8](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L8)
+Defined in: [transport.ts:8](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L8)
 
 ___
 
@@ -56,7 +56,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:3](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L3)
+Defined in: [transport.ts:3](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L3)
 
 ___
 
@@ -72,7 +72,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:11](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L11)
+Defined in: [transport.ts:11](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L11)
 
 ___
 
@@ -88,7 +88,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:2](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L2)
+Defined in: [transport.ts:2](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L2)
 
 ___
 
@@ -104,7 +104,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:5](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L5)
+Defined in: [transport.ts:5](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L5)
 
 ___
 
@@ -120,7 +120,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:4](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L4)
+Defined in: [transport.ts:4](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L4)
 
 ___
 
@@ -136,7 +136,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:12](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L12)
+Defined in: [transport.ts:12](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L12)
 
 ___
 
@@ -152,4 +152,4 @@ ___
 
 **Returns:** *any*
 
-Defined in: [transport.ts:10](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/transport.ts#L10)
+Defined in: [transport.ts:10](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/transport.ts#L10)

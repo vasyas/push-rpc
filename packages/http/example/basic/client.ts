@@ -5,7 +5,7 @@ import {createHttpClient} from "../../src"
 setLogger(console)
 ;(async () => {
   try {
-    const {remote} = await createRpcClient(0, () => createHttpClient("http://localhost:5555/rpc"))
+    const {remote} = await createRpcClient(0, async () => createHttpClient("http://localhost:5555"))
 
     console.log("Client connected")
 

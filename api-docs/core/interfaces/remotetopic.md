@@ -27,23 +27,24 @@
 
 ### get
 
-▸ **get**(`params?`: P): *Promise*<D\>
+▸ **get**(`params?`: P, `callOpts?`: CallOptions): *Promise*<D\>
 
 #### Parameters:
 
 | Name | Type |
 | :------ | :------ |
 | `params?` | P |
+| `callOpts?` | CallOptions |
 
 **Returns:** *Promise*<D\>
 
-Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L45)
+Defined in: [rpc.ts:45](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L45)
 
 ___
 
 ### subscribe
 
-▸ **subscribe**(`consumer`: [*DataConsumer*](../README.md#dataconsumer)<D\>, `params?`: P, `subscriptionKey?`: *any*): *Promise*<any\>
+▸ **subscribe**(`consumer`: [*DataConsumer*](../README.md#dataconsumer)<D\>, `params?`: P, `subscriptionKey?`: *any*, `callOpts?`: CallOptions): *Promise*<any\>
 
 #### Parameters:
 
@@ -52,10 +53,11 @@ ___
 | `consumer` | [*DataConsumer*](../README.md#dataconsumer)<D\> |
 | `params?` | P |
 | `subscriptionKey?` | *any* |
+| `callOpts?` | CallOptions |
 
 **Returns:** *Promise*<any\>
 
-Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L43)
+Defined in: [rpc.ts:43](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L43)
 
 ___
 
@@ -72,4 +74,4 @@ ___
 
 **Returns:** *any*
 
-Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L44)
+Defined in: [rpc.ts:44](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L44)

@@ -82,6 +82,8 @@ describe("connection", () => {
   })
 
   it("server returns http error on handshake doesn't break connection loop", async () => {
+    const connectionsHistory = []
+
     let verified = false
 
     await startTestServer(
@@ -140,4 +142,70 @@ describe("connection", () => {
     await client.test.call()
     assert.equal(rpcServer.getConnectedIds().length, 1)
   })
+
+  it("unexpected-response not breaking reconnection cycle", async () => {
+    const connectionsHistory = []
+    let connecting = true
+
+    const rpcServer = await startTestServer(
+      {
+        test: {
+          async call() {},
+        },
+      },
+      {
+        createConnectionContext: async () => ({
+          remoteId: "1",
+        }),
+      },
+      {
+        verifyClient: (info, done) => {
+          if (connecting) {
+            console.log("Connected ok")
+            done(true)
+          } else {
+            console.log("Refusing to connect")
+            done(false, 403, `error`)
+          }
+        },
+      }
+    )
+
+    const client = await createRpcClient(
+      1,
+      async () => {
+        return createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
+      },
+      {
+        reconnect: true,
+        errorDelayMaxDuration: 10,
+        listeners: {
+          connected() {
+            connectionsHistory.push("C")
+          },
+          disconnected() {
+            connectionsHistory.push("D")
+          },
+          messageIn() {},
+          messageOut() {},
+          subscribed() {},
+          unsubscribed() {},
+        },
+      }
+    )
+
+    assert.equal(rpcServer.getConnectedIds().length, 1)
+
+    connecting = false
+    await rpcServer.disconnectClient("1")
+    await new Promise(r => setTimeout(r, 15)) // at least one reconnect
+
+    assert.equal(rpcServer.getConnectedIds().length, 0) // but failed
+
+    connecting = true
+    await new Promise(r => setTimeout(r, 15))
+    assert.equal(rpcServer.getConnectedIds().length, 1)
+
+    await client.disconnect()
+  }).timeout(5000)
 })

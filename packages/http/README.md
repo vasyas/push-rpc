@@ -26,12 +26,12 @@ function getRemoteId(ctx: Koa.Context) {
   return "1" // share a single session for now, real impl could use cookies or some other meaning for HTTP sessions
 }
 
-createRpcServer(services, createKoaHttpServer(5555, getRemoteId, {prefix: "rpc"}))
+createRpcServer(services, createKoaHttpServer(5555, getRemoteId))
 
 ...
 
 /* client part */
-const {remote} = await createRpcClient(0, () => createHttpClient("http://localhost:5555/rpc"))
+const {remote} = await createRpcClient(0, () => createHttpClient("http://localhost:5555"))
 console.log("From server: " + (await remote.getHello()))
 ```
 

@@ -8,12 +8,14 @@
 
 - [callTimeout](rpcclientoptions.md#calltimeout)
 - [delayCalls](rpcclientoptions.md#delaycalls)
+- [errorDelayMaxDuration](rpcclientoptions.md#errordelaymaxduration)
 - [keepAliveTimeout](rpcclientoptions.md#keepalivetimeout)
 - [listeners](rpcclientoptions.md#listeners)
 - [local](rpcclientoptions.md#local)
 - [localMiddleware](rpcclientoptions.md#localmiddleware)
 - [pingSendTimeout](rpcclientoptions.md#pingsendtimeout)
 - [reconnect](rpcclientoptions.md#reconnect)
+- [reconnectDelay](rpcclientoptions.md#reconnectdelay)
 - [remoteMiddleware](rpcclientoptions.md#remotemiddleware)
 - [syncRemoteCalls](rpcclientoptions.md#syncremotecalls)
 
@@ -28,7 +30,7 @@
 
 • **callTimeout**: *number*
 
-Defined in: [client.ts:32](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L32)
+Defined in: [client.ts:29](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L29)
 
 ___
 
@@ -36,7 +38,15 @@ ___
 
 • **delayCalls**: *number*
 
-Defined in: [client.ts:34](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L34)
+Defined in: [client.ts:31](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L31)
+
+___
+
+### errorDelayMaxDuration
+
+• **errorDelayMaxDuration**: *number*
+
+Defined in: [client.ts:22](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L22)
 
 ___
 
@@ -44,7 +54,7 @@ ___
 
 • **keepAliveTimeout**: *number*
 
-Defined in: [client.ts:31](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L31)
+Defined in: [client.ts:28](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L28)
 
 ___
 
@@ -52,7 +62,7 @@ ___
 
 • **listeners**: [*RpcClientListeners*](rpcclientlisteners.md)
 
-Defined in: [client.ts:24](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L24)
+Defined in: [client.ts:19](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L19)
 
 ___
 
@@ -60,7 +70,7 @@ ___
 
 • **local**: *any*
 
-Defined in: [client.ts:23](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L23)
+Defined in: [client.ts:18](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L18)
 
 ___
 
@@ -68,7 +78,7 @@ ___
 
 • **localMiddleware**: [*Middleware*](../README.md#middleware)
 
-Defined in: [client.ts:27](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L27)
+Defined in: [client.ts:24](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L24)
 
 ___
 
@@ -76,7 +86,7 @@ ___
 
 • **pingSendTimeout**: *number*
 
-Defined in: [client.ts:30](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L30)
+Defined in: [client.ts:27](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L27)
 
 ___
 
@@ -84,7 +94,15 @@ ___
 
 • **reconnect**: *boolean*
 
-Defined in: [client.ts:25](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L25)
+Defined in: [client.ts:20](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L20)
+
+___
+
+### reconnectDelay
+
+• **reconnectDelay**: *number*
+
+Defined in: [client.ts:21](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L21)
 
 ___
 
@@ -92,7 +110,7 @@ ___
 
 • **remoteMiddleware**: [*Middleware*](../README.md#middleware)
 
-Defined in: [client.ts:28](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L28)
+Defined in: [client.ts:25](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L25)
 
 ___
 
@@ -100,7 +118,7 @@ ___
 
 • **syncRemoteCalls**: *boolean*
 
-Defined in: [client.ts:33](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L33)
+Defined in: [client.ts:30](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L30)
 
 ## Methods
 
@@ -110,7 +128,7 @@ Defined in: [client.ts:33](https://github.com/vasyas/typescript-rpc/blob/a0bd7db
 
 **Returns:** [*RpcConnectionContext*](rpcconnectioncontext.md)<any\>
 
-Defined in: [client.ts:26](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L26)
+Defined in: [client.ts:23](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L23)
 
 ___
 
@@ -126,4 +144,4 @@ ___
 
 **Returns:** *any*[]
 
-Defined in: [client.ts:29](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L29)
+Defined in: [client.ts:26](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L26)

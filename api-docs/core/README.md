@@ -11,12 +11,12 @@
 ### Classes
 
 - [LocalTopicImpl](classes/localtopicimpl.md)
+- [RpcClient](classes/rpcclient.md)
 
 ### Interfaces
 
 - [LocalTopic](interfaces/localtopic.md)
 - [RemoteTopic](interfaces/remotetopic.md)
-- [RpcClient](interfaces/rpcclient.md)
 - [RpcClientListeners](interfaces/rpcclientlisteners.md)
 - [RpcClientOptions](interfaces/rpcclientoptions.md)
 - [RpcConnectionContext](interfaces/rpcconnectioncontext.md)
@@ -74,7 +74,7 @@
 
 **Returns:** *void*
 
-Defined in: [rpc.ts:48](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L48)
+Defined in: [rpc.ts:52](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L52)
 
 ___
 
@@ -102,7 +102,7 @@ ___
 
 **Returns:** *Promise*<D\>
 
-Defined in: [rpc.ts:51](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L51)
+Defined in: [rpc.ts:55](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L55)
 
 ___
 
@@ -125,7 +125,7 @@ ___
 
 **Returns:** *Promise*<any\>
 
-Defined in: [rpc.ts:91](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/rpc.ts#L91)
+Defined in: [rpc.ts:95](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/rpc.ts#L95)
 
 ## Variables
 
@@ -133,7 +133,7 @@ Defined in: [rpc.ts:91](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/pa
 
 • `Const` **PING\_MESSAGE**: ``"PING"``= "PING"
 
-Defined in: [RpcSession.ts:450](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/RpcSession.ts#L450)
+Defined in: [RpcSession.ts:459](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/RpcSession.ts#L459)
 
 ___
 
@@ -141,7 +141,7 @@ ___
 
 • `Const` **PONG\_MESSAGE**: ``"PONG"``= "PONG"
 
-Defined in: [RpcSession.ts:451](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/RpcSession.ts#L451)
+Defined in: [RpcSession.ts:460](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/RpcSession.ts#L460)
 
 ## Functions
 
@@ -157,7 +157,7 @@ Defined in: [RpcSession.ts:451](https://github.com/vasyas/typescript-rpc/blob/a0
 
 **Returns:** [*Middleware*](README.md#middleware)
 
-Defined in: [utils.ts:76](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L76)
+Defined in: [utils.ts:81](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L81)
 
 ___
 
@@ -186,7 +186,7 @@ ___
 | `ping` | () => *void* |
 | `send` | (`data`: *any*) => *any* |
 
-Defined in: [utils.ts:123](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L123)
+Defined in: [utils.ts:128](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L128)
 
 ___
 
@@ -196,13 +196,13 @@ ___
 
 **Returns:** *any*
 
-Defined in: [utils.ts:58](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L58)
+Defined in: [utils.ts:63](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L63)
 
 ___
 
 ### createRpcClient
 
-▸ **createRpcClient**<R\>(`level`: *any*, `createSocket`: () => *Promise*<[*Socket*](interfaces/socket.md)\>, `options?`: *Partial*<[*RpcClientOptions*](interfaces/rpcclientoptions.md)\>): *Promise*<[*RpcClient*](interfaces/rpcclient.md)<R\>\>
+▸ **createRpcClient**<R\>(`level`: *any*, `createSocket`: () => *Promise*<[*Socket*](interfaces/socket.md)\>, `options?`: *Partial*<[*RpcClientOptions*](interfaces/rpcclientoptions.md)\>): *Promise*<[*RpcClient*](classes/rpcclient.md)<R\>\>
 
 #### Type parameters:
 
@@ -218,9 +218,9 @@ ___
 | `createSocket` | () => *Promise*<[*Socket*](interfaces/socket.md)\> | - |
 | `options` | *Partial*<[*RpcClientOptions*](interfaces/rpcclientoptions.md)\> | {} |
 
-**Returns:** *Promise*<[*RpcClient*](interfaces/rpcclient.md)<R\>\>
+**Returns:** *Promise*<[*RpcClient*](classes/rpcclient.md)<R\>\>
 
-Defined in: [client.ts:60](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/client.ts#L60)
+Defined in: [client.ts:178](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/client.ts#L178)
 
 ___
 
@@ -238,7 +238,7 @@ ___
 
 **Returns:** [*RpcServer*](interfaces/rpcserver.md)
 
-Defined in: [server.ts:63](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/server.ts#L63)
+Defined in: [server.ts:63](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/server.ts#L63)
 
 ___
 
@@ -255,7 +255,7 @@ ___
 
 **Returns:** *any*
 
-Defined in: [utils.ts:5](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L5)
+Defined in: [utils.ts:6](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L6)
 
 ___
 
@@ -280,7 +280,7 @@ ___
 
 **Returns:** [*RemoteTopic*](interfaces/remotetopic.md)<D2, P\>
 
-Defined in: [utils.ts:99](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L99)
+Defined in: [utils.ts:104](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L104)
 
 ___
 
@@ -296,7 +296,7 @@ ___
 
 **Returns:** *void*
 
-Defined in: [utils.ts:60](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/utils.ts#L60)
+Defined in: [utils.ts:65](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/utils.ts#L65)
 
 ___
 
@@ -312,4 +312,4 @@ ___
 
 **Returns:** *void*
 
-Defined in: [logger.ts:10](https://github.com/vasyas/typescript-rpc/blob/a0bd7db/packages/core/src/logger.ts#L10)
+Defined in: [logger.ts:10](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/logger.ts#L10)

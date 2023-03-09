@@ -1,6 +1,6 @@
 import * as Koa from "koa"
 import {createRpcServer, setLogger} from "@push-rpc/core"
-import {createHttpKoaMiddleware} from "../../src"
+import {createKoaHttpMiddleware} from "../../src"
 
 setLogger(console)
 
@@ -13,7 +13,7 @@ const services = {
 const app = new Koa()
 const server = app.listen(5555)
 
-const {onError, onConnection, middleware} = createHttpKoaMiddleware(() => "1", {prefix: "/rpc"})
+const {onError, onConnection, middleware} = createKoaHttpMiddleware(() => "1")
 app.use(middleware)
 
 const httpServer = {
