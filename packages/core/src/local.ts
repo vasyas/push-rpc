@@ -53,9 +53,8 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
   private dataSupplierCache = new PromiseCache<F, D>()
 
   async getData(filter: F, callContext: unknown, connectionContext: unknown): Promise<D> {
-    return await this.dataSupplierCache.invoke(
-      {filter, connectionContext},
-      () => this.supplier(filter, callContext)
+    return await this.dataSupplierCache.invoke({filter, connectionContext}, () =>
+      this.supplier(filter, callContext)
     )
   }
 
@@ -69,8 +68,6 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     const key = JSON.stringify(filter)
     const thisTopic = this
 
-    const data = await this.getData(filter, ctx, session.getConnectionContext())
-
     const subscription: Subscription<F, D, TD> = this.subscriptions[key] || {
       filter,
       sessions: [],
@@ -80,7 +77,11 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
           const data: D =
             suppliedData !== undefined
               ? await thisTopic.opts.triggerMapper(suppliedData, filter)
-              : await thisTopic.getData(filter, session.createContext(), session.getConnectionContext())
+              : await thisTopic.getData(
+                  filter,
+                  session.createContext(),
+                  session.getConnectionContext()
+                )
 
           session.send(MessageType.Data, createMessageId(), thisTopic.getTopicName(), filter, data)
         })
@@ -90,7 +91,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     subscription.sessions.push(session)
     this.subscriptions[key] = subscription
 
-    return data
+    return await this.getData(filter, ctx, session.getConnectionContext())
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {

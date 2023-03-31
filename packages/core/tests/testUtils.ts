@@ -5,7 +5,7 @@ import * as WebSocket from "ws"
 
 export const TEST_PORT = 5555
 
-let wss = null
+let wss: WebSocket.Server = null
 
 const listeners = {
   messageIn: (remoteId, data) => console.log("In", remoteId, data),
