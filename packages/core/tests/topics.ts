@@ -54,8 +54,12 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
-      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
+    const {remote: client} = await createRpcClient(
+      1,
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {
+        syncRemoteCalls: false,
+      }
     )
 
     let item1
@@ -277,8 +281,12 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
-      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
+    const {remote: client} = await createRpcClient(
+      1,
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {
+        syncRemoteCalls: false,
+      }
     )
 
     let item1
