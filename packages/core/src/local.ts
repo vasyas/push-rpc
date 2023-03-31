@@ -28,6 +28,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     this.opts = {
       triggerMapper: async d => d as any,
       throttleReducer: lastValueReducer,
+      throttleTimeout: 500,
       ...this.opts,
     }
   }

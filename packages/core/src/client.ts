@@ -52,7 +52,7 @@ const defaultOptions: RpcClientOptions = {
   pingSendTimeout: null,
   keepAliveTimeout: null,
   callTimeout: 30 * 1000,
-  syncRemoteCalls: false,
+  syncRemoteCalls: true,
   delayCalls: 0,
 }
 
