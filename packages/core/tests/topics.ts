@@ -133,7 +133,9 @@ describe("Topics", () => {
 
     const server = {
       test: {
-        item: new LocalTopicImpl<Item, {key: string}>(async ({key}) => ({key})),
+        item: new LocalTopicImpl<Item, {key: string}>(async ({key}) => ({key}), {
+          throttleTimeout: 0,
+        }),
       },
     }
 
