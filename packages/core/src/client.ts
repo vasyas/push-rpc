@@ -1,6 +1,6 @@
 import {RpcSession} from "./RpcSession"
 import {log} from "./logger"
-import {dateReviver} from "./utils"
+import {dateReviver, safeListener} from "./utils"
 import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket} from "./transport"
 
@@ -96,7 +96,7 @@ export class RpcClient<R> {
 
         socket.onOpen(() => {
           connected = true
-          this.opts.listeners.connected()
+          safeListener(() => this.opts.listeners.connected())
           this.session.open(socket)
           resolve()
         })
@@ -106,7 +106,7 @@ export class RpcClient<R> {
 
           if (connected) {
             onDisconnected()
-            this.opts.listeners.disconnected({code, reason})
+            safeListener(() => this.opts.listeners.disconnected({code, reason}))
           }
         })
 
@@ -185,7 +185,12 @@ export async function createRpcClient<R = any>(
   const session = new RpcSession(
     opts.local,
     level,
-    opts.listeners,
+    {
+      messageIn: data => safeListener(() => opts.listeners.messageIn(data)),
+      messageOut: data => safeListener(() => opts.listeners.messageOut(data)),
+      subscribed: subs => safeListener(() => opts.listeners.subscribed(subs)),
+      unsubscribed: subs => safeListener(() => opts.listeners.unsubscribed(subs)),
+    },
     opts.createContext(),
     opts.localMiddleware,
     opts.remoteMiddleware,

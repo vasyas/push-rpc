@@ -3,7 +3,7 @@ import {log} from "./logger"
 import {RpcSession} from "./RpcSession"
 import {createRemote} from "./remote"
 import {prepareLocal} from "./local"
-import {dateReviver} from "./utils"
+import {dateReviver, safeListener} from "./utils"
 import {Middleware, RpcConnectionContext} from "./rpc"
 import {Socket, SocketServer} from "./transport"
 
@@ -20,12 +20,12 @@ export interface RpcServerOptions {
   delayCalls?: number
 
   listeners?: {
-    connected?(remoteId: string, connections: number): void
-    disconnected?(remoteId: string, connections: number): void
-    messageIn(remoteId: string, data: string)
-    messageOut(remoteId: string, data: string)
-    subscribed(subscriptions: number)
-    unsubscribed(subscriptions: number)
+    connected?(remoteId: string, connections: number, ctx: RpcConnectionContext): void
+    disconnected?(remoteId: string, connections: number, ctx: RpcConnectionContext): void
+    messageIn(remoteId: string, data: string, ctx: RpcConnectionContext)
+    messageOut(remoteId: string, data: string, ctx: RpcConnectionContext)
+    subscribed(subscriptions: number, ctx: RpcConnectionContext)
+    unsubscribed(subscriptions: number, ctx: RpcConnectionContext)
   }
 }
 
@@ -110,10 +110,16 @@ export function createRpcServer(
       local,
       opts.clientLevel,
       {
-        messageIn: data => opts.listeners.messageIn(remoteId, data),
-        messageOut: data => opts.listeners.messageOut(remoteId, data),
-        subscribed: () => opts.listeners.subscribed(getTotalSubscriptions()),
-        unsubscribed: () => opts.listeners.unsubscribed(getTotalSubscriptions()),
+        messageIn: data =>
+          safeListener(() => opts.listeners.messageIn(remoteId, data, connectionContext)),
+        messageOut: data =>
+          safeListener(() => opts.listeners.messageOut(remoteId, data, connectionContext)),
+        subscribed: () =>
+          safeListener(() => opts.listeners.subscribed(getTotalSubscriptions(), connectionContext)),
+        unsubscribed: () =>
+          safeListener(() =>
+            opts.listeners.unsubscribed(getTotalSubscriptions(), connectionContext)
+          ),
       },
       connectionContext,
       opts.localMiddleware,
@@ -129,7 +135,9 @@ export function createRpcServer(
 
     session.open(socket)
 
-    opts.listeners.connected(remoteId, Object.keys(sessions).length)
+    safeListener(() =>
+      opts.listeners.connected(remoteId, Object.keys(sessions).length, connectionContext)
+    )
 
     socket.onDisconnected(async (code, reason) => {
       if (sessions[remoteId] == session) {
@@ -140,7 +148,9 @@ export function createRpcServer(
         log.debug(`Disconnected prev session, ${remoteId}`, {code, reason})
       }
 
-      opts.listeners.disconnected(remoteId, Object.keys(sessions).length)
+      safeListener(() =>
+        opts.listeners.disconnected(remoteId, Object.keys(sessions).length, connectionContext)
+      )
 
       await session.handleDisconnected()
     })

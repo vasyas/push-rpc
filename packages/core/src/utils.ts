@@ -2,6 +2,7 @@ import * as UUID from "uuid-js"
 import * as jsonCircularStringify from "json-stringify-safe"
 import {DataConsumer, MessageType, Middleware, RemoteTopic} from "./rpc"
 import {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"
+import {log} from "./logger"
 
 export function dateReviver(key, val) {
   if (typeof val == "string") {
@@ -196,4 +197,12 @@ export class PromiseCache<F, D> {
   }
 
   private cache: {[key: string]: Promise<D>} = {}
+}
+
+export function safeListener(f: () => void) {
+  try {
+    f()
+  } catch (e) {
+    log.error("Error in listener", e)
+  }
 }
