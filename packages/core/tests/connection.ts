@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import {createNodeWebsocket} from "../../websocket/src"
-import {createRpcClient} from "../src"
+import {createRpcClient, RpcClient} from "../src"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 
 describe("connection", () => {
@@ -208,4 +208,45 @@ describe("connection", () => {
 
     await client.disconnect()
   }).timeout(5000)
+
+  it("wait for call when disconnected", async () => {
+    let client: RpcClient<any>
+
+    try {
+      const server = await startTestServer({
+        test: {
+          async getSomething() {
+            return "ok"
+          },
+        },
+      })
+
+      let response
+
+      client = await createRpcClient(
+        1,
+        async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+        {
+          reconnect: true,
+        }
+      )
+
+      // disconnect
+      await server.disconnectClient(server.getConnectedIds()[0])
+
+      // give some time for client to catch disconnect
+      await new Promise(r => setTimeout(r, 10))
+
+      client.remote.test.getSomething().then(r => {
+        response = r
+      })
+
+      // wait for reconnect & call
+      await new Promise(r => setTimeout(r, 50))
+
+      assert.equal(response, "ok")
+    } finally {
+      await client.disconnect()
+    }
+  })
 })

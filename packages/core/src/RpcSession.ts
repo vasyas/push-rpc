@@ -88,6 +88,8 @@ export class RpcSession {
     }
 
     this.callTimeoutTimer = setInterval(() => this.timeoutCalls(), 1000) // every 1s
+
+    this.flushPendingCalls()
   }
 
   private trackMessageReceived(msg) {
@@ -99,6 +101,11 @@ export class RpcSession {
 
   disconnect() {
     return new Promise(resolve => {
+      if (!this.socket) {
+        resolve()
+        return
+      }
+
       const timer = setTimeout(() => {
         // if not disconnected in 5s, just ignore it
         log.debug(`Wait for disconnect timed out for ${this.connectionContext.remoteId}`)
@@ -136,6 +143,8 @@ export class RpcSession {
 
     this.resolveDisconnect()
     this.resolveDisconnect = () => {}
+
+    this.socket = null
   }
 
   sendPing = async () => {
@@ -162,8 +171,13 @@ export class RpcSession {
 
       // handle emulated PINGs
       if (data == PING_MESSAGE) {
-        this.listeners.messageOut(PONG_MESSAGE)
-        this.socket.send(PONG_MESSAGE)
+        if (this.socket) {
+          this.listeners.messageOut(PONG_MESSAGE)
+          this.socket.send(PONG_MESSAGE)
+        } else {
+          log.debug(`Received PING but socket is not open ${this.connectionContext.remoteId}`)
+        }
+
         return
       }
 
@@ -254,11 +268,15 @@ export class RpcSession {
   }
 
   send(type: MessageType, id: string, ...params) {
-    this.lastSendAt = Date.now()
+    if (this.socket) {
+      this.lastSendAt = Date.now()
 
-    const data = message(type, id, ...params)
-    this.listeners.messageOut(data)
-    this.socket.send(data)
+      const data = message(type, id, ...params)
+      this.listeners.messageOut(data)
+      this.socket.send(data)
+    } else {
+      log.debug(`Can't send message, socket is not connected`)
+    }
   }
 
   private timeoutCalls() {
@@ -307,6 +325,8 @@ export class RpcSession {
     if (!!Object.keys(this.runningCalls).length && this.syncRemoteCalls) {
       return
     }
+
+    if (!this.socket) return
 
     while (this.queue.length > 0) {
       const call = this.queue.shift()
