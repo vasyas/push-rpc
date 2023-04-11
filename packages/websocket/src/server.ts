@@ -35,11 +35,26 @@ export function createNodeWebsocket(url: string, protocol?: string | string[]) {
 export function wrapWebsocket(ws): Socket {
   let errorHandler: (e: any) => void = () => {}
 
+  let messageReplay = []
+
+  ws.on("message", e => {
+    if (messageReplay) {
+      messageReplay.push(e.toString("utf-8"))
+    }
+  })
+
   return {
-    onMessage: h =>
+    onMessage: h => {
+      for (const message of messageReplay) {
+        h(message)
+      }
+
+      messageReplay = null
+
       ws.on("message", e => {
         h(e.toString("utf-8"))
-      }),
+      })
+    },
     onOpen: h => ws.on("open", h),
     onDisconnected: h =>
       ws.on("close", (code, reason) => {

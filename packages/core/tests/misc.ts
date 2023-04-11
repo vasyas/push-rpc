@@ -1,5 +1,6 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils"
+import {RpcConnectionContext} from "../src"
 
 describe("Misc", () => {
   it("Call parameter is not modified", async () => {
@@ -89,6 +90,30 @@ describe("Misc", () => {
         return msg
       },
     })
+
+    const client = await createTestClient(0)
+
+    const r = await client.hello()
+    console.log(r)
+  })
+
+  it("websocket misses 1st message due to async init", async () => {
+    await startTestServer(
+      {
+        async hello() {
+          return "ok"
+        },
+      },
+      {
+        async createConnectionContext(): Promise<RpcConnectionContext> {
+          await new Promise(resolve => setTimeout(resolve, 50))
+
+          return {
+            remoteId: "remote",
+          }
+        },
+      }
+    )
 
     const client = await createTestClient(0)
 
