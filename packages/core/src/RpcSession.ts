@@ -128,7 +128,7 @@ export class RpcSession {
 
     // timeout pending calls
     ;[...this.queue, ...Object.values(this.runningCalls)].forEach(call => {
-      call.reject(new Error("Timeout" + call.type + "-" + call.name))
+      call.reject(new Error("Timeout " + call.type + ", " + call.name))
     })
 
     this.queue = []
@@ -280,7 +280,7 @@ export class RpcSession {
       return new Promise((resolve, reject) => {
         this.queue.push({
           type,
-          name: name,
+          name,
           params: cloneParams(p),
           resolve,
           reject,

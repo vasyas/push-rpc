@@ -57,6 +57,7 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     if (!this.consumers[paramsKey]) return
 
+    // session.send and not session.callRemote because unsubscribe doesn't yield any response from the server side
     this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
 
     const subscriptions = this.consumers[paramsKey]
@@ -83,6 +84,8 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
   resubscribe() {
     Object.keys(this.consumers).forEach(paramsKey => {
       const params = JSON.parse(paramsKey)
+
+      // session.send and not session.callRemote b/c we don't want resubscribes to be pass thru middleware
       this.session.send(MessageType.Subscribe, createMessageId(), this.topicName, params)
     })
   }
