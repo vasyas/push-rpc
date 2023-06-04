@@ -29,6 +29,7 @@ export interface RpcClientOptions {
   callTimeout: number
   syncRemoteCalls: boolean
   delayCalls: number
+  connectionTimeout: number
 }
 
 const defaultOptions: RpcClientOptions = {
@@ -54,6 +55,7 @@ const defaultOptions: RpcClientOptions = {
   callTimeout: 30 * 1000,
   syncRemoteCalls: true,
   delayCalls: 0,
+  connectionTimeout: 10 * 1000,
 }
 
 export class RpcClient<R> {
@@ -86,12 +88,14 @@ export class RpcClient<R> {
 
         let connected = false
 
-        const timer = setTimeout(() => {
-          if (!connected) reject(new Error("Connection timeout"))
-        }, 10 * 1000) // 10s connection timeout
+        if (this.opts.connectionTimeout) {
+          const timer = setTimeout(() => {
+            if (!connected) reject(new Error("Connection timeout"))
+          }, this.opts.connectionTimeout)
 
-        if (timer.unref) {
-          timer.unref()
+          if (timer.unref) {
+            timer.unref()
+          }
         }
 
         socket.onOpen(() => {
