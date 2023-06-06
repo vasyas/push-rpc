@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/websocket",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@push-rpc/core": "^1.6.2",
+    "@push-rpc/core": "^1.6.3",
     "ws": "^7.2.0"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
