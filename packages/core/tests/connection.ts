@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import {createNodeWebsocket} from "../../websocket/src"
-import {createRpcClient, RpcClient} from "../src"
+import {createRpcClient, RpcClient, Socket} from "../src"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
 
 describe("connection", () => {
@@ -248,5 +248,124 @@ describe("connection", () => {
     } finally {
       await client.disconnect()
     }
+  })
+
+  it("out of band client connect/disconnect", async () => {
+    let connectionsHistory = []
+
+    const rpcServer = await startTestServer({
+      test: {
+        async call() {},
+      },
+    })
+
+    const client = await createRpcClient(
+      1,
+      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
+      {
+        reconnect: true,
+        reconnectDelay: 0,
+        listeners: {
+          connected() {
+            connectionsHistory.push("C")
+          },
+          disconnected() {
+            connectionsHistory.push("D")
+          },
+          messageOut() {},
+          messageIn() {},
+          unsubscribed() {},
+          subscribed() {},
+        },
+      }
+    )
+
+    await rpcServer.disconnectClient(rpcServer.getConnectedIds()[0])
+
+    await new Promise(r => setTimeout(r, 100))
+
+    await client.disconnect()
+
+    await new Promise(r => setTimeout(r, 100))
+
+    assert.deepEqual(connectionsHistory, ["C", "D", "C", "D"])
+  })
+
+  it("connection timeout generates correct events`", async () => {
+    let connectionsHistory = []
+
+    let connection = 0
+
+    const connectionTimeout = 200
+
+    const rpcServer = await startTestServer(
+      {
+        test: {
+          async call() {},
+        },
+      },
+      {
+        createConnectionContext: async () => ({
+          remoteId: "client",
+        }),
+      }
+    )
+
+    const client = await createRpcClient(
+      1,
+      async () => {
+        const socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
+
+        connection++
+        // console.log("Create socket, connection " + connection)
+
+        if (connection == 2) {
+          // simulate connection timeout
+          const realOnOpen = socket.onOpen
+          let timer = null
+          socket.onOpen = h => {
+            realOnOpen.call(socket, () => {
+              timer = setTimeout(h, connectionTimeout + 200)
+            })
+          }
+
+          const realDisconnect = socket.disconnect
+          socket.disconnect = () => {
+            clearTimeout(timer)
+            realDisconnect.call(socket)
+          }
+        }
+
+        return socket
+      },
+      {
+        reconnect: true,
+        reconnectDelay: 0,
+        errorDelayMaxDuration: 0,
+        connectionTimeout,
+        listeners: {
+          connected() {
+            connectionsHistory.push("C")
+          },
+          disconnected() {
+            connectionsHistory.push("D")
+          },
+          messageOut() {},
+          messageIn() {},
+          unsubscribed() {},
+          subscribed() {},
+        },
+      }
+    )
+
+    await rpcServer.disconnectClient(rpcServer.getConnectedIds()[0])
+
+    await new Promise(r => setTimeout(r, 1500))
+
+    // console.log(connectionsHistory)
+
+    assert.deepEqual(connectionsHistory, ["C", "D", "C"])
+
+    await client.disconnect()
   })
 })

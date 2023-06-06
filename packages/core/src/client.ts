@@ -90,7 +90,10 @@ export class RpcClient<R> {
 
         if (this.opts.connectionTimeout) {
           const timer = setTimeout(() => {
-            if (!connected) reject(new Error("Connection timeout"))
+            if (!connected) {
+              socket.disconnect()
+              reject(new Error("Connection timeout"))
+            }
           }, this.opts.connectionTimeout)
 
           if (timer.unref) {
