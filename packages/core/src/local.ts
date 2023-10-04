@@ -124,16 +124,16 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
   unsubscribe(params?: F, subscriptionKey?: any) {}
 }
 
-function filterContains(container, filter): boolean {
-  if (filter == null) return true // subscribe to all data
-  if (container == null) return true // all data modified
+function filterContains(triggerFilter, subscriptionFilter): boolean {
+  if (subscriptionFilter == null) return true // subscribe to all data
+  if (triggerFilter == null) return true // all data modified
 
-  for (const key of Object.keys(filter)) {
-    if (container[key] == undefined) continue
-    if (filter[key] == container[key]) continue
+  for (const key of Object.keys(subscriptionFilter)) {
+    if (triggerFilter[key] == undefined) continue
+    if (subscriptionFilter[key] == triggerFilter[key]) continue
 
-    if (Array.isArray(container[key]) && Array.isArray(filter[key])) {
-      if (JSON.stringify(container[key]) == JSON.stringify(filter[key])) {
+    if (Array.isArray(triggerFilter[key]) && Array.isArray(subscriptionFilter[key])) {
+      if (JSON.stringify(triggerFilter[key]) == JSON.stringify(subscriptionFilter[key])) {
         continue
       }
     }
