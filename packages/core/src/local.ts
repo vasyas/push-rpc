@@ -154,13 +154,16 @@ interface Subscription<F, D, TD> {
  * 1. Set name on topics
  * 2. Bind this to remote methods
  */
-export function prepareLocal(services, prefix = "") {
+export function prepareLocal(services, prefix = "", visited: Set<unknown> = new Set()) {
+  if (visited.has(services)) return
+  visited.add(services)
+
   const keys = getObjectProps(services)
 
   keys.forEach(key => {
     const item = services[key]
 
-    if (typeof item == "object") {
+    if (item && typeof item == "object") {
       const name = prefix + key
 
       if ("setTopicName" in item) {
@@ -168,7 +171,7 @@ export function prepareLocal(services, prefix = "") {
         return
       }
 
-      return prepareLocal(item, name + "/")
+      return prepareLocal(item, name + "/", visited)
     }
   })
 }

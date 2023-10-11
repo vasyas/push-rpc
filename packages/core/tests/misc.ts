@@ -1,6 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils"
 import {RpcConnectionContext} from "../src"
+import {prepareLocal} from "../src/local"
 
 describe("Misc", () => {
   it("Call parameter is not modified", async () => {
@@ -119,5 +120,23 @@ describe("Misc", () => {
 
     const r = await client.hello()
     console.log(r)
+  })
+
+  it("null member in local", async () => {
+    const local = {
+      nested: null,
+    }
+
+    prepareLocal(local)
+  })
+
+  it("recursive member in local", async () => {
+    const local = {
+      nested: null,
+    }
+
+    local.nested = local
+
+    prepareLocal(local)
   })
 })
