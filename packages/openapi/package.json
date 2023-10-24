@@ -18,7 +18,7 @@
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
     "js-yaml": "^3.14.0",
-    "moment": "^2.22.1",
+    "moment": "^2.29.4",
     "ts-morph": "^9.0.0"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
