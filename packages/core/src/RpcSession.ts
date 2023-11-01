@@ -453,11 +453,12 @@ export class RpcSession {
 
 function resubscribeTopics(remote) {
   Object.getOwnPropertyNames(remote).forEach(key => {
-    if (typeof remote[key] == "object") {
-      resubscribeTopics(remote[key])
-    } else {
-      remote[key].resubscribe()
-    }
+    if (key == "prototype") return
+
+    // because each item is always a topic; but those that not subscribed will not do a thing on resubscribe
+    remote[key].resubscribe()
+
+    resubscribeTopics(remote[key])
   })
 }
 
