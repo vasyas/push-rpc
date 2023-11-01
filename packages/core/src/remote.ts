@@ -1,5 +1,5 @@
 import {CallOptions, DataConsumer, LocalTopic, MessageType, RemoteTopic, TopicImpl} from "./rpc"
-import {RpcSession} from "./RpcSession"
+import {RpcSession, skippedRemoteProps} from "./RpcSession"
 import {createMessageId, getClassMethodNames} from "./utils"
 
 interface Subscription<D> {
@@ -121,7 +121,8 @@ export function createRemote(session: RpcSession, name = "") {
       if (typeof propName != "string") return target[propName]
 
       // skip other system props
-      if (["then", "catch", "toJSON", "prototype"].includes(propName)) return target[propName]
+      if (["then", "catch", "toJSON", ...skippedRemoteProps].includes(propName))
+        return target[propName]
 
       // skip topic methods
       if (remoteTopicProps.includes(propName)) return target[propName]
@@ -140,7 +141,7 @@ export function createRemote(session: RpcSession, name = "") {
 
     // Used in resubscribe
     ownKeys() {
-      return ["prototype", ...Object.keys(cachedItems)]
+      return [...skippedRemoteProps, ...Object.keys(cachedItems)]
     },
   })
 }

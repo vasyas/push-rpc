@@ -453,7 +453,7 @@ export class RpcSession {
 
 function resubscribeTopics(remote) {
   Object.getOwnPropertyNames(remote).forEach(key => {
-    if (key == "prototype") return
+    if (skippedRemoteProps.includes(key)) return
 
     // because each item is always a topic; but those that not subscribed will not do a thing on resubscribe
     remote[key].resubscribe()
@@ -487,3 +487,5 @@ function cloneParams(p) {
   }
   return p
 }
+
+export const skippedRemoteProps = ["length", "name", "prototype", "arguments", "caller"]
