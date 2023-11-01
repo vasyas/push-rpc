@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/openapi",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -14,7 +14,7 @@
     "@types/node": "^12.12.17"
   },
   "dependencies": {
-    "@push-rpc/core": "^1.7.0",
+    "@push-rpc/core": "^1.7.1",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
     "js-yaml": "^3.14.0",
