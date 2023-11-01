@@ -1,12 +1,4 @@
-import {
-  CallOptions,
-  DataConsumer,
-  LocalTopic,
-  MessageType,
-  Method,
-  RemoteTopic,
-  TopicImpl,
-} from "./rpc"
+import {CallOptions, DataConsumer, LocalTopic, MessageType, RemoteTopic, TopicImpl} from "./rpc"
 import {RpcSession} from "./RpcSession"
 import {createMessageId, getClassMethodNames} from "./utils"
 
@@ -104,65 +96,51 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
   trigger(p?: F, data?: D): void {}
 }
 
-export function createRemote(level: number, session: RpcSession) {
-  return createRemoteServiceItems(level, name => {
-    // start with method
-    const remoteItem = (params, callOpts?) => {
-      return session.callRemote(name, params, MessageType.Call, callOpts)
-    }
+export function createRemote(session: RpcSession, name = "") {
+  // start with method
+  const remoteItem = (params, callOpts?) => {
+    return session.callRemote(name, params, MessageType.Call, callOpts)
+  }
 
-    const remoteTopic = new RemoteTopicImpl(name, session)
+  // then add topic methods
+  const remoteTopic = new RemoteTopicImpl(name, session)
 
-    // make remoteItem both topic and remoteMethod
-    getClassMethodNames(remoteTopic).forEach(methodName => {
-      remoteItem[methodName] = (...args) => remoteTopic[methodName].apply(remoteTopic, args)
-    })
-
-    return remoteItem
+  // make remoteItem both topic and remoteMethod
+  const remoteTopicProps = getClassMethodNames(remoteTopic)
+  remoteTopicProps.forEach(methodName => {
+    remoteItem[methodName] = (...args) => remoteTopic[methodName].apply(remoteTopic, args)
   })
-}
 
-function createRemoteServiceItems(
-  level,
-  createServiceItem: (name) => RemoteTopic<any, any> | Method,
-  prefix = ""
-): any {
+  // then add proxy creating subitems
+
   const cachedItems = {}
 
-  return new Proxy(
-    {},
-    {
-      get(target, name) {
-        // skip internal props
-        if (typeof name != "string") return target[name]
+  return new Proxy(remoteItem, {
+    get(target, propName) {
+      // skip internal props
+      if (typeof propName != "string") return target[propName]
 
-        // and other props
-        if (["then", "toJSON"].indexOf(name) >= 0) return undefined
+      // skip other system props
+      if (["then", "catch", "toJSON", "prototype"].includes(propName)) return target[propName]
 
-        if (!cachedItems[name]) {
-          const itemName = prefix + name
+      // skip topic methods
+      if (remoteTopicProps.includes(propName)) return target[propName]
 
-          if (level > 0)
-            cachedItems[name] = createRemoteServiceItems(
-              level - 1,
-              createServiceItem,
-              itemName + "/"
-            )
-          else cachedItems[name] = createServiceItem(itemName)
-        }
+      if (!cachedItems[propName]) {
+        cachedItems[propName] = createRemote(session, name ? name + "/" + propName : propName)
+      }
 
-        return cachedItems[name]
-      },
+      return cachedItems[propName]
+    },
 
-      set(target, name, value) {
-        cachedItems[name] = value
-        return true
-      },
+    set(target, propName, value) {
+      cachedItems[propName] = value
+      return true
+    },
 
-      // Used in resubscribe
-      ownKeys() {
-        return Object.keys(cachedItems)
-      },
-    }
-  )
+    // Used in resubscribe
+    ownKeys() {
+      return ["prototype", ...Object.keys(cachedItems)]
+    },
+  })
 }

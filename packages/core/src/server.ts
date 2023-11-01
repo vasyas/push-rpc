@@ -11,7 +11,6 @@ export interface RpcServerOptions {
   createConnectionContext?(socket: Socket, ...transportDetails: any): Promise<RpcConnectionContext>
   localMiddleware?: Middleware
   remoteMiddleware?: Middleware
-  clientLevel?: number
   messageParser?(data): any[]
   pingSendTimeout?: number
   keepAliveTimeout?: number
@@ -35,7 +34,6 @@ const defaultOptions: Partial<RpcServerOptions> = {
   }),
   localMiddleware: (ctx, next, params, messageType) => next(params),
   remoteMiddleware: (ctx, next, params, messageType) => next(params),
-  clientLevel: 0,
   pingSendTimeout: 40 * 1000,
   keepAliveTimeout: 120 * 1000,
   callTimeout: 15 * 1000,
@@ -108,7 +106,6 @@ export function createRpcServer(
 
     const session = new RpcSession(
       local,
-      opts.clientLevel,
       {
         messageIn: data =>
           safeListener(() => opts.listeners.messageIn(remoteId, data, connectionContext)),
@@ -167,7 +164,7 @@ export function createRpcServer(
     getRemote: clientId => {
       if (!sessions[clientId]) throw new Error(`Client ${clientId} is not connected`)
 
-      return createRemote(opts.clientLevel, sessions[clientId])
+      return createRemote(sessions[clientId])
     },
     isConnected,
     getConnectedIds: () => Object.keys(sessions),

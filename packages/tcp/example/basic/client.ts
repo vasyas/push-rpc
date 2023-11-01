@@ -3,7 +3,7 @@ import {createSocket} from "../../src/client"
 
 setLogger(console)
 ;(async () => {
-  const {remote} = await createRpcClient(0, () => createSocket("localhost", 5555))
+  const {remote} = await createRpcClient(() => createSocket("localhost", 5555))
 
   console.log("Client connected")
 

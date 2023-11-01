@@ -14,7 +14,6 @@ describe("Topic bugs", () => {
     await startTestServer(services)
 
     const client = await createRpcClient(
-      0,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {}
     )
@@ -49,7 +48,6 @@ describe("Topic bugs", () => {
     await startTestServer(services)
 
     const client = await createRpcClient(
-      0,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {}
     )

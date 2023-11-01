@@ -139,4 +139,60 @@ describe("Misc", () => {
 
     prepareLocal(local)
   })
+
+  it("Non flat remote", async () => {
+    await startTestServer({
+      async hello1() {
+        return "yes1"
+      },
+
+      nested: {
+        async hello2() {
+          return "yes2"
+        },
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    assert.equal("yes1", await client.hello1())
+    assert.equal("yes2", await client.nested.hello2())
+  })
+
+  it("Item not found", async () => {
+    await startTestServer({
+      async hello1() {
+        return "yes1"
+      },
+
+      nested: {
+        async hello2() {
+          return "yes2"
+        },
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    try {
+      await client.hello()
+      assert.fail("Error expected")
+    } catch (e) {
+      assert.include(e.message, "not implemented")
+    }
+
+    try {
+      await client.nested.hello()
+      assert.fail("Error expected")
+    } catch (e) {
+      assert.include(e.message, "not implemented")
+    }
+
+    try {
+      await client.nested.nested2.hello()
+      assert.fail("Error expected")
+    } catch (e) {
+      assert.include(e.message, "not implemented")
+    }
+  })
 })

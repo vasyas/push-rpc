@@ -49,7 +49,6 @@ export async function createTestClient(
 ) {
   return (
     await createRpcClient(
-      level,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`, protocol),
       options
     )

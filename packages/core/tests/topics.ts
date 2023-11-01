@@ -55,7 +55,6 @@ describe("Topics", () => {
     await startTestServer(server)
 
     const {remote: client} = await createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {
         syncRemoteCalls: false,
@@ -79,6 +78,29 @@ describe("Topics", () => {
     assert.equal(supplied, 1)
   })
 
+  it("subscribe delivers data after subscription", async () => {
+    const item = {r: "1"}
+
+    await startTestServer({
+      test: {
+        item: new LocalTopicImpl(async () => {
+          return item
+        }),
+      },
+    })
+
+    const client = await createTestClient(0)
+
+    let receivedItem
+
+    await client.test.item.subscribe(() => {
+      receivedItem = item
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(receivedItem, item)
+  })
+
   it("resubscribe", async () => {
     const item = {r: "1"}
 
@@ -93,7 +115,6 @@ describe("Topics", () => {
     let socket
 
     const client = await createRpcClient(
-      1,
       () => {
         socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
         return socket
@@ -107,7 +128,7 @@ describe("Topics", () => {
       receivedItem = item
     })
 
-    // first notificaiton right after subscription
+    // first notification right after subscription
     await new Promise(resolve => setTimeout(resolve, 50))
     assert.deepEqual(receivedItem, item)
 
@@ -145,7 +166,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -199,7 +220,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -238,7 +259,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -282,7 +303,6 @@ describe("Topics", () => {
     await startTestServer(server)
 
     const {remote: client} = await createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {
         syncRemoteCalls: false,
@@ -319,7 +339,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -363,7 +383,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -404,7 +424,7 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const {remote: client} = await createRpcClient(1, async () =>
+    const {remote: client} = await createRpcClient(async () =>
       createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
     )
 
@@ -445,7 +465,6 @@ describe("Topics", () => {
     await startTestServer(server)
 
     const client = await createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: false}
     )

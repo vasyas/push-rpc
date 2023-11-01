@@ -16,31 +16,34 @@ export type ServiceItem = Topic<any, any> | Method
 export type Method = (req?, ctx?) => Promise<any>
 
 export function getServiceItem(services: Services, name: string): {item: ServiceItem; object: any} {
-  if (!name) {
-    return {item: null, object: null}
-  }
-
   const names = name.split("/")
 
   const item = services[names[0]]
 
-  if (typeof item == "object") {
-    if ("getTopicName" in item) return {item: item as any, object: services}
-
-    if (!item) {
-      return {item: null, object: null}
-    }
-
-    return getServiceItem(item as Services, names.slice(1).join("/"))
+  if (!item) {
+    return {item: null, object: null}
   }
 
-  return {item, object: services}
+  if (names.length == 1) {
+    if (item) {
+      return {item: item as any, object: services}
+    } else {
+      return {item: null, object: null}
+    }
+  }
+
+  return getServiceItem(item as Services, names.slice(1).join("/"))
 }
 
 // remote interfaces
 
 export interface RemoteTopic<D, P> {
-  subscribe(consumer: DataConsumer<D>, params?: P, subscriptionKey?: any, callOpts?: CallOptions): Promise<any>
+  subscribe(
+    consumer: DataConsumer<D>,
+    params?: P,
+    subscriptionKey?: any,
+    callOpts?: CallOptions
+  ): Promise<any>
   unsubscribe(params?: P, subscriptionKey?: any)
   get(params?: P, callOpts?: CallOptions): Promise<D>
 }

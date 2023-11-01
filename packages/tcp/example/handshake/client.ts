@@ -6,7 +6,7 @@ setLogger(console)
 
 // Demo async connection context to implement custom handshake
 ;(async () => {
-  const {remote} = await createRpcClient(0, () => {
+  const {remote} = await createRpcClient(() => {
     const socket = new net.Socket()
     socket.connect(5555, "localhost")
 

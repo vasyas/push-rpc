@@ -34,7 +34,6 @@ describe("connection", () => {
     await startTestServer({})
 
     const rpcClient = await createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {reconnect: true}
     )
@@ -100,7 +99,6 @@ describe("connection", () => {
       failed = false
 
     const clientPromise = createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {
         reconnect: true,
@@ -172,7 +170,6 @@ describe("connection", () => {
     )
 
     const client = await createRpcClient(
-      1,
       async () => {
         return createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
       },
@@ -224,7 +221,6 @@ describe("connection", () => {
       let response
 
       client = await createRpcClient(
-        1,
         async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
         {
           reconnect: true,
@@ -260,7 +256,6 @@ describe("connection", () => {
     })
 
     const client = await createRpcClient(
-      1,
       async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
       {
         reconnect: true,
@@ -312,7 +307,6 @@ describe("connection", () => {
     )
 
     const client = await createRpcClient(
-      1,
       async () => {
         const socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
 

@@ -24,7 +24,6 @@ export interface RpcSessionListeners {
 export class RpcSession {
   constructor(
     private local: any,
-    remoteLevel: number,
     private listeners: RpcSessionListeners,
     private connectionContext: RpcConnectionContext,
     private localMiddleware: Middleware,
@@ -36,7 +35,7 @@ export class RpcSession {
     private syncRemoteCalls: boolean,
     private delayCalls: number
   ) {
-    this.remote = createRemote(remoteLevel, this)
+    this.remote = createRemote(this)
   }
 
   public remote: any

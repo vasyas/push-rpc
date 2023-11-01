@@ -183,7 +183,6 @@ export class RpcClient<R> {
 }
 
 export async function createRpcClient<R = any>(
-  level,
   createSocket: () => Promise<Socket>,
   options: Partial<RpcClientOptions> = {}
 ): Promise<RpcClient<R>> {
@@ -191,7 +190,6 @@ export async function createRpcClient<R = any>(
 
   const session = new RpcSession(
     opts.local,
-    level,
     {
       messageIn: data => safeListener(() => opts.listeners.messageIn(data)),
       messageOut: data => safeListener(() => opts.listeners.messageOut(data)),

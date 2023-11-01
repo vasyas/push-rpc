@@ -7,7 +7,6 @@
 ### Properties
 
 - [callTimeout](rpcserveroptions.md#calltimeout)
-- [clientLevel](rpcserveroptions.md#clientlevel)
 - [delayCalls](rpcserveroptions.md#delaycalls)
 - [keepAliveTimeout](rpcserveroptions.md#keepalivetimeout)
 - [listeners](rpcserveroptions.md#listeners)
@@ -28,14 +27,6 @@
 • `Optional` **callTimeout**: *number*
 
 Defined in: [server.ts:18](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/server.ts#L18)
-
-___
-
-### clientLevel
-
-• `Optional` **clientLevel**: *number*
-
-Defined in: [server.ts:14](https://github.com/vasyas/typescript-rpc/blob/2053b37/packages/core/src/server.ts#L14)
 
 ___
 
