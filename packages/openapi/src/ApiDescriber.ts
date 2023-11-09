@@ -155,6 +155,11 @@ export class ApiDescriber {
     if (type.isEnum() || type.isEnumLiteral()) return this.enumSchema(type) // isEnumLiteral for enums with a single value
     if (type.isUnion()) return this.unionSchema(type)
 
+    if (type.isTypeParameter()) {
+      // console.log(type.getTargetType().getText())
+      // console.log(type.)
+    }
+
     console.warn(`Unsupported type ${type.getText()}`)
     return {}
   }
@@ -287,13 +292,13 @@ export class ApiDescriber {
 
   private getTypeReferenceName(type: Type, skipArguments?): string {
     // Generic
-    if (!skipArguments && type.getTypeArguments().length > 0) {
+    const typeArguments =
+      type.getTypeArguments().length > 0 ? type.getTypeArguments() : type.getAliasTypeArguments()
+
+    if (!skipArguments && typeArguments.length > 0) {
       const targetName = this.getTypeReferenceName(type.getApparentType(), true)
 
-      const argNames = type
-        .getTypeArguments()
-        .map(type => this.getTypeReferenceName(type))
-        .join("And")
+      const argNames = typeArguments.map(type => this.getTypeReferenceName(type)).join("And")
       return `${targetName}Of_${argNames}`
     }
 
