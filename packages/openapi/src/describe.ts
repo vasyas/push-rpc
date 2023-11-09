@@ -31,33 +31,47 @@ function filterUndefined(obj) {
   return obj
 }
 
-export function generateOpenAPI({tsConfig, template, baseDir, skip, entryFile, entryType}) {
-  const project = loadProject(path.join(baseDir, tsConfig))
+export function generateOpenAPI(req: {
+  tsConfig: string
+  template: any
+  baseDir: string
+  skip?: string
+  entryFile: string
+  entryType: string
+}) {
+  const project = loadProject(path.join(req.baseDir, req.tsConfig))
 
-  const file = project.getSourceFile(path.join(baseDir, entryFile))
-  if (!file) throw new Error(`Cannot find entry file ${entryFile}`)
+  const file = project.getSourceFile(path.join(req.baseDir, req.entryFile))
+  if (!file) throw new Error(`Cannot find entry file ${req.entryFile}`)
 
-  const entryTypeNode = file.getTypeAlias(entryType)
-    ? (file.getTypeAlias(entryType).getTypeNode() as TypeLiteralNode)
-    : file.getInterface(entryType)
+  const entryTypeNode = file.getTypeAlias(req.entryType)
+    ? (file.getTypeAlias(req.entryType).getTypeNode() as TypeLiteralNode)
+    : file.getInterface(req.entryType)
 
-  if (!entryTypeNode) throw new Error(`Cannot find entry interface or type alias ${entryType}`)
+  if (!entryTypeNode) throw new Error(`Cannot find entry interface or type alias ${req.entryType}`)
 
-  const apiDescriber = new ApiDescriber(baseDir, skip)
+  const apiDescriber = new ApiDescriber(req.baseDir, req.skip)
 
   const paths = apiDescriber.describeEntryType(entryTypeNode)
 
   return {
-    ...template,
+    ...req.template,
     paths,
     components: {
-      ...template.components,
+      ...req.template.components,
       schemas: apiDescriber.createDefinitionSchemas(),
     },
   }
 }
 
-export function generateYml({tsConfig, template, baseDir, skip, entryFile, entryType}): string {
-  const result = generateOpenAPI({tsConfig, template, baseDir, skip, entryFile, entryType})
+export function generateYml(req: {
+  tsConfig: string
+  template: any
+  baseDir: string
+  skip?: string
+  entryFile: string
+  entryType: string
+}): string {
+  const result = generateOpenAPI(req)
   return yaml.safeDump(filterUndefined(result))
 }
