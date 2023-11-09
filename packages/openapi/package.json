@@ -19,7 +19,7 @@
     "command-line-usage": "^5.0.5",
     "js-yaml": "^3.14.0",
     "moment": "^2.22.1",
-    "ts-morph": "^9.0.0"
+    "ts-morph": "^20.0.0"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "Vasyl Stashuk <vasyl@stashuk.com>",

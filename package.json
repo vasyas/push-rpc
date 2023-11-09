@@ -13,7 +13,7 @@
   "name": "push-rpc",
   "version": "1.1.0",
   "main": "index.js",
-  "repository": "https://github.com/vasyas/typescript-rpc.git",
+  "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "vasyas <vasyl@stashuk.com>",
   "license": "MIT",
   "devDependencies": {
@@ -25,9 +25,9 @@
     "mocha": "^6.2.0",
     "prettier": "^1.19.1",
     "ts-node": "^8.3.0",
-    "typedoc": "^0.20.36",
-    "typedoc-plugin-markdown": "^3.7.2",
-    "typescript": "^3.6.2"
+    "typedoc": "^0.25.3",
+    "typedoc-plugin-markdown": "^3.17.1",
+    "typescript": "^5.2.2"
   },
   "dependencies": {}
 }
