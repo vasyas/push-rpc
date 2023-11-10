@@ -5,7 +5,7 @@ import {Services} from "./shared"
 setLogger(console)
 ;(async () => {
   const services: Services = (
-    await createRpcClient(1, async () => createNodeWebsocket("ws://localhost:5555"), {
+    await createRpcClient(async () => createNodeWebsocket("ws://localhost:5555"), {
       // without pings client won't be able to detect lost connection to server
       pingSendTimeout: 20 * 1000,
       keepAliveTimeout: 20 * 1000,

@@ -8,13 +8,9 @@ setLogger(console)
     getClientHello: async () => "Hello from client",
   }
 
-  const {remote} = await createRpcClient(
-    0,
-    async () => createNodeWebsocket("ws://localhost:5555"),
-    {
-      local,
-    }
-  )
+  const {remote} = await createRpcClient(async () => createNodeWebsocket("ws://localhost:5555"), {
+    local,
+  })
 
   console.log("Client connected")
 

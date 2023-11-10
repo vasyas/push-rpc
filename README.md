@@ -76,7 +76,7 @@ import {Services} from "./shared"
 
 ;(async () => {
   const services: Services = (
-    await createRpcClient(1, () => createWebsocket("ws://localhost:5555"))
+    await createRpcClient(() => createWebsocket("ws://localhost:5555"))
   ).remote
 
   console.log("Client connected")

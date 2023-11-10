@@ -21,7 +21,7 @@ export interface Todo {
 
 // client
 async function createClient() {
-  const {remote: services} = await createRpcClient(1, async () =>
+  const {remote: services} = await createRpcClient(async () =>
     createNodeWebsocket("ws://localhost:5555")
   )
 
