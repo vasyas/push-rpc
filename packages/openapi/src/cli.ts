@@ -1,7 +1,7 @@
-import * as path from "path"
-import * as commandLineArgs from "command-line-args"
-import * as commandLineUsage from "command-line-usage"
-import * as fs from "fs"
+import path from "path"
+import commandLineArgs from "command-line-args"
+import commandLineUsage from "command-line-usage"
+import fs from "fs"
 import {generateYml} from "./describe"
 
 const optionList = [
