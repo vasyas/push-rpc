@@ -1,12 +1,12 @@
 {
+  "extends": "../../tsconfig.json",
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "tests/**/*.ts"
+  ],
   "compilerOptions": {
-    "target": "es5",
-    "outDir": "dist",
-    "lib": [
-      "es6"
-    ],
-    "declaration": true
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["tests/**/*.ts"]
+    "outDir": "dist"
+  }
 }
