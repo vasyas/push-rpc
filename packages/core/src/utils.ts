@@ -1,5 +1,5 @@
 import * as UUID from "uuid-js"
-import * as jsonCircularStringify from "json-stringify-safe"
+import jsonCircularStringify from "json-stringify-safe"
 import {DataConsumer, MessageType, Middleware, RemoteTopic} from "./rpc"
 import {PING_MESSAGE, PONG_MESSAGE} from "./RpcSession"
 import {log} from "./logger"

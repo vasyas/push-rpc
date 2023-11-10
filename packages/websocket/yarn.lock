@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@push-rpc/core@^1.5.7":
-  version "1.5.7"
-  resolved "https://repo.huaweicloud.com/repository/npm/@push-rpc/core/-/core-1.5.7.tgz#26ceb638f76d9b0b72d3f665b7038b37dbf6ac42"
-  integrity sha512-6vRW8TLMwABZAMWRyacaqX7Uc1PageAjBb7DrQ2PUFqdSWG72qua1UTtGC2NudvcST6x5mJpP73gQmrMtcP64A==
+"@push-rpc/core@^1.7.1":
+  version "1.7.1"
+  resolved "https://registry.npmjs.org/@push-rpc/core/-/core-1.7.1.tgz#cc173464ce08118c9e91e1f6000e4515e4e46543"
+  integrity sha512-BexfDCBhohl5zQcee3L2QiyARf75jI5R/F/z52meirgy2Po6OTTJp/BDNYjqFVqrFiOkxqzDYPwAKYm37FsKOg==
   dependencies:
     json-stringify-safe "^5.0.1"
     uuid-js "^0.7.5"

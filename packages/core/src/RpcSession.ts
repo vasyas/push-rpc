@@ -12,7 +12,7 @@ import {
 } from "./rpc"
 import {Socket} from "./transport"
 import {createMessageId, message} from "./utils"
-import * as jsonCircularStringify from "json-stringify-safe"
+import jsonCircularStringify from "json-stringify-safe"
 
 export interface RpcSessionListeners {
   messageIn(data: string): void

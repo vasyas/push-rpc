@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
+"@push-rpc/core@^1.7.1":
+  version "1.7.1"
+  resolved "https://registry.npmjs.org/@push-rpc/core/-/core-1.7.1.tgz#cc173464ce08118c9e91e1f6000e4515e4e46543"
+  integrity sha512-BexfDCBhohl5zQcee3L2QiyARf75jI5R/F/z52meirgy2Po6OTTJp/BDNYjqFVqrFiOkxqzDYPwAKYm37FsKOg==
+  dependencies:
+    json-stringify-safe "^5.0.1"
+    uuid-js "^0.7.5"
+
 "@types/accepts@*":
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/@types/accepts/-/accepts-1.3.5.tgz#c34bec115cfc746e04fe5a059df4ce7e7b391575"
@@ -304,6 +312,11 @@ isomorphic-fetch@^2.2.1:
   dependencies:
     node-fetch "^1.0.1"
     whatwg-fetch ">=0.10.0"
+
+json-stringify-safe@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
+  integrity sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==
 
 keygrip@~1.1.0:
   version "1.1.0"
