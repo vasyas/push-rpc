@@ -5,6 +5,7 @@
     "demo/**/*.ts"
   ],
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "lib": ["DOM"]
   }
 }

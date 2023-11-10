@@ -1,6 +1,6 @@
 import {SocketServer} from "@push-rpc/core"
-import * as Koa from "koa"
-import * as koaBody from "koa-body"
+import Koa from "koa"
+import koaBody from "koa-body"
 import {createKoaHttpMiddleware} from "./server"
 
 export function createKoaHttpServer(

@@ -6,6 +6,8 @@
       "es2020"
     ],
     "declaration": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }
