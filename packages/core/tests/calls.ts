@@ -143,5 +143,5 @@ abstract class A {
     return this.method()
   }
 
-  abstract async method()
+  abstract method()
 }

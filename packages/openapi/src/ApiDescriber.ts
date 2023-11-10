@@ -8,8 +8,6 @@ import {
   TypeElementMemberedNode,
 } from "ts-morph"
 
-// consider also lukeautry/tsoa
-
 export class ApiDescriber {
   constructor(private baseDir: string, private skipPrefix?: string) {}
 
@@ -156,8 +154,8 @@ export class ApiDescriber {
     if (type.isUnion()) return this.unionSchema(type)
 
     if (type.isTypeParameter()) {
-      // console.log(type.getTargetType().getText())
-      // console.log(type.)
+      const t = type.getTypeArguments()
+      console.log(t)
     }
 
     console.warn(`Unsupported type ${type.getText()}`)
@@ -184,11 +182,20 @@ export class ApiDescriber {
       }
     }
 
-    const typeMapping = new TypeMapping(
-      type.getTargetType() ? type.getTargetType().getTypeArguments() : [],
-      type.getTypeArguments(),
-      parentTypeMapping
-    )
+    const typeMapping = new TypeMapping(parentTypeMapping)
+
+    if (type.getTargetType()) {
+      for (let i = 0; i < type.getTargetType().getTypeArguments().length; i++) {
+        typeMapping.add(type.getTargetType().getTypeArguments()[i], type.getTypeArguments()[i])
+      }
+
+      for (let i = 0; i < type.getTargetType().getAliasTypeArguments().length; i++) {
+        typeMapping.add(
+          type.getTargetType().getAliasTypeArguments()[i],
+          type.getAliasTypeArguments()[i]
+        )
+      }
+    }
 
     // key-value object
     const properties = {}
@@ -328,10 +335,10 @@ export class ApiDescriber {
 }
 
 class TypeMapping {
-  constructor(from: Type[] = [], to: Type[] = [], private parentTypeMapping = null) {
-    for (let i = 0; i < from.length; i++) {
-      this.mapping[from[i].getText()] = to[i]
-    }
+  constructor(private parentTypeMapping = null) {}
+
+  add(from: Type, to: Type) {
+    this.mapping[from.getText()] = to
   }
 
   map(from: Type): Type {

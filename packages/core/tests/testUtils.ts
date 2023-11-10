@@ -33,9 +33,9 @@ export function startTestServer(
 
 afterEach(
   () =>
-    new Promise(resolve => {
+    new Promise<void>(resolve => {
       if (wss) {
-        wss.close(resolve)
+        wss.close(() => resolve())
       } else {
         resolve()
       }

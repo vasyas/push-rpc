@@ -99,7 +99,7 @@ export class RpcSession {
   private resolveDisconnect = () => {}
 
   disconnect() {
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       if (!this.socket) {
         resolve()
         return

@@ -142,13 +142,13 @@ export class RpcClient<R> {
    * Never rejects
    */
   connectionLoop() {
-    return new Promise(async resolve => {
+    return new Promise<void>(async resolve => {
       let onFirstConnection = resolve
       let errorDelay = 0
 
       while (true) {
         // connect, and wait for ...
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
           // 1. ...disconnected
           const connectionPromise = this.connect(resolve)
 
