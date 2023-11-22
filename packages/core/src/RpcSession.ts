@@ -421,14 +421,13 @@ export class RpcSession {
     try {
       const ctx = this.createContext(messageId, topic.getTopicName())
 
-      // topic.subscribeSession will subscribe even when throwing the error, so lets add it to the list
-      this.subscriptions.push({topic, params})
-      this.listeners.subscribed(this.subscriptions.length)
-
       const subscribeTopic = (p = params) => topic.subscribeSession(this, p, messageId, ctx)
       const r = await this.localMiddleware(ctx, subscribeTopic, params, MessageType.Subscribe)
 
       this.send(MessageType.Data, messageId, topic.getTopicName(), cloneParams(params), r)
+
+      this.subscriptions.push({topic, params})
+      this.listeners.subscribed(this.subscriptions.length)
     } catch (e) {
       log.error(`Unable to subscribe to topic ${topic.getTopicName()}`, e)
       this.sendError(messageId, e)

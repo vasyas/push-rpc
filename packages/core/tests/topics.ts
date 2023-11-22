@@ -3,7 +3,9 @@ import {createRpcClient, LocalTopicImpl, MessageType} from "../src"
 import {groupReducer} from "../src/local"
 import {RemoteTopicImpl} from "../src/remote"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
-import {createNodeWebsocket} from "../../websocket/src/server"
+import {createNodeWebsocket, wrapWebsocket} from "../../websocket/src/server"
+import {RpcSession} from "../src/RpcSession"
+import WebSocket from "ws"
 
 describe("Topics", () => {
   it("error in supplier breaks subscribe", async () => {
@@ -482,5 +484,39 @@ describe("Topics", () => {
     assert.equal(Object.keys(client.remote.testUnsub.item.getConsumers()).length, 1)
 
     assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 0)
+  })
+
+  it("exception during subscribe do not create subscription", async () => {
+    // throwing exception from supplier is an indication that topic do not want to subscribe this consumer
+
+    const services = {
+      item: new LocalTopicImpl(async () => {
+        throw new Error()
+      }),
+    }
+
+    const server = await startTestServer(services)
+
+    let ws
+
+    const client = await createRpcClient(async () => {
+      ws = new WebSocket(`ws://localhost:${TEST_PORT}`)
+      return wrapWebsocket(ws)
+    })
+
+    client.remote.item
+      .subscribe(() => {}, {})
+      .catch(e => {
+        // ignored
+      })
+
+    // pause the socket so that the server doesn't get the unsubscribe message
+    ws.send = () => {}
+
+    await new Promise(r => setTimeout(r, 20))
+
+    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
+    const session = Object.values(server["__sessions"])[0] as RpcSession
+    assert.equal(0, session.subscriptions.length)
   })
 })

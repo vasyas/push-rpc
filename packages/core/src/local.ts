@@ -92,7 +92,12 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     subscription.sessions.push(session)
     this.subscriptions[key] = subscription
 
-    return await this.getData(filter, ctx, session.getConnectionContext())
+    try {
+      return await this.getData(filter, ctx, session.getConnectionContext())
+    } catch (e) {
+      this.unsubscribeSession(session, filter)
+      throw e
+    }
   }
 
   unsubscribeSession(session: RpcSession, filter: F) {
