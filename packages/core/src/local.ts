@@ -102,7 +102,9 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
     if (!subscription) return
 
     const index = subscription.sessions.indexOf(session)
-    subscription.sessions.splice(index, 1)
+    if (index >= 0) {
+      subscription.sessions.splice(index, 1)
+    }
 
     if (!subscription.sessions.length) {
       delete this.subscriptions[key]
