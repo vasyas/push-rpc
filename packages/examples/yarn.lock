@@ -938,6 +938,22 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@push-rpc/core@^1.5.5":
+  version "1.5.5"
+  resolved "https://registry.yarnpkg.com/@push-rpc/core/-/core-1.5.5.tgz#cb81246f18cd30680e268a156e048326cf37549b"
+  integrity sha512-ZOBYZzZaUcn+QE5k38fi/1IkNZ6Eom5fjksLocuulYnlM2X3mH5O6TZL4SgQkBb3FVkOTP+0PYsoyQcKZKjDLw==
+  dependencies:
+    json-stringify-safe "^5.0.1"
+    uuid-js "^0.7.5"
+
+"@push-rpc/websocket@^1.5.5":
+  version "1.5.5"
+  resolved "https://registry.yarnpkg.com/@push-rpc/websocket/-/websocket-1.5.5.tgz#2f51c15c022d61afd0140abd747d19ef02bcdff3"
+  integrity sha512-g2EXGx+M2Pb3F5oumqk01feS1YYinuxA+mmEltJNW0uN0MBoyoBBWTqubCgoJeKMYvzlpfCmLf5LuIZ5r4VoDg==
+  dependencies:
+    "@push-rpc/core" "^1.5.5"
+    ws "^7.2.0"
+
 "@types/q@^1.5.1":
   version "1.5.4"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.4.tgz#15925414e0ad2cd765bfef58842f7e26a7accb24"
@@ -2995,10 +3011,10 @@ json-schema@0.2.3:
   resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.2.3.tgz#b480c892e59a2f05954ce727bd3f2a4e882f9e13"
   integrity sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM=
 
-json-stringify-safe@~5.0.1:
+json-stringify-safe@^5.0.1, json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
-  integrity sha1-Epai1Y/UXxmg9s4B1lcB4sc1tus=
+  integrity sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==
 
 json5@^1.0.1:
   version "1.0.1"
@@ -4086,9 +4102,9 @@ q@^1.1.2:
   integrity sha1-fjL3W0E4EpHQRhHxvxQQmsAGUdc=
 
 qs@~6.5.2:
-  version "6.5.2"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
-  integrity sha512-N5ZAX4/LxJmF+7wN74pUD6qAh9/wnvdQcjq9TZjevvXzSUo7bfmw91saqMjzGS2xq91/odN2dW/WOl7qQHNDGA==
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.3.tgz#3aeeffc91967ef6e35c0e488ef46fb296ab76aad"
+  integrity sha512-qxXIEh4pCGfHICj1mAJQ2/2XVZkjCDTcEgfoSQxc/fYivUZxTkk7L3bDBJSoNrEzXI17oUO5Dp07ktqE5KzczA==
 
 querystring-es3@^0.2.0:
   version "0.2.1"
