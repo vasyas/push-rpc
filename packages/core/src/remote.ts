@@ -32,13 +32,33 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
       consumer(this.cached[paramsKey])
     }
 
+    const alreadySubscribed = !!this.consumers[paramsKey]
+
     this.consumers[paramsKey] = [...(this.consumers[paramsKey] || []), {consumer, subscriptionKey}]
 
-    try {
-      await this.session.callRemote(this.topicName, filter, MessageType.Subscribe, callOpts)
-    } catch (e) {
-      this.unsubscribe(filter, subscriptionKey)
-      throw e
+    if (alreadySubscribed) {
+      // refetch latest data
+
+      try {
+        const data = await this.session.callRemote(
+          this.topicName,
+          filter,
+          MessageType.Get,
+          callOpts
+        )
+        this.receiveData(filter, data)
+      } catch (e) {
+        this.unsubscribe(filter, subscriptionKey)
+        throw e
+      }
+    } else {
+      // do not subscribe if already subscribed
+      try {
+        await this.session.callRemote(this.topicName, filter, MessageType.Subscribe, callOpts)
+      } catch (e) {
+        this.unsubscribe(filter, subscriptionKey)
+        throw e
+      }
     }
 
     return subscriptionKey
@@ -49,9 +69,6 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     if (!this.consumers[paramsKey]) return
 
-    // session.send and not session.callRemote because unsubscribe doesn't yield any response from the server side
-    this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
-
     const subscriptions = this.consumers[paramsKey]
 
     const idx = subscriptions.findIndex(s => s.subscriptionKey == subscriptionKey)
@@ -60,6 +77,9 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
         subscriptions.splice(idx, 1)
       } else {
         this.deleteAllSubscriptions(paramsKey)
+
+        // session.send and not session.callRemote because unsubscribe doesn't yield any response from the server side
+        this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
       }
     }
   }
