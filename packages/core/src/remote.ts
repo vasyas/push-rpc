@@ -71,14 +71,24 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
     const subscriptions = this.consumers[paramsKey]
 
+    if (subscriptionKey == null) {
+      if (subscriptions.length > 0) {
+        this.deleteAllSubscriptions(paramsKey)
+
+        this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
+      }
+
+      return
+    }
+
     const idx = subscriptions.findIndex(s => s.subscriptionKey == subscriptionKey)
+
     if (idx >= 0) {
       if (subscriptions.length > 1) {
         subscriptions.splice(idx, 1)
       } else {
         this.deleteAllSubscriptions(paramsKey)
 
-        // session.send and not session.callRemote because unsubscribe doesn't yield any response from the server side
         this.session.send(MessageType.Unsubscribe, createMessageId(), this.topicName, params)
       }
     }
