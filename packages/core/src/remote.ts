@@ -124,6 +124,9 @@ export class RemoteTopicImpl<D, F> extends TopicImpl
 
   // this is only to easy using for remote services during tests
   trigger(p?: F, data?: D): void {}
+  async getData(p: F, callContext: unknown, connectionContext: unknown): Promise<D> {
+    return undefined
+  }
 }
 
 export function createRemote(session: RpcSession, name = "") {

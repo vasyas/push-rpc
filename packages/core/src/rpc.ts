@@ -59,6 +59,7 @@ export type DataSupplier<D, P> = (p: P, ctx) => Promise<D>
 
 export interface LocalTopic<D, P, TD = D> {
   trigger(p?: Partial<P>, data?: TD): void
+  getData(filter: P, callContext: unknown, connectionContext?: unknown): Promise<D>
 }
 
 export interface RpcConnectionContext<Remote = any> {

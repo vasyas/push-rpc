@@ -53,7 +53,7 @@ export class LocalTopicImpl<D, F, TD = D> extends TopicImpl implements Topic<D, 
 
   private dataSupplierCache = new PromiseCache<F, D>()
 
-  async getData(filter: F, callContext: unknown, connectionContext: unknown): Promise<D> {
+  async getData(filter: F, callContext: unknown, connectionContext: unknown = {}): Promise<D> {
     return await this.dataSupplierCache.invoke({filter, connectionContext}, () =>
       this.supplier(filter, callContext)
     )
