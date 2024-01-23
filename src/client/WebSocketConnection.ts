@@ -10,13 +10,7 @@ export class WebSocketConnection {
 
   async close() {
     if (this.socket) {
-      return new Promise<void>((resolve) => {
-        this.socket!.on("close", () => {
-          this.socket = null
-          resolve()
-        })
-        this.socket!.close()
-      })
+      this.socket!.terminate()
     }
 
     return Promise.resolve()

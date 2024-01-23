@@ -5,9 +5,9 @@ import {log} from "../logger.js"
 
 export class ConnectionsServer {
   constructor(server: http.Server, options: ConnectionsServerOptions, connectionClosed: (clientId: string) => void) {
-    const wss = new WebSocketServer({server})
+    this.wss = new WebSocketServer({server})
 
-    wss.on("connection", (ws: WebSocket & { alive: boolean }) => {
+    this.wss.on("connection", (ws: WebSocket & { alive: boolean }) => {
       ws.alive = true
 
       const clientId = ws.protocol || "anon"
@@ -40,9 +40,7 @@ export class ConnectionsServer {
       });
     }, options.pingInterval);
 
-    wss.on('close', () => {
-      console.log("WSS close")
-
+    this.wss.on('close', () => {
       clearInterval(pingTimer)
     })
   }
@@ -57,7 +55,17 @@ export class ConnectionsServer {
     }
   }
 
+  private wss: WebSocketServer
   private clientSockets = new Map<string, WebSocket & { alive: boolean }>()
+
+  async close() {
+    return new Promise<void>((resolve, reject) => {
+      this.wss.close((err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  }
 }
 
 export type ConnectionsServerOptions = {

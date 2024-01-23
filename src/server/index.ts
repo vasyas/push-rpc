@@ -83,7 +83,7 @@ export function publishServices<S extends Services>(
     }
   }))
 
-  function close() {
+  function closeHttpServer() {
     return new Promise<void>((resolve, reject) => {
       httpServer.closeIdleConnections()
       httpServer.close((err) => {
@@ -102,7 +102,10 @@ export function publishServices<S extends Services>(
       resolve({
         services: withTriggers(localSubscriptions, services),
         server: {
-          close,
+          async close() {
+            await connectionsServer.close()
+            await closeHttpServer()
+          },
 
           _subscriptions() {
             return localSubscriptions._subscriptions()
