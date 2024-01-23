@@ -1,6 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testServer} from "./testUtils.js"
-import {RpcErrors, Services} from "../src/index.js"
+import {RpcErrors} from "../src/index.js"
+import {adelay} from "../src/utils/promises.js"
 
 describe("calls", () => {
   it("client call server", async () => {
@@ -154,6 +155,7 @@ describe("calls", () => {
     const server = {
       test: {
         item: async () => {
+          await adelay(1)
           supplied++
           return item
         },
@@ -174,7 +176,7 @@ describe("calls", () => {
       item2 = item
     })
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item1, item)
     assert.deepEqual(item2, item)
 

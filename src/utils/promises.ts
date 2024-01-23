@@ -19,3 +19,7 @@ export class PromiseCache {
 
   private cache: {[key: string]: Promise<any>} = {}
 }
+
+export async function adelay(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
+}

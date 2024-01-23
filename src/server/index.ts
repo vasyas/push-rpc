@@ -192,7 +192,7 @@ function invokeItem(
   parameters: unknown[],
   middlewares: Middleware[]
 ): Promise<unknown> {
-  return invocationCache.invoke({itemName, clientId, parameters}, () => {
+  return invocationCache.invoke({clientId, itemName, parameters}, () => {
     const invokeItem = (...params: unknown[]) => {
       return item.function.call(item.container, ...params)
     }
