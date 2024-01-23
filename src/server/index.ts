@@ -80,7 +80,7 @@ export function publishServices<S extends Services>(
     }
   }))
 
-  function shutdown() {
+  function close() {
     return new Promise<void>((resolve, reject) => {
       httpServer.closeIdleConnections()
       httpServer.close((err) => {
@@ -99,7 +99,7 @@ export function publishServices<S extends Services>(
       resolve({
         services: withTriggers(localSubscriptions, services),
         server: {
-          shutdown
+          close
         }
       })
     })
@@ -107,7 +107,7 @@ export function publishServices<S extends Services>(
 }
 
 export type RpcServer = {
-  shutdown(): Promise<void>
+  close(): Promise<void>
 }
 
 export type PublishServicesOptions = {
