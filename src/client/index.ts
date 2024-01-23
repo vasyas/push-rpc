@@ -12,6 +12,8 @@ export type RpcClient = {
 export type ConsumeServicesOptions = {
   callTimeout: number
   subscribe: boolean
+  reconnectDelay: number
+  errorDelayMaxDuration: number
 }
 
 export async function consumeServices<S extends Services>(
@@ -34,9 +36,17 @@ export async function consumeServices<S extends Services>(
 
   const client = new HttpClient(url, clientId, {callTimeout: options.callTimeout})
   const remoteSubscriptions = new RemoteSubscriptions()
-  const connection = new WebSocketConnection(url, clientId, (itemName, parameters, data) => {
-    remoteSubscriptions.consume(itemName, parameters, data)
-  })
+  const connection = new WebSocketConnection(
+    url,
+    clientId,
+    (itemName, parameters, data) => {
+      remoteSubscriptions.consume(itemName, parameters, data)
+    },
+    {
+      errorDelayMaxDuration: options.errorDelayMaxDuration,
+      reconnectDelay: options.reconnectDelay,
+    }
+  )
 
   const remote = createRemote<S>({
     call(itemName: string, parameters: unknown[]): Promise<unknown> {
@@ -44,13 +54,17 @@ export async function consumeServices<S extends Services>(
       return client.call(itemName, parameters)
     },
 
-    async subscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): Promise<void> {
+    async subscribe(
+      itemName: string,
+      parameters: unknown[],
+      consumer: (d: unknown) => void
+    ): Promise<void> {
       // TODO consume cached data?
 
       if (options.subscribe) {
-          connection.connect().catch(e => {
-            // ignored
-          })
+        connection.connect().catch((e) => {
+          // ignored
+        })
       }
 
       const data = await client.subscribe(itemName, parameters) // TODO callTimeout
@@ -61,13 +75,13 @@ export async function consumeServices<S extends Services>(
       remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
 
       await client.unsubscribe(itemName, parameters)
-    }
+    },
   })
   return {
     client: {
       close() {
         return connection.close()
-      }
+      },
     },
     remote,
   }
@@ -76,4 +90,6 @@ export async function consumeServices<S extends Services>(
 const defaultOptions: ConsumeServicesOptions = {
   callTimeout: 5 * 1000,
   subscribe: true,
+  reconnectDelay: 0,
+  errorDelayMaxDuration: 15 * 1000,
 }
