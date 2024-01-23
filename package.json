@@ -1,0 +1,32 @@
+{
+  "private": true,
+  "name": "@push-rpc/next",
+  "version": "2.0.0-beta.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "prepublishOnly": "npm run build && npm run test",
+    "build": "tsc",
+    "test": "mocha -r ts-node/register tests/**/*.ts"
+  },
+  "repository": "https://github.com/vasyas/push-rpc.git",
+  "author": "vasyas <vasyl@stashuk.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fast-stringify": "^2.0.0",
+    "nanoid": "^5.0.4"
+  },
+  "optionalDependencies": {
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "chai": "^5.0.0",
+    "mocha": "^10.2.0"
+  }
+}
