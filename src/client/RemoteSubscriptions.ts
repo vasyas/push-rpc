@@ -1,8 +1,6 @@
 import {safeStringify} from "../utils/json.js"
 
 export class RemoteSubscriptions {
-  constructor() {}
-
   subscribe(initialData: unknown, itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
     const filterKey = getFilterKey(parameters)
 

@@ -1,4 +1,6 @@
 import {RemoteFunction, Services} from "../rpc.js"
+import {LocalSubscriptions} from "./LocalSubscriptions.js"
+import {withTriggers} from "./local.js"
 
 export type ServicesWithTriggers<T extends Services> = {
   [K in keyof T]: T[K] extends Services
@@ -25,4 +27,9 @@ export async function publishServices<S extends Services>(
   server: RpcServer,
   services: ServicesWithTriggers<S>
 }> {
+  const localSubscriptions = new LocalSubscriptions()
+
+  return {
+    services: withTriggers(localSubscriptions, services)
+  }
 }
