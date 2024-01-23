@@ -133,6 +133,8 @@ function getItem(
     item = item[part]
   }
 
+  if (!item) return undefined
+
   return {
     function: item,
     container: parent,
