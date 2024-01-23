@@ -7,25 +7,6 @@ import {Middleware, withMiddlewares} from "../utils/middleware.js"
 import {log} from "../logger.js"
 import {ConnectionsServer} from "./ConnectionsServer.js"
 
-export type ServicesWithTriggers<T extends Services> = {
-  [K in keyof T]: T[K] extends Services
-    ? ServicesWithTriggers<T[K]>
-    : T[K] extends RemoteFunction
-      ? T[K] & {trigger(filter?: Partial<Parameters<T[K]>[0]>): void}
-      : never
-}
-
-
-export type RpcServer = {
-  shutdown(): Promise<void>
-}
-
-export type PublishServicesOptions = {
-  port: number
-  path: string
-  host: string
-}
-
 export function publishServices<S extends Services>(
   services: S,
   options: Partial<PublishServicesOptions> = {}
@@ -40,11 +21,11 @@ export function publishServices<S extends Services>(
 
   const localSubscriptions = new LocalSubscriptions()
 
-  const middlewares: Middleware[] = []
+  const httpServer = http.createServer()
 
-  const connectionsServer = new ConnectionsServer()
+  const connectionsServer = new ConnectionsServer(httpServer)
 
-  const httpServer = http.createServer((req, res) => serveHttpRequest(req, res, opts.path, {
+  httpServer.addListener("request", (req, res) => serveHttpRequest(req, res, opts.path, {
     async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
       const item = getItem(services, itemName)
 
@@ -53,7 +34,7 @@ export function publishServices<S extends Services>(
       }
 
       try {
-        return await invokeItem(clientId, item, parameters, middlewares)
+        return await invokeItem(clientId, item, parameters, opts.middleware)
       } catch (e) {
         log.error(`Cannot call item ${itemName}.`, e)
         throw e
@@ -68,11 +49,11 @@ export function publishServices<S extends Services>(
       }
 
       try {
-        const data = await invokeItem(clientId, item, parameters, middlewares)
+        const data = await invokeItem(clientId, item, parameters, opts.middleware)
 
         localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
           try {
-            const data = await invokeItem(clientId, item, parameters, middlewares)
+            const data = await invokeItem(clientId, item, parameters, opts.middleware)
 
             // TODO do not send if data is the same
 
@@ -125,10 +106,29 @@ export function publishServices<S extends Services>(
   })
 }
 
+export type ServicesWithTriggers<T extends Services> = {
+  [K in keyof T]: T[K] extends Services
+    ? ServicesWithTriggers<T[K]>
+    : T[K] extends RemoteFunction
+      ? T[K] & { trigger(filter?: Partial<Parameters<T[K]>[0]>): void }
+      : never
+}
+
+export type RpcServer = {
+  shutdown(): Promise<void>
+}
+
+export type PublishServicesOptions = {
+  port: number
+  path: string
+  host: string
+  middleware: Middleware[]
+}
+
 function getItem(
   root: any,
   itemName: string
-): {function: RemoteFunction; container: any} | undefined {
+): { function: RemoteFunction; container: any } | undefined {
   const parts = itemName.split("/")
 
   let item = root
@@ -149,7 +149,7 @@ function getItem(
 
 function invokeItem(
   clientId: string,
-  item: {function: RemoteFunction; container: any},
+  item: { function: RemoteFunction; container: any },
   parameters: unknown[],
   middlewares: Middleware[]
 ): Promise<unknown> {
@@ -162,5 +162,6 @@ function invokeItem(
 
 const defaultOptions: Omit<PublishServicesOptions, "port"> = {
   path: "",
-  host: "0.0.0.0"
+  host: "0.0.0.0",
+  middleware: [],
 }
