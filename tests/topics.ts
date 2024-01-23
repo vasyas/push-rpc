@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testServer} from "./testUtils.js"
+import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("Topics", () => {
@@ -97,6 +97,14 @@ describe("Topics", () => {
     await adelay(50)
     assert.deepEqual(item1, item)
     assert.deepEqual(item2, item)
+
+    // a single subscription present on server
+    assert.equal(testServer?._subscriptions().size, 1)
+    assert.equal(testServer?._subscriptions().get("test/item")?.byFilter.size, 1)
+    assert.equal(
+      testServer?._subscriptions().get("test/item")?.byFilter.get("null").subscribedClients.length,
+      1
+    )
   })
 
   it("concurrent subscribe cache", async () => {
@@ -169,10 +177,6 @@ describe("Topics", () => {
 
     // and a new version after some time
     assert.deepEqual(item2, item)
-  })
-
-  it("double subscribe", () => {
-    assert.equal(1, 2)
   })
 
   /*
