@@ -165,22 +165,21 @@ describe("calls", () => {
     const client = await createTestClient<typeof server>()
 
     let item1
-    client.test.item().then(item => {
+    client.test.item().then((item) => {
       item1 = item
     })
 
     let item2
-    client.test.item().then(item => {
+    client.test.item().then((item) => {
       item2 = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     assert.deepEqual(item1, item)
     assert.deepEqual(item2, item)
 
     assert.equal(supplied, 1)
   })
-
 })
 
 abstract class A {

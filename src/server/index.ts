@@ -6,6 +6,7 @@ import {serveHttpRequest} from "./http.js"
 import {Middleware, withMiddlewares} from "../utils/middleware.js"
 import {log} from "../logger.js"
 import {ConnectionsServer} from "./ConnectionsServer.js"
+import {PromiseCache} from "../utils/promises.js"
 
 export function publishServices<S extends Services>(
   services: S,
@@ -31,6 +32,8 @@ export function publishServices<S extends Services>(
     }
   )
 
+  const invocationCache = new PromiseCache()
+
   httpServer.addListener("request", (req, res) =>
     serveHttpRequest(req, res, options.path, {
       async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
@@ -41,7 +44,14 @@ export function publishServices<S extends Services>(
         }
 
         try {
-          return await invokeItem(clientId, item, parameters, options.middleware)
+          return await invokeItem(
+            invocationCache,
+            clientId,
+            itemName,
+            item,
+            parameters,
+            options.middleware
+          )
         } catch (e) {
           log.error(`Cannot call item ${itemName}.`, e)
           throw e
@@ -56,11 +66,25 @@ export function publishServices<S extends Services>(
         }
 
         try {
-          const data = await invokeItem(clientId, item, parameters, options.middleware)
+          const data = await invokeItem(
+            invocationCache,
+            clientId,
+            itemName,
+            item,
+            parameters,
+            options.middleware
+          )
 
           localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
             try {
-              const data = await invokeItem(clientId, item, parameters, options.middleware)
+              const data = await invokeItem(
+                invocationCache,
+                clientId,
+                itemName,
+                item,
+                parameters,
+                options.middleware
+              )
 
               // TODO do not send if data is the same
 
@@ -161,16 +185,20 @@ function getItem(
 }
 
 function invokeItem(
+  invocationCache: PromiseCache,
   clientId: string,
+  itemName: string,
   item: {function: RemoteFunction; container: any},
   parameters: unknown[],
   middlewares: Middleware[]
 ): Promise<unknown> {
-  const invokeItem = (...params: unknown[]) => {
-    return item.function.call(item.container, ...params)
-  }
+  return invocationCache.invoke({itemName, clientId, parameters}, () => {
+    const invokeItem = (...params: unknown[]) => {
+      return item.function.call(item.container, ...params)
+    }
 
-  return withMiddlewares(middlewares, invokeItem, ...parameters, {})
+    return withMiddlewares(middlewares, invokeItem, ...parameters, {})
+  })
 }
 
 const defaultOptions: Omit<PublishServicesOptions, "port"> = {
