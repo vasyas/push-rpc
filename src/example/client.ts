@@ -1,18 +1,12 @@
-import {createRpcClient} from "@push-rpc/core"
 import {Services} from "./api.js"
-import {ComboClientTransport} from "@push-rpc/combo"
-;(async () => {
-  const {remote} = await createRpcClient<Services>(
-    new ComboClientTransport("http://localhost:8080/rpc")
-  )
+import {consumeServices} from "../client/index.js"
 
-  console.log("Client created")
+const {remote} = await consumeServices<Services>("http://localhost:8080/rpc")
 
-  await remote.todo.getTodos.subscribe((todos) => {
-    console.log("Got todo items", todos)
-  }, null)
+console.log("Client created")
 
-  await remote.todo.addTodo({text: "Buy groceries"})
-})().catch((e) => {
-  console.error(e)
-})
+await remote.todo.getTodos.subscribe((todos) => {
+  console.log("Got todo items", todos)
+}, null)
+
+await remote.todo.addTodo({text: "Buy groceries"})
