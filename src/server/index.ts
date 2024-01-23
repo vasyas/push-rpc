@@ -9,14 +9,14 @@ import {ConnectionsServer} from "./ConnectionsServer.js"
 
 export function publishServices<S extends Services>(
   services: S,
-  options: Partial<PublishServicesOptions> = {}
+  overrideOptions: Partial<PublishServicesOptions> = {}
 ): Promise<{
   server: RpcServer,
   services: ServicesWithTriggers<S>
 }> {
-  const opts = {
+  const options = {
     ...defaultOptions,
-    ...options,
+    ...overrideOptions,
   }
 
   const localSubscriptions = new LocalSubscriptions()
@@ -25,7 +25,7 @@ export function publishServices<S extends Services>(
 
   const connectionsServer = new ConnectionsServer(httpServer)
 
-  httpServer.addListener("request", (req, res) => serveHttpRequest(req, res, opts.path, {
+  httpServer.addListener("request", (req, res) => serveHttpRequest(req, res, options.path, {
     async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
       const item = getItem(services, itemName)
 
@@ -34,7 +34,7 @@ export function publishServices<S extends Services>(
       }
 
       try {
-        return await invokeItem(clientId, item, parameters, opts.middleware)
+        return await invokeItem(clientId, item, parameters, options.middleware)
       } catch (e) {
         log.error(`Cannot call item ${itemName}.`, e)
         throw e
@@ -49,11 +49,11 @@ export function publishServices<S extends Services>(
       }
 
       try {
-        const data = await invokeItem(clientId, item, parameters, opts.middleware)
+        const data = await invokeItem(clientId, item, parameters, options.middleware)
 
         localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
           try {
-            const data = await invokeItem(clientId, item, parameters, opts.middleware)
+            const data = await invokeItem(clientId, item, parameters, options.middleware)
 
             // TODO do not send if data is the same
 
@@ -95,7 +95,7 @@ export function publishServices<S extends Services>(
       reject(err)
     })
 
-    httpServer.listen(opts.port, opts.host, () => {
+    httpServer.listen(options.port, options.host, () => {
       resolve({
         services: withTriggers(localSubscriptions, services),
         server: {

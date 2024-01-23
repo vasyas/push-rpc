@@ -12,12 +12,11 @@ export type RpcClient = {
 export type ConsumeServicesOptions = {
   callTimeout: number
   subscribe: boolean
-  waitSubscribe: boolean
 }
 
 export async function consumeServices<S extends Services>(
   url: string,
-  options: Partial<ConsumeServicesOptions> = {}
+  overrideOptions: Partial<ConsumeServicesOptions> = {}
 ): Promise<{
   client: RpcClient
   remote: ServicesWithSubscriptions<S>
@@ -26,14 +25,14 @@ export async function consumeServices<S extends Services>(
     throw new Error("URL must not end with /")
   }
 
-  const opts = {
+  const options = {
     ...defaultOptions,
-    ...options,
+    ...overrideOptions,
   }
 
   const clientId = nanoid()
 
-  const client = new HttpClient(url, clientId, {callTimeout: opts.callTimeout})
+  const client = new HttpClient(url, clientId, {callTimeout: options.callTimeout})
   const remoteSubscriptions = new RemoteSubscriptions()
   const connection = new WebSocketConnection(url, clientId, (itemName, parameters, data) => {
     remoteSubscriptions.consume(itemName, parameters, data)
@@ -49,13 +48,9 @@ export async function consumeServices<S extends Services>(
       // TODO consume cached data?
 
       if (options.subscribe) {
-        if (options.waitSubscribe) {
-            await connection.connect()
-        } else {
           connection.connect().catch(e => {
             // ignored
           })
-        }
       }
 
       const data = await client.subscribe(itemName, parameters) // TODO callTimeout
@@ -81,5 +76,4 @@ export async function consumeServices<S extends Services>(
 const defaultOptions: ConsumeServicesOptions = {
   callTimeout: 5 * 1000,
   subscribe: true,
-  waitSubscribe: false
 }
