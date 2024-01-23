@@ -67,6 +67,9 @@ export class HttpClient {
         return res
       }
     } catch (e: any) {
+      if (e.message == "fetch failed" && e.cause) {
+        e = e.cause
+      }
       if (e.message?.toLowerCase()?.includes("timeout")) {
         // NodeJS undici http client timeout
         const error = new Error("Timeout")

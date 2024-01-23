@@ -30,33 +30,6 @@ describe("calls", () => {
     assert.deepEqual(r, resp)
   })
 
-  it("server call client", async () => {
-    const resp = {r: "asf"}
-
-    const invocation = {
-      req: null as unknown,
-      ctx: null as unknown,
-    }
-
-    const services = await startTestServer({})
-
-    const client = await createTestClient<typeof services>({
-      test: {
-        async getSomething(req: unknown, ctx?: unknown) {
-          invocation.req = req
-          invocation.ctx = ctx
-          return resp
-        },
-      },
-    })
-
-    const req = {key: "value"}
-    const r = await testServer.get
-
-    assert.deepEqual(invocation.req, req)
-    assert.deepEqual(r, resp)
-  })
-
   it("error", async () => {
     const message = "bla"
 
