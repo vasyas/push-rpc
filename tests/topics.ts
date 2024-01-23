@@ -1,5 +1,6 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testServer} from "./testUtils.js"
+import {adelay} from "../src/utils/promises.js"
 
 describe("Topics", () => {
   it("subscribe delivers data", async () => {
@@ -7,7 +8,7 @@ describe("Topics", () => {
 
     const remote = await startTestServer({
       test: {
-        item: async () => item
+        item: async () => item,
       },
     })
 
@@ -19,7 +20,7 @@ describe("Topics", () => {
       receivedItem = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(receivedItem, item)
   })
 
@@ -58,7 +59,7 @@ describe("Topics", () => {
       })
 
     // pause the socket so that the server doesn't get the unsubscribe message
-    await new Promise(r => setTimeout(r, 20))
+    await adelay(20)
 
     assert.equal(0, testServer?._subscriptions().size)
   })
@@ -75,25 +76,25 @@ describe("Topics", () => {
     const remote = await createTestClient<typeof services>()
 
     let item1
-    await remote.test.item.subscribe(item => {
+    await remote.test.item.subscribe((item) => {
       item1 = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item1, item)
 
     let item2
-    await remote.test.item.subscribe(item => {
+    await remote.test.item.subscribe((item) => {
       item2 = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item2, item)
 
     // trigger sends item
     item.r = "2"
     services.test.item.trigger()
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item1, item)
     assert.deepEqual(item2, item)
   })
@@ -105,6 +106,7 @@ describe("Topics", () => {
     const server = {
       test: {
         item: async () => {
+          await adelay(1)
           supplied++
           return item
         },
@@ -116,16 +118,16 @@ describe("Topics", () => {
     const client = await createTestClient<typeof server>()
 
     let item1
-    client.test.item.subscribe(item => {
+    client.test.item.subscribe((item) => {
       item1 = item
     })
 
     let item2
-    client.test.item.subscribe(item => {
+    client.test.item.subscribe((item) => {
       item2 = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item1, item)
     assert.deepEqual(item2, item)
 
@@ -146,24 +148,24 @@ describe("Topics", () => {
     const client = await createTestClient<typeof server>()
 
     let item1
-    await client.test.item.subscribe(item => {
+    await client.test.item.subscribe((item) => {
       item1 = item
     })
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(item1, item)
 
     item.r = "2"
 
     let item2
-    client.test.item.subscribe(item => {
+    client.test.item.subscribe((item) => {
       item2 = item
     })
 
     // cached version should be delivered
     assert.deepEqual(item2, {r: "1"})
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
 
     // and a new version after some time
     assert.deepEqual(item2, item)
