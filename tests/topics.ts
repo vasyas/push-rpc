@@ -134,7 +134,7 @@ describe("Topics", () => {
     assert.equal(supplied, 1)
   })
 
-  it("subscribe use cached value", async () => {
+  it("subscribe use client cached value", async () => {
     const item = {r: "1"}
 
     const server = {
@@ -169,6 +169,10 @@ describe("Topics", () => {
 
     // and a new version after some time
     assert.deepEqual(item2, item)
+  })
+
+  it("double subscribe", () => {
+    assert.equal(1, 2)
   })
 
   /*

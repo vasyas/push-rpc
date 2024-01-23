@@ -38,10 +38,7 @@ export function createRemote<S extends Services>(
       if (Object.keys(subscription).includes(propName)) return target[propName]
 
       if (!cachedItems[propName]) {
-        cachedItems[propName] = createRemote(
-          hooks,
-          name ? name + "/" + propName : propName
-        )
+        cachedItems[propName] = createRemote(hooks, name ? name + "/" + propName : propName)
       }
 
       return cachedItems[propName]
@@ -62,7 +59,11 @@ export function createRemote<S extends Services>(
 export type RemoteHooks = {
   call(itemName: string, parameters: unknown[]): Promise<unknown>
   subscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): Promise<void>
-  unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): Promise<void>
+  unsubscribe(
+    itemName: string,
+    parameters: unknown[],
+    consumer: (d: unknown) => void
+  ): Promise<void>
 }
 
 export type ServicesWithSubscriptions<T extends Services> = {
@@ -70,9 +71,9 @@ export type ServicesWithSubscriptions<T extends Services> = {
     ? ServicesWithSubscriptions<T[K]>
     : T[K] extends RemoteFunction
       ? T[K] & {
-                  subscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>,
-                  unsubscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>
-              }
+          subscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>
+          unsubscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>
+        }
       : never
 }
 

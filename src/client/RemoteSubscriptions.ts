@@ -1,7 +1,12 @@
 import {safeStringify} from "../utils/json.js"
 
 export class RemoteSubscriptions {
-  subscribe(initialData: unknown, itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
+  subscribe(
+    initialData: unknown,
+    itemName: string,
+    parameters: unknown[],
+    consumer: (d: unknown) => void
+  ) {
     const filterKey = getFilterKey(parameters)
 
     this.addSubscription(itemName, filterKey, consumer)
@@ -19,24 +24,24 @@ export class RemoteSubscriptions {
     const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
-    const subscriptions = itemSubscriptions.byFilter.get(filterKey) || []
-    itemSubscriptions.byFilter.set(filterKey, subscriptions)
-    subscriptions.push({consumer})
+    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey) || {
+      cached: null,
+      consumers: [],
+    }
+    itemSubscriptions.byFilter.set(filterKey, filterSubscriptions)
+    filterSubscriptions.consumers.push(consumer)
   }
 
   private removeSubscription(itemName: string, filterKey: string, consumer: (d: unknown) => void) {
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
-    const subscriptions = itemSubscriptions.byFilter.get(filterKey)
-    if (!subscriptions) return
+    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+    if (!filterSubscriptions) return
 
-    const newSubscriptions = subscriptions.filter(
-      (subscription) => subscription.consumer != consumer
-    )
+    filterSubscriptions.consumers = filterSubscriptions.consumers.filter((c) => c != consumer)
 
-    if (newSubscriptions.length > 0) itemSubscriptions.byFilter.set(filterKey, newSubscriptions)
-    else {
+    if (!filterSubscriptions.consumers.length) {
       itemSubscriptions.byFilter.delete(filterKey)
 
       if (itemSubscriptions.byFilter.size == 0) {
@@ -45,15 +50,30 @@ export class RemoteSubscriptions {
     }
   }
 
+  getCached(itemName: string, parameters: unknown[]): unknown | undefined {
+    const filterKey = getFilterKey(parameters)
+
+    const itemSubscriptions = this.byItem.get(itemName)
+    if (!itemSubscriptions) return
+
+    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+
+    return filterSubscriptions?.cached
+  }
+
   consume(itemName: string, parameters: unknown[], data: unknown) {
     const filterKey = getFilterKey(parameters)
 
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
-    const subscriptions = itemSubscriptions.byFilter.get(filterKey) || []
-    subscriptions.forEach((subscription) => {
-      subscription.consumer(data)
+    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+
+    if (!filterSubscriptions) return
+
+    filterSubscriptions.cached = data
+    filterSubscriptions.consumers.forEach((consumer) => {
+      consumer(data)
     })
   }
 
@@ -63,9 +83,10 @@ export class RemoteSubscriptions {
 type ItemSubscription = {
   byFilter: Map<
     string,
-    Array<{
-      consumer: (d: unknown) => void
-    }>
+    {
+      cached: unknown
+      consumers: Array<(d: unknown) => void>
+    }
   >
 }
 

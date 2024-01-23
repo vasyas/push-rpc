@@ -62,7 +62,11 @@ export async function consumeServices<S extends Services>(
       parameters: unknown[],
       consumer: (d: unknown) => void
     ): Promise<void> {
-      // TODO consume cached data?
+      const cached = remoteSubscriptions.getCached(itemName, parameters)
+
+      if (cached !== undefined) {
+        consumer(cached)
+      }
 
       if (options.subscribe) {
         connection.connect().catch((e) => {
