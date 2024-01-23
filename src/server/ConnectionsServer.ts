@@ -11,8 +11,6 @@ export class ConnectionsServer {
       const clientId = ws.protocol || "anon"
       this.clientSockets.set(clientId, ws)
 
-      log.debug("New client connected", clientId)
-
       ws.on("error", (e: unknown) => {
         log.error("Error in WS", e)
       })

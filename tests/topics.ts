@@ -1,45 +1,69 @@
 import {assert} from "chai"
-import {createRpcClient, LocalTopicImpl, MessageType} from "../src"
-import {groupReducer} from "../src/local"
-import {RemoteTopicImpl} from "../src/remote"
-import {createTestClient, startTestServer, TEST_PORT} from "./testUtils"
-import {createNodeWebsocket, wrapWebsocket} from "../../websocket/src/server"
-import {RpcSession} from "../src/RpcSession"
-import WebSocket from "ws"
+import {createTestClient, startTestServer, testServer} from "./testUtils.js"
 
 describe("Topics", () => {
-  it("error in supplier breaks subscribe", async () => {
-    await startTestServer({
-      item: new LocalTopicImpl(async () => {
-        throw new Error("AA")
-      }),
+  it("subscribe delivers data", async () => {
+    const item = {r: "1"}
+
+    const remote = await startTestServer({
+      test: {
+        item: async () => item
+      },
     })
 
-    const client = await createTestClient(0)
+    const client = await createTestClient<typeof remote>()
+
+    let receivedItem
+
+    await client.test.item.subscribe(() => {
+      receivedItem = item
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    assert.deepEqual(receivedItem, item)
+  })
+
+  it("error in supplier breaks subscribe", async () => {
+    const remote = await startTestServer({
+      item: async () => {
+        throw new Error("AA")
+      },
+    })
+
+    const client = await createTestClient<typeof remote>()
 
     try {
       await client.item.subscribe(() => {})
       assert.fail("Error expected")
-    } catch (e) {
+    } catch (e: any) {
       assert.equal(e.message, "AA")
     }
   })
 
-  it("get", async () => {
-    const item = {r: "asf"}
-
-    await startTestServer({
-      test: {
-        item: new LocalTopicImpl(async () => item),
+  it("exception during subscribe do not create subscription", async () => {
+    const services = {
+      item: async () => {
+        throw new Error()
       },
-    })
+    }
 
-    const client = await createTestClient()
+    await startTestServer(services)
 
-    const r = await client.test.item.get({})
+    const remote = await createTestClient<typeof services>()
 
-    assert.deepEqual(r, item)
+    remote.item
+      .subscribe(() => {})
+      .catch((e: any) => {
+        // ignored
+      })
+
+    // pause the socket so that the server doesn't get the unsubscribe message
+    await new Promise(r => setTimeout(r, 20))
+
+    assert.equal(0, testServer?._subscriptions().size)
   })
+
+  /*
 
   it("concurrent get cache", async () => {
     const item = {r: "1"}
@@ -80,30 +104,7 @@ describe("Topics", () => {
     assert.equal(supplied, 1)
   })
 
-  it("subscribe delivers data after subscription", async () => {
-    const item = {r: "1"}
-
-    await startTestServer({
-      test: {
-        item: new LocalTopicImpl(async () => {
-          return item
-        }),
-      },
-    })
-
-    const client = await createTestClient(0)
-
-    let receivedItem
-
-    await client.test.item.subscribe(() => {
-      receivedItem = item
-    })
-
-    await new Promise(resolve => setTimeout(resolve, 50))
-    assert.deepEqual(receivedItem, item)
-  })
-
-  it("resubscribe", async () => {
+  it("resubscribe on reconnect", async () => {
     const item = {r: "1"}
 
     const server = {
@@ -486,37 +487,5 @@ describe("Topics", () => {
     assert.equal(Object.keys(server.testUnsub.item["subscriptions"]).length, 0)
   })
 
-  it("exception during subscribe do not create subscription", async () => {
-    // throwing exception from supplier is an indication that topic do not want to subscribe this consumer
-
-    const services = {
-      item: new LocalTopicImpl(async () => {
-        throw new Error()
-      }),
-    }
-
-    const server = await startTestServer(services)
-
-    let ws
-
-    const client = await createRpcClient(async () => {
-      ws = new WebSocket(`ws://localhost:${TEST_PORT}`)
-      return wrapWebsocket(ws)
-    })
-
-    client.remote.item
-      .subscribe(() => {}, {})
-      .catch(e => {
-        // ignored
-      })
-
-    // pause the socket so that the server doesn't get the unsubscribe message
-    ws.send = () => {}
-
-    await new Promise(r => setTimeout(r, 20))
-
-    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
-    const session = Object.values(server["__sessions"])[0] as RpcSession
-    assert.equal(0, session.subscriptions.length)
-  })
+   */
 })

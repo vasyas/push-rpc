@@ -99,7 +99,11 @@ export function publishServices<S extends Services>(
       resolve({
         services: withTriggers(localSubscriptions, services),
         server: {
-          close
+          close,
+
+          _subscriptions() {
+            return localSubscriptions._subscriptions()
+          }
         }
       })
     })
@@ -108,6 +112,9 @@ export function publishServices<S extends Services>(
 
 export type RpcServer = {
   close(): Promise<void>
+
+  // test-only
+  _subscriptions(): Map<any, any>
 }
 
 export type PublishServicesOptions = {

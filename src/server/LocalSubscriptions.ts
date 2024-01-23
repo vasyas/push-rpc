@@ -41,8 +41,6 @@ export class LocalSubscriptions {
   }
 
   trigger(itemName: string, triggerFilter: Record<string, unknown> = {}) {
-    console.log("Trigger", itemName, triggerFilter)
-
     const itemSub = this.byItem.get(itemName)
     if (!itemSub) return
 
@@ -56,6 +54,11 @@ export class LocalSubscriptions {
   }
 
   private byItem: Map<string, ItemSubscription> = new Map()
+
+  // test-only
+  _subscriptions() {
+    return this.byItem
+  }
 }
 
 type ItemSubscription = {
