@@ -24,3 +24,5 @@ export enum RpcErrors {
 export type CallOptions = {
   timeout: number
 }
+
+export const CLIENT_ID_HEADER = "x-rpc-client-id"

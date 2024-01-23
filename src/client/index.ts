@@ -1,21 +1,79 @@
-import {Consumer, RemoteFunction, Services} from "../rpc.js"
-
-export type ServicesWithSubscriptions<T extends Services> = {
-  [K in keyof T]: T[K] extends Services
-    ? ServicesWithSubscriptions<T[K]>
-    : T[K] extends RemoteFunction
-      ? T[K] & {subscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>}
-      : never
-}
+import {Services} from "../rpc.js"
+import {RemoteSubscriptions} from "./RemoteSubscriptions.js"
+import {HttpClient} from "./HttpClient.js"
+import {createRemote, ServicesWithSubscriptions} from "./remote.js"
+import {WebSocketConnection} from "./WebSocketConnection.js"
+import {nanoid} from "nanoid"
 
 export type RpcClient = {
-  shutdown(): Promise<void>
+  close(): Promise<void>
+}
+
+export type ConsumeServicesOptions = {
+  callTimeout: number
+  subscribe: boolean
 }
 
 export async function consumeServices<S extends Services>(
-  url: string
+  url: string,
+  options: Partial<ConsumeServicesOptions> = {}
 ): Promise<{
   client: RpcClient
   remote: ServicesWithSubscriptions<S>
 }> {
+  if (url.endsWith("/")) {
+    throw new Error("URL must not end with /")
+  }
+
+  const opts = {
+    ...defaultTransportOptions,
+    ...options,
+  }
+
+  const clientId = nanoid()
+
+  const client = new HttpClient(url, clientId, {callTimeout: opts.callTimeout})
+  const remoteSubscriptions = new RemoteSubscriptions()
+  const connection = new WebSocketConnection(url, clientId, (itemName, parameters, data) => {
+    remoteSubscriptions.consume(itemName, parameters, data)
+  })
+
+  const remote = createRemote<S>({
+    call(itemName: string, parameters: unknown[]): Promise<unknown> {
+      // TODO callTimeout
+      return client.call(itemName, parameters)
+    },
+
+    async subscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): Promise<void> {
+      // TODO consume cached data?
+
+      if (options.subscribe) {
+        connection.connect().catch(e => {
+          // ignored
+        })
+      }
+
+      const data = await client.subscribe(itemName, parameters) // TODO callTimeout
+      remoteSubscriptions.subscribe(data, itemName, parameters, consumer)
+    },
+
+    async unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
+      remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
+
+      await client.unsubscribe(itemName, parameters)
+    }
+  })
+  return {
+    client: {
+      close() {
+        return connection.close()
+      }
+    },
+    remote,
+  }
+}
+
+const defaultTransportOptions: ConsumeServicesOptions = {
+  callTimeout: 5 * 1000,
+  subscribe: true
 }
