@@ -1,7 +1,7 @@
 import {
   consumeServices,
   ConsumeServicesOptions,
-  publishServices,
+  publishServices, PublishServicesOptions,
   RpcClient,
   RpcServer,
   Services,
@@ -13,10 +13,11 @@ export const TEST_PORT = 5555
 
 export let testServer: RpcServer | null = null
 
-export async function startTestServer<S extends Services>(local: S): Promise<ServicesWithTriggers<S>> {
+export async function startTestServer<S extends Services>(local: S, options: Partial<PublishServicesOptions> = {}): Promise<ServicesWithTriggers<S>> {
   const r = await publishServices<S>(local, {
     port: TEST_PORT,
-    path: "/rpc"
+    path: "/rpc",
+    ...options
   })
   testServer = r.server
   return r.services

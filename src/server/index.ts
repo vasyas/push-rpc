@@ -23,7 +23,7 @@ export function publishServices<S extends Services>(
 
   const httpServer = http.createServer()
 
-  const connectionsServer = new ConnectionsServer(httpServer)
+  const connectionsServer = new ConnectionsServer(httpServer, {keepAliveTimeout: options.keepAliveTimeout})
 
   httpServer.addListener("request", (req, res) => serveHttpRequest(req, res, options.path, {
     async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
@@ -122,6 +122,7 @@ export type PublishServicesOptions = {
   path: string
   host: string
   middleware: Middleware[]
+  keepAliveTimeout: number
 }
 
 function getItem(
@@ -165,4 +166,5 @@ const defaultOptions: Omit<PublishServicesOptions, "port"> = {
   path: "",
   host: "0.0.0.0",
   middleware: [],
+  keepAliveTimeout: 2 * 60 * 1000
 }

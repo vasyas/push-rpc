@@ -4,7 +4,7 @@ import http from "http"
 import {log} from "../logger.js"
 
 export class ConnectionsServer {
-  constructor(server: http.Server) {
+  constructor(server: http.Server, private options: ConnectionsServerOptions) {
     const wss = new WebSocketServer({server})
 
     wss.on("connection", (ws: WebSocket) => {
@@ -32,4 +32,8 @@ export class ConnectionsServer {
   }
 
   private clientSockets = new Map<string, WebSocket>()
+}
+
+export type ConnectionsServerOptions = {
+  keepAliveTimeout: number
 }
