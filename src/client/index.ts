@@ -12,6 +12,7 @@ export type RpcClient = {
 export type ConsumeServicesOptions = {
   callTimeout: number
   subscribe: boolean
+  waitSubscribe: boolean
 }
 
 export async function consumeServices<S extends Services>(
@@ -48,9 +49,13 @@ export async function consumeServices<S extends Services>(
       // TODO consume cached data?
 
       if (options.subscribe) {
-        connection.connect().catch(e => {
-          // ignored
-        })
+        if (options.waitSubscribe) {
+            await connection.connect()
+        } else {
+          connection.connect().catch(e => {
+            // ignored
+          })
+        }
       }
 
       const data = await client.subscribe(itemName, parameters) // TODO callTimeout
@@ -75,5 +80,6 @@ export async function consumeServices<S extends Services>(
 
 const defaultOptions: ConsumeServicesOptions = {
   callTimeout: 5 * 1000,
-  subscribe: true
+  subscribe: true,
+  waitSubscribe: false
 }
