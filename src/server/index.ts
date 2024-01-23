@@ -1,6 +1,6 @@
 import {RemoteFunction, RpcError, RpcErrors, Services} from "../rpc.js"
 import {LocalSubscriptions} from "./LocalSubscriptions.js"
-import {withTriggers} from "./local.js"
+import {ServicesWithTriggers, withTriggers} from "./local.js"
 import http from "http"
 import {serveHttpRequest} from "./http.js"
 import {Middleware, withMiddlewares} from "../utils/middleware.js"
@@ -104,14 +104,6 @@ export function publishServices<S extends Services>(
       })
     })
   })
-}
-
-export type ServicesWithTriggers<T extends Services> = {
-  [K in keyof T]: T[K] extends Services
-    ? ServicesWithTriggers<T[K]>
-    : T[K] extends RemoteFunction
-      ? T[K] & { trigger(filter?: Partial<Parameters<T[K]>[0]>): void }
-      : never
 }
 
 export type RpcServer = {

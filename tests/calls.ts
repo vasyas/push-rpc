@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testRpcServer} from "./testUtils.js"
+import {createTestClient, startTestServer, testServer} from "./testUtils.js"
 import {RpcErrors, Services} from "../src/index.js"
 
 describe("calls", () => {
@@ -51,7 +51,7 @@ describe("calls", () => {
     })
 
     const req = {key: "value"}
-    const r = await testRpcServer.get
+    const r = await testServer.get
 
     assert.deepEqual(invocation.req, req)
     assert.deepEqual(r, resp)
