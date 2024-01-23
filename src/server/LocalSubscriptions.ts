@@ -1,7 +1,7 @@
 import {safeStringify} from "../utils/json.js"
 
 export class LocalSubscriptions {
-  subscribe(subscriptionKey: string, itemName: string, parameters: unknown[], update: () => void) {
+  subscribe(clientId: string, itemName: string, parameters: unknown[], update: () => void) {
     const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
@@ -13,12 +13,12 @@ export class LocalSubscriptions {
     }
     itemSubscriptions.byFilter.set(filterKey, subscriptions)
 
-    if (!subscriptions.subscribedClients.some((c) => c.subscriptionKey == subscriptionKey)) {
-      subscriptions.subscribedClients.push({subscriptionKey, update})
+    if (!subscriptions.subscribedClients.some((c) => c.clientId == clientId)) {
+      subscriptions.subscribedClients.push({clientId, update})
     }
   }
 
-  unsubscribe(subscriptionKey: string, itemName: string, parameters: unknown[]) {
+  unsubscribe(clientId: string, itemName: string, parameters: unknown[]) {
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
@@ -28,11 +28,29 @@ export class LocalSubscriptions {
     if (!subscriptions) return
 
     subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
-      (subscription) => subscription.subscriptionKey != subscriptionKey
+      (subscription) => subscription.clientId != clientId
     )
 
     if (!subscriptions.subscribedClients.length) {
       itemSubscriptions.byFilter.delete(filterKey)
+
+      if (itemSubscriptions.byFilter.size == 0) {
+        this.byItem.delete(itemName)
+      }
+    }
+  }
+
+  unsubscribeAll(clientId: string) {
+    for (const [itemName, itemSubscriptions] of this.byItem.entries()) {
+      for (const [filterKey, subscriptions] of itemSubscriptions.byFilter.entries()) {
+        subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
+          (subscription) => subscription.clientId != clientId
+        )
+
+        if (!subscriptions.subscribedClients.length) {
+          itemSubscriptions.byFilter.delete(filterKey)
+        }
+      }
 
       if (itemSubscriptions.byFilter.size == 0) {
         this.byItem.delete(itemName)
@@ -71,7 +89,7 @@ type FilterSubscription = {
 }
 
 type SubscribedClient = {
-  subscriptionKey: string
+  clientId: string
   update: () => void
 }
 

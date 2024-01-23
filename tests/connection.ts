@@ -1,9 +1,22 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testServer} from "./testUtils.js"
+import WebSocket from "ws"
 
 describe("connection", () => {
-  it("server close connection on keep alive timeout", async () => {
-    const keepAliveTimeout = 300
+  let oldPing: typeof WebSocket.prototype.ping
+
+  before(() => {
+    oldPing = WebSocket.prototype.ping
+    WebSocket.prototype.ping = () => {
+    }
+  })
+
+  after(() => {
+    WebSocket.prototype.ping = oldPing
+  })
+
+  it("server close connection on ping timeout", async () => {
+    const pingInterval = 100
 
     const services = await startTestServer(
       {
@@ -12,7 +25,7 @@ describe("connection", () => {
         },
       },
       {
-        keepAliveTimeout,
+        pingInterval,
       }
     )
 
@@ -22,11 +35,15 @@ describe("connection", () => {
     assert.equal(testServer?._subscriptions().size, 1)
 
     // wait for timeout
-    await new Promise(r => setTimeout(r, keepAliveTimeout * 2.5))
+    await new Promise(r => setTimeout(r, pingInterval * 2.5))
 
     // should be closed
     assert.equal(testServer?._subscriptions().size, 0)
   }).timeout(5000)
+
+  it("client close connection on ping timeout", async () => {
+
+  })
 
   /*
 
