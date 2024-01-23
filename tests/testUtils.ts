@@ -14,7 +14,10 @@ export const TEST_PORT = 5555
 export let testServer: RpcServer | null = null
 
 export async function startTestServer<S extends Services>(local: S): Promise<ServicesWithTriggers<S>> {
-  const r = await publishServices<S>(local)
+  const r = await publishServices<S>(local, {
+    port: TEST_PORT,
+    path: "/rpc"
+  })
   testServer = r.server
   return r.services
 }
