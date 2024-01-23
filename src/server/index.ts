@@ -11,7 +11,7 @@ export function publishServices<S extends Services>(
   services: S,
   overrideOptions: Partial<PublishServicesOptions> = {}
 ): Promise<{
-  server: RpcServer,
+  server: RpcServer
   services: ServicesWithTriggers<S>
 }> {
   const options = {
@@ -24,64 +24,69 @@ export function publishServices<S extends Services>(
   const httpServer = http.createServer()
 
   const connectionsServer = new ConnectionsServer(
-    httpServer, {pingInterval: options.pingInterval}, (clientId) => {
+    httpServer,
+    {pingInterval: options.pingInterval},
+    (clientId) => {
       localSubscriptions.unsubscribeAll(clientId)
-    })
-
-  httpServer.addListener("request", (req, res) => serveHttpRequest(req, res, options.path, {
-    async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
-      const item = getItem(services, itemName)
-
-      if (!item) {
-        throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
-      }
-
-      try {
-        return await invokeItem(clientId, item, parameters, options.middleware)
-      } catch (e) {
-        log.error(`Cannot call item ${itemName}.`, e)
-        throw e
-      }
-    },
-
-    async subscribe(clientId: string, itemName: string, parameters: unknown[]) {
-      const item = getItem(services, itemName)
-
-      if (!item) {
-        throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
-      }
-
-      try {
-        const data = await invokeItem(clientId, item, parameters, options.middleware)
-
-        localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
-          try {
-            const data = await invokeItem(clientId, item, parameters, options.middleware)
-
-            // TODO do not send if data is the same
-
-            connectionsServer.publish(clientId, itemName, parameters, data)
-          } catch (e) {
-            log.error("Cannot get data for subscription", e)
-          }
-        })
-
-        return data
-      } catch (e) {
-        log.error(`Failed to subscribe ${itemName}`, e)
-        throw e
-      }
-    },
-
-    async unsubscribe(clientId: string, itemName: string, parameters: unknown[]) {
-      try {
-        localSubscriptions.unsubscribe(clientId, itemName, parameters)
-      } catch (e) {
-        log.error(`Failed to unsubscribe ${itemName}`, e)
-        throw e
-      }
     }
-  }))
+  )
+
+  httpServer.addListener("request", (req, res) =>
+    serveHttpRequest(req, res, options.path, {
+      async call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown> {
+        const item = getItem(services, itemName)
+
+        if (!item) {
+          throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
+        }
+
+        try {
+          return await invokeItem(clientId, item, parameters, options.middleware)
+        } catch (e) {
+          log.error(`Cannot call item ${itemName}.`, e)
+          throw e
+        }
+      },
+
+      async subscribe(clientId: string, itemName: string, parameters: unknown[]) {
+        const item = getItem(services, itemName)
+
+        if (!item) {
+          throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
+        }
+
+        try {
+          const data = await invokeItem(clientId, item, parameters, options.middleware)
+
+          localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
+            try {
+              const data = await invokeItem(clientId, item, parameters, options.middleware)
+
+              // TODO do not send if data is the same
+
+              connectionsServer.publish(clientId, itemName, parameters, data)
+            } catch (e) {
+              log.error("Cannot get data for subscription", e)
+            }
+          })
+
+          return data
+        } catch (e) {
+          log.error(`Failed to subscribe ${itemName}`, e)
+          throw e
+        }
+      },
+
+      async unsubscribe(clientId: string, itemName: string, parameters: unknown[]) {
+        try {
+          localSubscriptions.unsubscribe(clientId, itemName, parameters)
+        } catch (e) {
+          log.error(`Failed to unsubscribe ${itemName}`, e)
+          throw e
+        }
+      },
+    })
+  )
 
   function closeHttpServer() {
     return new Promise<void>((resolve, reject) => {
@@ -109,8 +114,8 @@ export function publishServices<S extends Services>(
 
           _subscriptions() {
             return localSubscriptions._subscriptions()
-          }
-        }
+          },
+        },
       })
     })
   })
@@ -134,7 +139,7 @@ export type PublishServicesOptions = {
 function getItem(
   root: any,
   itemName: string
-): { function: RemoteFunction; container: any } | undefined {
+): {function: RemoteFunction; container: any} | undefined {
   const parts = itemName.split("/")
 
   let item = root
@@ -157,7 +162,7 @@ function getItem(
 
 function invokeItem(
   clientId: string,
-  item: { function: RemoteFunction; container: any },
+  item: {function: RemoteFunction; container: any},
   parameters: unknown[],
   middlewares: Middleware[]
 ): Promise<unknown> {
@@ -172,5 +177,5 @@ const defaultOptions: Omit<PublishServicesOptions, "port"> = {
   path: "",
   host: "0.0.0.0",
   middleware: [],
-  pingInterval: 60 * 1000
+  pingInterval: 30 * 1000, // should be in-sync with client
 }

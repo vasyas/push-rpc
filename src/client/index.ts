@@ -6,6 +6,7 @@ import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
 
 export type RpcClient = {
+  isConnected(): boolean
   close(): Promise<void>
 }
 
@@ -14,6 +15,7 @@ export type ConsumeServicesOptions = {
   subscribe: boolean
   reconnectDelay: number
   errorDelayMaxDuration: number
+  pingInterval: number
 }
 
 export async function consumeServices<S extends Services>(
@@ -45,12 +47,13 @@ export async function consumeServices<S extends Services>(
     {
       errorDelayMaxDuration: options.errorDelayMaxDuration,
       reconnectDelay: options.reconnectDelay,
+      pingInterval: options.pingInterval,
     }
   )
 
   const remote = createRemote<S>({
     call(itemName: string, parameters: unknown[]): Promise<unknown> {
-      // TODO callTimeout
+      // TODO per-call callTimeout
       return client.call(itemName, parameters)
     },
 
@@ -82,6 +85,9 @@ export async function consumeServices<S extends Services>(
       close() {
         return connection.close()
       },
+      isConnected() {
+        return connection.isConnected()
+      },
     },
     remote,
   }
@@ -92,4 +98,5 @@ const defaultOptions: ConsumeServicesOptions = {
   subscribe: true,
   reconnectDelay: 0,
   errorDelayMaxDuration: 15 * 1000,
+  pingInterval: 30 * 1000, // should be in-sync with server
 }

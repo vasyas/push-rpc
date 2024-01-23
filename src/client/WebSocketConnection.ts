@@ -7,7 +7,11 @@ export class WebSocketConnection {
     private readonly url: string,
     private readonly clientId: string,
     private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
-    private readonly options: {reconnectDelay: number; errorDelayMaxDuration: number}
+    private readonly options: {
+      reconnectDelay: number
+      errorDelayMaxDuration: number
+      pingInterval: number
+    }
   ) {
     this.url = url
     this.clientId = clientId
@@ -18,6 +22,11 @@ export class WebSocketConnection {
 
     if (this.socket) {
       this.socket!.terminate()
+      this.socket = null
+    }
+
+    if (this.pingTimeout) {
+      clearTimeout(this.pingTimeout)
     }
 
     return Promise.resolve()
@@ -29,7 +38,7 @@ export class WebSocketConnection {
    * Never rejects
    */
   connect() {
-    if (!this.disconnectedMark) return Promise.resolve()
+    if (this.socket || !this.disconnectedMark) return Promise.resolve()
 
     this.disconnectedMark = false
 
@@ -72,6 +81,10 @@ export class WebSocketConnection {
     })
   }
 
+  public isConnected() {
+    return this.socket !== null
+  }
+
   /**
    * Connect this to server
    *
@@ -85,16 +98,30 @@ export class WebSocketConnection {
         let connected = false
 
         socket.on("open", () => {
+          console.log("Socket open")
+
           this.socket = socket
           connected = true
           resolve()
+
+          this.heartbeat()
+        })
+
+        socket.on("ping", () => {
+          console.log("Socket ping")
+          this.heartbeat()
         })
 
         socket.on("close", () => {
+          console.log("Socket close")
           this.socket = null
 
           if (connected) {
             onDisconnected()
+          }
+
+          if (this.pingTimeout) {
+            clearTimeout(this.pingTimeout)
           }
         })
 
@@ -123,6 +150,21 @@ export class WebSocketConnection {
 
   private socket: WebSocket | null = null
   private disconnectedMark = true
+  private pingTimeout: NodeJS.Timeout | null = null
+
+  private heartbeat() {
+    console.log("Heartbeat")
+
+    if (this.pingTimeout) {
+      clearTimeout(this.pingTimeout)
+    }
+
+    this.pingTimeout = setTimeout(() => {
+      console.log("Ping timed out")
+
+      this.socket?.terminate()
+    }, this.options.pingInterval * 1.5)
+  }
 
   private async receiveSocketMessage(rawMessage: WebSocket.RawData) {
     try {

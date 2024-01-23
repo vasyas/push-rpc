@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testServer} from "./testUtils.js"
+import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import WebSocket from "ws"
 
 describe("connection", () => {
@@ -7,8 +7,7 @@ describe("connection", () => {
 
   before(() => {
     oldPing = WebSocket.prototype.ping
-    WebSocket.prototype.ping = () => {
-    }
+    WebSocket.prototype.ping = () => {}
   })
 
   after(() => {
@@ -35,14 +34,35 @@ describe("connection", () => {
     assert.equal(testServer?._subscriptions().size, 1)
 
     // wait for timeout
-    await new Promise(r => setTimeout(r, pingInterval * 2.5))
+    await new Promise((r) => setTimeout(r, pingInterval * 2.5))
 
     // should be closed
     assert.equal(testServer?._subscriptions().size, 0)
   }).timeout(5000)
 
   it("client close connection on ping timeout", async () => {
+    const pingInterval = 100
 
+    const services = await startTestServer({
+      test: {
+        async call() {},
+      },
+    })
+
+    const remote = await createTestClient<typeof services>({
+      pingInterval,
+      reconnectDelay: pingInterval * 4, // so we don't reconnect fast and can catch disconnected state
+    })
+
+    await remote.test.call.subscribe(() => {})
+
+    assert.equal(testClient?.isConnected(), true)
+
+    // wait for timeout
+    await new Promise((r) => setTimeout(r, pingInterval * 2.5))
+
+    // should be closed
+    assert.equal(testClient?.isConnected(), false)
   })
 
   /*
