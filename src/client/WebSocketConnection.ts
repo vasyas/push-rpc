@@ -177,4 +177,9 @@ export class WebSocketConnection {
       log.warn("Invalid message received", e)
     }
   }
+
+  // test-only
+  _webSocket() {
+    return this.socket
+  }
 }

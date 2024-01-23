@@ -4,10 +4,15 @@ import {HttpClient} from "./HttpClient.js"
 import {createRemote, ServicesWithSubscriptions} from "./remote.js"
 import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
+import WebSocket from "ws"
 
 export type RpcClient = {
   isConnected(): boolean
   close(): Promise<void>
+
+  // test-only
+  _subscriptions(): Map<any, any>
+  _webSocket(): WebSocket | null
 }
 
 export type ConsumeServicesOptions = {
@@ -92,6 +97,9 @@ export async function consumeServices<S extends Services>(
       isConnected() {
         return connection.isConnected()
       },
+
+      _subscriptions: () => remoteSubscriptions._subscriptions(),
+      _webSocket: () => connection._webSocket(),
     },
     remote,
   }

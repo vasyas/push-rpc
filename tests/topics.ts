@@ -179,9 +179,6 @@ describe("Topics", () => {
     assert.deepEqual(item2, item)
   })
 
-  /*
-  to be implemented after connection tracking
-
   it("unsubscribe topics on disconnect", async () => {
     const item = {r: "1"}
 
@@ -193,21 +190,18 @@ describe("Topics", () => {
 
     await startTestServer(server)
 
-    const client = await createRpcClient(
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {reconnect: false}
-    )
+    const remote = await createTestClient<typeof server>()
 
-    await client.remote.testUnsub.item.subscribe(() => {})
+    await remote.testUnsub.item.subscribe(() => {})
 
     assert.equal(1, testServer?._subscriptions().size)
 
-    client.disconnect()
+    await testClient!.close()
 
-    await new Promise(r => setTimeout(r, 50))
+    await new Promise((r) => setTimeout(r, 50))
 
-    // client's RemoteTopicImpl is not unsubscribed intentionally not to loose existing handlers
-    assert.equal(Object.keys(client.remote.testUnsub.item.getConsumers()).length, 1)
+    // client's subscriptions are not removed intentionally not to lose existing handlers
+    assert.equal(testClient?._subscriptions().size, 1)
 
     assert.equal(0, testServer?._subscriptions().size)
   })
@@ -215,51 +209,42 @@ describe("Topics", () => {
   it("resubscribe on reconnect", async () => {
     const item = {r: "1"}
 
-    const server = {
+    const services = await startTestServer({
       test: {
-        item: new LocalTopicImpl(async () => item),
+        item: async () => item,
       },
-    }
+    })
 
-    await startTestServer(server)
-
-    let socket
-
-    const client = await createRpcClient(
-      () => {
-        socket = createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
-        return socket
-      },
-      {reconnect: true}
-    )
+    const remote = await createTestClient<typeof services>()
 
     let receivedItem
 
-    await client.remote.test.item.subscribe(item => {
+    await remote.test.item.subscribe((item) => {
       receivedItem = item
     })
 
     // first notification right after subscription
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await adelay(50)
     assert.deepEqual(receivedItem, item)
 
     // trigger sends item
     item.r = "2"
-    server.test.item.trigger()
-    await new Promise(resolve => setTimeout(resolve, 50))
+    services.test.item.trigger()
+    await adelay(50)
     assert.deepEqual(receivedItem, item)
 
+    console.log("before  close")
+
     // disconnect & resubscribe
-    socket.disconnect()
-    await new Promise(resolve => setTimeout(resolve, 50))
+    testClient?._webSocket()?.close()
+    await adelay(50)
+
+    console.log("before trigger")
 
     // session should be re-subscribed, trigger should continue to send items
     item.r = "3"
-    server.test.item.trigger()
-    await new Promise(resolve => setTimeout(resolve, 50))
+    services.test.item.trigger()
+    await adelay(50)
     assert.deepEqual(receivedItem, item)
-
-    client.disconnect()
   })
-   */
 })
