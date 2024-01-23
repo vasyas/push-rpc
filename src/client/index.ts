@@ -26,7 +26,7 @@ export async function consumeServices<S extends Services>(
   }
 
   const opts = {
-    ...defaultTransportOptions,
+    ...defaultOptions,
     ...options,
   }
 
@@ -73,7 +73,7 @@ export async function consumeServices<S extends Services>(
   }
 }
 
-const defaultTransportOptions: ConsumeServicesOptions = {
+const defaultOptions: ConsumeServicesOptions = {
   callTimeout: 5 * 1000,
   subscribe: true
 }
