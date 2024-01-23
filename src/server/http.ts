@@ -1,7 +1,7 @@
+import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
 import {CLIENT_ID_HEADER} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
-import * as http from "http"
 
 export async function serveHttpRequest(
   req: IncomingMessage,
@@ -24,13 +24,13 @@ export async function serveHttpRequest(
     let result: unknown
     switch (req.method) {
       case "POST":
-        result = await clientHooks.call(clientId, itemName, body)
+        result = await hooks.call(clientId, itemName, body)
         break
       case "PUT":
-        result = await clientHooks.subscribe(clientId, itemName, body)
+        result = await hooks.subscribe(clientId, itemName, body)
         break
       case "PATCH":
-        result = await clientHooks.unsubscribe(clientId, itemName, body)
+        result = await hooks.unsubscribe(clientId, itemName, body)
         break
       default:
         throw new Error(`HTTP Method ${req.method} not supported`)
@@ -88,5 +88,7 @@ function readBody(req: http.IncomingMessage) {
 }
 
 export type HttpServerHooks = {
-
+  call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
+  subscribe(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
+  unsubscribe(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
 }
