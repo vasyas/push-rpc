@@ -74,8 +74,20 @@ export class LocalSubscriptions {
   private byItem: Map<string, ItemSubscription> = new Map()
 
   // test-only
-  _subscriptions() {
-    return this.byItem
+  _allSubscriptions() {
+    const result: Array<[string, unknown[], unknown[]]> = []
+
+    for (const [itemName, itemSubscriptions] of this.byItem) {
+      for (const [, parameterSubscriptions] of itemSubscriptions.byFilter) {
+        result.push([
+          itemName,
+          [parameterSubscriptions.filter],
+          parameterSubscriptions.subscribedClients,
+        ])
+      }
+    }
+
+    return result
   }
 }
 

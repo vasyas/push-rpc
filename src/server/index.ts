@@ -136,8 +136,8 @@ export function publishServices<S extends Services>(
             await closeHttpServer()
           },
 
-          _subscriptions() {
-            return localSubscriptions._subscriptions()
+          _allSubscriptions() {
+            return localSubscriptions._allSubscriptions()
           },
         },
       })
@@ -149,7 +149,7 @@ export type RpcServer = {
   close(): Promise<void>
 
   // test-only
-  _subscriptions(): Map<any, any>
+  _allSubscriptions(): Array<any[]>
 }
 
 export type PublishServicesOptions = {
