@@ -1,4 +1,6 @@
 import {safeStringify} from "../utils/json.js"
+import {lastValueReducer, throttle} from "../utils/throttle.js"
+import {ThrottleSettings} from "./local.js"
 
 export class LocalSubscriptions {
   subscribe(
@@ -75,6 +77,23 @@ export class LocalSubscriptions {
       })
     }
   }
+
+  throttled(itemName: string, f: (d: unknown) => void) {
+    const settings: ThrottleSettings = this.itemThrottleSettings.get(itemName) || {
+      timeout: 500,
+      reducer: lastValueReducer,
+    }
+
+    if (!settings.timeout) return f
+
+    return throttle(f, settings.timeout, settings.reducer || lastValueReducer)
+  }
+
+  throttleItem(itemName: string, settings: ThrottleSettings) {
+    this.itemThrottleSettings.set(itemName, settings)
+  }
+
+  private itemThrottleSettings: Map<string, ThrottleSettings> = new Map()
 
   private byItem: Map<string, ItemSubscription> = new Map()
 

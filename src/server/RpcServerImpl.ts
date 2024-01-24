@@ -127,31 +127,28 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
         InvocationType.Subscribe
       )
 
-      this.localSubscriptions.subscribe(
-        connectionContext.clientId,
-        itemName,
-        parameters,
-        async (suppliedData?: unknown) => {
-          try {
-            const data =
-              suppliedData !== undefined
-                ? suppliedData
-                : await this.invokeLocalFunction(
-                    connectionContext,
-                    itemName,
-                    item,
-                    parameters,
-                    InvocationType.Trigger
-                  )
+      const update = this.localSubscriptions.throttled(itemName, async (suppliedData?: unknown) => {
+        try {
+          const data =
+            suppliedData !== undefined
+              ? suppliedData
+              : await this.invokeLocalFunction(
+                  connectionContext,
+                  itemName,
+                  item,
+                  parameters,
+                  InvocationType.Trigger
+                )
 
-            // TODO do not send if data is the same
+          // TODO do not send if data is the same
 
-            this.connectionsServer.publish(connectionContext.clientId, itemName, parameters, data)
-          } catch (e) {
-            log.error("Cannot get data for subscription", e)
-          }
+          this.connectionsServer.publish(connectionContext.clientId, itemName, parameters, data)
+        } catch (e) {
+          log.error("Cannot get data for subscription", e)
         }
-      )
+      })
+
+      this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
 
       return data
     } catch (e) {

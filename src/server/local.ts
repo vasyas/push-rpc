@@ -1,6 +1,7 @@
 import {RemoteFunction, Services} from "../rpc.js"
 import {LocalSubscriptions} from "./LocalSubscriptions.js"
 import {ExtractPromiseResult} from "../utils/types.js"
+import {ThrottleArgsReducer} from "../utils/throttle.js"
 
 export type ServicesWithTriggers<T extends Services> = {
   [K in keyof T]: T[K] extends Services
@@ -18,6 +19,7 @@ export type ServicesWithTriggers<T extends Services> = {
 
 export type ThrottleSettings = {
   timeout: number
+  reducer?: ThrottleArgsReducer<unknown>
 }
 
 export function withTriggers<T extends Services>(
@@ -50,7 +52,9 @@ export function withTriggers<T extends Services>(
           }, 0)
         }
 
-        delegate.throttle = (settings: ThrottleSettings) => {}
+        delegate.throttle = (settings: ThrottleSettings) => {
+          localSubscriptions.throttleItem(itemName, settings)
+        }
 
         return delegate
       } else if (!cachedItems[propName]) {
