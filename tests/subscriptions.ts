@@ -331,20 +331,17 @@ describe("Subscriptions", () => {
 
     const services = await startTestServer({
       test: {
-        item: async () => "ok",
+        item: async () => "ok-" + Date.now(),
       },
     })
 
     const client = await createTestClient<typeof services>()
 
     const sub1 = (r: string) => {
-      console.log("Got sub 1")
       delivered = r
     }
 
-    const sub2 = () => {
-      console.log("Got sub 2")
-    }
+    const sub2 = () => {}
 
     await client.test.item.subscribe(sub1)
 
@@ -354,10 +351,8 @@ describe("Subscriptions", () => {
     delivered = null
 
     await client.test.item.unsubscribe(sub2)
-    console.log("Unsubscribe")
 
     services.test.item.trigger()
-    console.log("Trigger")
 
     await adelay(200)
 
