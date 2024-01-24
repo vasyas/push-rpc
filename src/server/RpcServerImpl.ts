@@ -8,6 +8,7 @@ import {RemoteFunction, RpcError, RpcErrors, Services} from "../rpc.js"
 import {log} from "../logger.js"
 import {withMiddlewares} from "../utils/middleware.js"
 import {ServicesWithTriggers, withTriggers} from "./local.js"
+import {safeParseJson, safeStringify} from "../utils/json.js"
 
 export class RpcServerImpl<S extends Services> implements RpcServer {
   constructor(
@@ -165,7 +166,9 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
         return item.function.call(item.container, ...params)
       }
 
-      return withMiddlewares(this.options.middleware, invokeItem, ...parameters)
+      const parametersCopy = safeParseJson(safeStringify(parameters))
+
+      return withMiddlewares(this.options.middleware, invokeItem, ...parametersCopy)
     })
   }
 }

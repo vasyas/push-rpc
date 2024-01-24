@@ -1,6 +1,5 @@
 import {createTestClient, startTestServer} from "./testUtils.js"
 import {assert} from "chai"
-import {IncomingMessage} from "http"
 import {RpcContext} from "../src/server/index.js"
 import {adelay} from "../src/utils/promises.js"
 
