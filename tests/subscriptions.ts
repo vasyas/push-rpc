@@ -364,4 +364,27 @@ describe("Subscriptions", () => {
     assert.isOk(delivered)
     delivered = null
   })
+
+  it("unsubscribe before supply bug", async () => {
+    const services = await startTestServer({
+      item: async () => {
+        await adelay(20)
+        return 1
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    const sub = () => {}
+    client.item.subscribe(sub)
+
+    await adelay(10)
+
+    client.item.unsubscribe(sub)
+
+    await adelay(20)
+
+    assert.equal(0, testClient!._allSubscriptions().length)
+    assert.equal(0, testServer!._allSubscriptions().length)
+  })
 })
