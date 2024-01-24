@@ -25,13 +25,13 @@ describe("connection", () => {
     const remote = await createTestClient<typeof services>()
 
     await remote.test.call.subscribe(() => {})
-    assert.equal(testServer?._allSubscriptions().size, 1)
+    assert.equal(testServer?._allSubscriptions().length, 1)
 
     // wait for timeout
     await new Promise((r) => setTimeout(r, pingInterval * 2.5))
 
     // should be closed
-    assert.equal(testServer?._allSubscriptions().size, 0)
+    assert.equal(testServer?._allSubscriptions().length, 0)
 
     WebSocket.prototype.ping = oldPing
   }).timeout(5000)

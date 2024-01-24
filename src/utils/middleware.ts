@@ -15,6 +15,11 @@ export function withMiddlewares(
     function dispatch(i: number, ...p: unknown[]): Promise<unknown> {
       if (i <= index) return Promise.reject(new Error("next() called multiple times"))
 
+      // use previous invocation params
+      if (!p.length) {
+        p = params
+      }
+
       index = i
 
       try {

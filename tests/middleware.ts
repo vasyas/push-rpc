@@ -4,7 +4,7 @@ import {startTestServer} from "./testUtils.js"
 
 // should be implemented after implement context
 describe("middleware", () => {
-  it("compose", async () => {
+  it("compose override params", async () => {
     const m1: Middleware = (next, param: any) => {
       return next(param + 1)
     }
@@ -18,7 +18,19 @@ describe("middleware", () => {
     assert.equal(r, 3)
   })
 
-  it("local get topic", async () => {
+  it("compose use prev params", async () => {
+    const m1: Middleware = (next) => {
+      return next()
+    }
+
+    const r = await withMiddlewares([m1], async (p) => p, 0)
+
+    assert.equal(r, 0)
+  })
+
+  /*
+
+  it("local call", async () => {
     let mwMessageType = null
 
     await startTestServer(
@@ -26,10 +38,12 @@ describe("middleware", () => {
         item: () => "1",
       },
       {
-        middleware: [(ctx, next, ...params) => {
-          mwMessageType = messageType
-          return next(...params)
-        }],
+        middleware: [
+          (ctx, next, ...params) => {
+            mwMessageType = messageType
+            return next(...params)
+          },
+        ],
       }
     )
 
@@ -38,8 +52,6 @@ describe("middleware", () => {
     assert.equal(r, "1")
     assert.equal(mwMessageType, MessageType.Get)
   })
-
-  /*
 
   it("remote get topic", async () => {
     let mwMessageType = null
