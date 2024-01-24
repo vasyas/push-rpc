@@ -132,5 +132,38 @@ describe("context", () => {
     assert.isNotOk(ctx!.modified)
   })
 
-  it("modified in middleware", async () => {})
+  it("modified in middleware", async () => {
+    let ctx = null
+
+    const services = await startTestServer(
+      {
+        test: {
+          async call(passedCtx?: any) {
+            ctx = passedCtx
+          },
+        },
+      },
+      {
+        createContext(): Promise<RpcContext> {
+          return Promise.resolve({clientId: "test", count: 0})
+        },
+        middleware: [
+          (next, ctx: any) => {
+            ctx.count++
+            return next(ctx)
+          },
+        ],
+      }
+    )
+
+    const client = await createTestClient<typeof services>()
+
+    await client.test.call.subscribe(() => {})
+    assert.equal(ctx!.count, 1)
+
+    services.test.call.trigger()
+
+    await adelay(20)
+    assert.equal(ctx!.count, 1)
+  })
 })
