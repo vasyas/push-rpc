@@ -7,67 +7,71 @@ export class RemoteSubscriptions {
     parameters: unknown[],
     consumer: (d: unknown) => void
   ) {
-    const filterKey = getFilterKey(parameters)
-
-    this.addSubscription(itemName, filterKey, consumer)
+    this.addSubscription(itemName, parameters, consumer)
 
     this.consume(itemName, parameters, initialData)
   }
 
   unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
-    const filterKey = getFilterKey(parameters)
+    const parametersKey = getParametersKey(parameters)
 
-    this.removeSubscription(itemName, filterKey, consumer)
+    this.removeSubscription(itemName, parametersKey, consumer)
   }
 
-  private addSubscription(itemName: string, filterKey: string, consumer: (d: unknown) => void) {
-    const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
+  private addSubscription(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
+    const itemSubscriptions = this.byItem.get(itemName) || {byParameters: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
-    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey) || {
+    const parametersKey = getParametersKey(parameters)
+    const parameterSubscriptions = itemSubscriptions.byParameters.get(parametersKey) || {
+      parameters,
       cached: null,
       consumers: [],
     }
-    itemSubscriptions.byFilter.set(filterKey, filterSubscriptions)
-    filterSubscriptions.consumers.push(consumer)
+    itemSubscriptions.byParameters.set(parametersKey, parameterSubscriptions)
+    parameterSubscriptions.consumers.push(consumer)
   }
 
-  private removeSubscription(itemName: string, filterKey: string, consumer: (d: unknown) => void) {
+  private removeSubscription(
+    itemName: string,
+    parametersKey: string,
+    consumer: (d: unknown) => void
+  ) {
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
-    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
     if (!filterSubscriptions) return
 
     filterSubscriptions.consumers = filterSubscriptions.consumers.filter((c) => c != consumer)
 
     if (!filterSubscriptions.consumers.length) {
-      itemSubscriptions.byFilter.delete(filterKey)
+      itemSubscriptions.byParameters.delete(parametersKey)
 
-      if (itemSubscriptions.byFilter.size == 0) {
+      if (itemSubscriptions.byParameters.size == 0) {
         this.byItem.delete(itemName)
       }
     }
   }
 
   getCached(itemName: string, parameters: unknown[]): unknown | undefined {
-    const filterKey = getFilterKey(parameters)
+    const parametersKey = getParametersKey(parameters)
 
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
-    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
 
     return filterSubscriptions?.cached
   }
 
   consume(itemName: string, parameters: unknown[], data: unknown) {
-    const filterKey = getFilterKey(parameters)
+    const parametersKey = getParametersKey(parameters)
 
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return
 
-    const filterSubscriptions = itemSubscriptions.byFilter.get(filterKey)
+    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
 
     if (!filterSubscriptions) return
 
@@ -77,7 +81,7 @@ export class RemoteSubscriptions {
     })
   }
 
-  // getAllSubscriptions(): Array<[string, unknown[], (Array<((d: unknown) => void)]>) > {}
+  getAllSubscriptions(): Array<[string, unknown[], Array<(d: unknown) => void>]> {}
 
   private byItem: Map<string, ItemSubscription> = new Map()
 
@@ -88,15 +92,16 @@ export class RemoteSubscriptions {
 }
 
 type ItemSubscription = {
-  byFilter: Map<
+  byParameters: Map<
     string,
     {
+      parameters: unknown[]
       cached: unknown
       consumers: Array<(d: unknown) => void>
     }
   >
 }
 
-function getFilterKey(parameters: unknown[]) {
-  return safeStringify(parameters?.[0] ?? null)
+function getParametersKey(parameters: unknown[]) {
+  return safeStringify(parameters)
 }

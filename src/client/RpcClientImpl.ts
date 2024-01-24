@@ -96,7 +96,6 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   }
 
   private resubscribe = () => {
-    /*
     for (const [itemName, params, consumers] of this.remoteSubscriptions.getAllSubscriptions()) {
       this.httpClient
         .subscribe(itemName, params)
@@ -109,7 +108,5 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
           }
         })
     }
-
-     */
   }
 }
