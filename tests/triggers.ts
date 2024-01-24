@@ -7,12 +7,13 @@ describe("Subscription triggers", () => {
   it("trigger filter", async () => {
     interface Item {
       key: string
+      updated: number
     }
 
     const services = await startTestServer({
       test: {
-        async item({key}: Item): Promise<Item> {
-          return {key}
+        async item({key}: {key: string}): Promise<{key: string; updated: number}> {
+          return {key, updated: Date.now()}
         },
       },
     })
@@ -41,7 +42,7 @@ describe("Subscription triggers", () => {
 
     services.test.item.trigger({key: "1"})
     await adelay(20)
-    assert.deepEqual(item1, {key: "1"})
+    assert.equal(item1!.key, "1")
     assert.isNull(item2)
 
     // null trigger sends all items
@@ -50,8 +51,8 @@ describe("Subscription triggers", () => {
 
     services.test.item.trigger()
     await adelay(20)
-    assert.deepEqual(item1, {key: "1"})
-    assert.deepEqual(item2, {key: "2"})
+    assert.deepEqual(item1!.key, "1")
+    assert.deepEqual(item2!.key, "2")
   })
 
   it("trigger throttling", async () => {

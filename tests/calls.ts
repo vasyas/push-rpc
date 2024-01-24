@@ -97,7 +97,7 @@ describe("calls", () => {
       assert.equal(e.code, RpcErrors.Timeout)
     }
   }).timeout(5000)
-
+  
    */
 
   it("binds this object", async () => {
@@ -144,6 +144,33 @@ describe("calls", () => {
 
     const r = await client.test.getSomething()
     assert.deepEqual(r, resp)
+  })
+
+  it("first level lookup", async () => {
+    const services = await startTestServer({
+      async hello() {
+        return "yes"
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    const r = await client.hello()
+    assert.equal("yes", r)
+  })
+
+  it("nested lookup", async () => {
+    const services = await startTestServer({
+      obj: {
+        async hello() {
+          return "yes"
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+    const r = await client.obj.hello()
+    assert.equal("yes", r)
   })
 
   it("concurrent call cache", async () => {

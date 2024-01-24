@@ -4,9 +4,7 @@ export function createRemote<S extends Services>(
   hooks: RemoteHooks,
   name = ""
 ): ServicesWithSubscriptions<S> {
-  // TODO add remote middleware?
-
-  // start with method
+  // start with remote function
   const remoteItem = (...params: unknown[]) => {
     return hooks.call(name, params)
   }

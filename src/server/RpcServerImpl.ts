@@ -119,7 +119,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     }
 
     try {
-      const data = await this.invokeLocalFunction(
+      let lastData = await this.invokeLocalFunction(
         connectionContext,
         itemName,
         item,
@@ -129,7 +129,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
 
       const update = this.localSubscriptions.throttled(itemName, async (suppliedData?: unknown) => {
         try {
-          const data =
+          const newData =
             suppliedData !== undefined
               ? suppliedData
               : await this.invokeLocalFunction(
@@ -140,9 +140,15 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
                   InvocationType.Trigger
                 )
 
-          // TODO do not send if data is the same
-
-          this.connectionsServer.publish(connectionContext.clientId, itemName, parameters, data)
+          if (safeStringify(newData) != safeStringify(lastData)) {
+            lastData = newData
+            this.connectionsServer.publish(
+              connectionContext.clientId,
+              itemName,
+              parameters,
+              newData
+            )
+          }
         } catch (e) {
           log.error("Cannot get data for subscription", e)
         }
@@ -150,7 +156,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
 
       this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
 
-      return data
+      return lastData
     } catch (e) {
       log.error(`Failed to subscribe ${itemName}`, e)
       throw e

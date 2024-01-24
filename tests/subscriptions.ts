@@ -6,13 +6,13 @@ describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
     const item = {r: "1"}
 
-    const remote = await startTestServer({
+    const services = await startTestServer({
       test: {
         item: async () => item,
       },
     })
 
-    const client = await createTestClient<typeof remote>()
+    const client = await createTestClient<typeof services>()
 
     let receivedItem
 
@@ -25,13 +25,13 @@ describe("Subscriptions", () => {
   })
 
   it("error in supplier breaks subscribe", async () => {
-    const remote = await startTestServer({
+    const services = await startTestServer({
       item: async () => {
         throw new Error("AA")
       },
     })
 
-    const client = await createTestClient<typeof remote>()
+    const client = await createTestClient<typeof services>()
 
     try {
       await client.item.subscribe(() => {})
@@ -386,5 +386,35 @@ describe("Subscriptions", () => {
 
     assert.equal(0, testClient!._allSubscriptions().length)
     assert.equal(0, testServer!._allSubscriptions().length)
+  })
+
+  it("skip unchanged data", async () => {
+    const item = {r: "1"}
+
+    const services = await startTestServer({
+      test: {
+        item: async () => item,
+      },
+    })
+
+    services.test.item.throttle({
+      timeout: 0,
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    let receivedItem
+
+    await client.test.item.subscribe(() => {
+      receivedItem = item
+    })
+
+    await adelay(20)
+    assert.deepEqual(receivedItem, item)
+    receivedItem = null
+
+    services.test.item.trigger()
+    await adelay(20)
+    assert.isNotOk(receivedItem)
   })
 })
