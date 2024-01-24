@@ -11,12 +11,14 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     url: string,
     private readonly options: ConsumeServicesOptions
   ) {
-    this.httpClient = new HttpClient(url, this.clientId, {callTimeout: options.callTimeout})
+    const clientId = nanoid()
+
+    this.httpClient = new HttpClient(url, clientId, {callTimeout: options.callTimeout})
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(
       url,
-      this.clientId,
+      clientId,
       {
         errorDelayMaxDuration: options.errorDelayMaxDuration,
         reconnectDelay: options.reconnectDelay,
@@ -29,7 +31,6 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     )
   }
 
-  private readonly clientId = nanoid()
   private readonly httpClient: HttpClient
   private readonly remoteSubscriptions: RemoteSubscriptions
   private readonly connection: WebSocketConnection
