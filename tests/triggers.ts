@@ -130,43 +130,4 @@ describe("Subscription triggers", () => {
     await new Promise((resolve) => setTimeout(resolve, throttleTimeout))
     assert.deepEqual(item, [2, 3]) // trailing edge
   })
-
-  /*
-
-
-it("trigger mapper", async () => {
-const map = {
-  1: "a",
-  2: "b",
-  3: "c",
-}
-
-const server = {
-  test: {
-    item: new LocalTopicImpl(async () => "n/a", {
-      triggerMapper: (key: number) => map[key],
-    }),
-  },
-}
-
-await startTestServer(server)
-
-const {remote: client} = await createRpcClient(async () =>
-  createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
-)
-
-let item = null
-
-await client.test.item.subscribe((i) => {
-  item = i
-})
-
-await new Promise((resolve) => setTimeout(resolve, 50))
-assert.deepEqual(item, "n/a")
-
-server.test.item.trigger({}, 1)
-await new Promise((resolve) => setTimeout(resolve, 50))
-assert.deepEqual(item, "a")
-})
-*/
 })
