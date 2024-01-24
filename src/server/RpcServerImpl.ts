@@ -86,7 +86,13 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     }
 
     try {
-      return await this.invokeItem(clientId, itemName, item, parameters, InvocationType.Call)
+      return await this.invokeLocalFunction(
+        clientId,
+        itemName,
+        item,
+        parameters,
+        InvocationType.Call
+      )
     } catch (e) {
       log.error(`Cannot call item ${itemName}.`, e)
       throw e
@@ -101,7 +107,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     }
 
     try {
-      const data = await this.invokeItem(
+      const data = await this.invokeLocalFunction(
         clientId,
         itemName,
         item,
@@ -111,7 +117,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
 
       this.localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
         try {
-          const data = await this.invokeItem(
+          const data = await this.invokeLocalFunction(
             clientId,
             itemName,
             item,
@@ -167,7 +173,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     }
   }
 
-  private invokeItem(
+  private invokeLocalFunction(
     clientId: string,
     remoteFunctionName: string,
     item: {function: RemoteFunction; container: any},
@@ -175,10 +181,6 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     invocationType: InvocationType
   ): Promise<unknown> {
     return this.invocationCache.invoke({clientId, remoteFunctionName, parameters}, () => {
-      const invokeItem = (...params: unknown[]) => {
-        return item.function.call(item.container, ...params)
-      }
-
       const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
       const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1) as [RpcContext]
@@ -186,6 +188,9 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
       ctx.remoteFunctionName = remoteFunctionName
       ctx.invocationType = invocationType
 
+      const invokeItem = (...params: unknown[]) => {
+        return item.function.call(item.container, ...params, ctx)
+      }
       return withMiddlewares(ctx, this.options.middleware, invokeItem, ...parametersCopy)
     })
   }

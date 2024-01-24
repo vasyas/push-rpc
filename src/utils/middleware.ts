@@ -26,7 +26,7 @@ export function withMiddlewares(
 
       try {
         if (i === middlewares.length) {
-          return Promise.resolve(next(...[...p, ctx]))
+          return Promise.resolve(next(...p))
         } else {
           return Promise.resolve(middlewares[i](ctx, dispatch.bind(null, i + 1), ...p))
         }
