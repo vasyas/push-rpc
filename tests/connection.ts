@@ -22,7 +22,9 @@ describe("connection", () => {
       }
     )
 
-    const remote = await createTestClient<typeof services>()
+    const remote = await createTestClient<typeof services>({
+      reconnectDelay: pingInterval * 4, // so we don't reconnect fast and can catch disconnected state
+    })
 
     await remote.test.call.subscribe(() => {})
     assert.equal(testServer?._allSubscriptions().length, 1)
