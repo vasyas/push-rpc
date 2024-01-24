@@ -306,7 +306,6 @@ describe("Subscriptions", () => {
     assert.equal(0, testServer?._allSubscriptions().length)
   })
 
-  /*
   it("double subscribe leaves session referenced on disconnect", async () => {
     const services = await startTestServer({
       item: async () => 1,
@@ -319,15 +318,11 @@ describe("Subscriptions", () => {
 
     await remote.item.subscribe(sub1)
     await adelay(20)
-    assert.equal(1, testServer?._subscriptions().size)
-
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+    assert.equal(1, testServer?._allSubscriptions().length)
 
     await remote.item.subscribe(sub2)
     await adelay(20)
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+    assert.equal(1, testServer?._allSubscriptions().length)
 
     await remote.item.unsubscribe(sub1)
     await adelay(100)
@@ -335,8 +330,6 @@ describe("Subscriptions", () => {
     await testClient?.close()
     await adelay(100)
 
-    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
+    assert.equal(0, testServer?._allSubscriptions().length)
   })
-  
-   */
 })
