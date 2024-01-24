@@ -160,6 +160,10 @@ export type PublishServicesOptions = {
   pingInterval: number
 }
 
+export type RpcContext = {
+  clientId: string
+}
+
 function getItem(
   root: any,
   itemName: string

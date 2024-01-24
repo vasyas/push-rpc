@@ -11,7 +11,8 @@ supported. Remote function can throw an error, which will be propagated to the c
 Services can be nested.
 
 **Context**. Only lives at the server side. Contains metadata about request and connection. It is passed to all the
-middlewares and remote functions as the last parameter. A new context object is created for each invocation.
+middlewares and remote functions as the last parameter. A new context object is created for each invocation. For
+subscriptions, context is initially created during 'subscribe' invocation and is copied to each 'trigger' invocation.
 
 **Middlewares**. Middlewares are used to intercept client and server requests. Both calls and subscriptions can be
 intercepted?. Middlewares can be attached on both client and server side. Middlewares receive context as the last
