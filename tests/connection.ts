@@ -1,6 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import WebSocket from "ws"
+import {adelay} from "../src/utils/promises.js"
 
 describe("connection", () => {
   it("server close connection on ping timeout", async () => {
@@ -30,7 +31,7 @@ describe("connection", () => {
     assert.equal(testServer?._allSubscriptions().length, 1)
 
     // wait for timeout
-    await new Promise((r) => setTimeout(r, pingInterval * 2.5))
+    await adelay(pingInterval * 2.5)
 
     // should be closed
     assert.equal(testServer?._allSubscriptions().length, 0)

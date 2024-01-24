@@ -1,6 +1,7 @@
 import WebSocket from "ws"
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
+import {adelay} from "../utils/promises.js"
 
 export class WebSocketConnection {
   constructor(
@@ -29,8 +30,6 @@ export class WebSocketConnection {
     if (this.pingTimeout) {
       clearTimeout(this.pingTimeout)
     }
-
-    return Promise.resolve()
   }
 
   /**
@@ -69,13 +68,17 @@ export class WebSocketConnection {
           )
         })
 
+        // disconnected while connecting?
         if (this.disconnectedMark) {
           return
         }
 
-        await new Promise((r) => {
-          setTimeout(r, this.options.reconnectDelay + errorDelay)
-        })
+        await adelay(this.options.reconnectDelay + errorDelay)
+
+        // disconnected while waiting?
+        if (this.disconnectedMark) {
+          return
+        }
 
         errorDelay = Math.round(Math.random() * this.options.errorDelayMaxDuration)
       }

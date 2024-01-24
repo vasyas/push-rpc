@@ -37,7 +37,9 @@ export async function serveHttpRequest(
         result = await hooks.unsubscribe(ctx, itemName, body)
         break
       default:
-        throw new Error(`HTTP Method ${req.method} not supported`)
+        res.statusCode = 404
+        res.end()
+        return
     }
 
     if (typeof result == "undefined") {

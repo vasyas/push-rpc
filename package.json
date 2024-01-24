@@ -8,7 +8,7 @@
   "scripts": {
     "prepublishOnly": "npm run build && npm run test",
     "build": "tsc",
-    "test": "mocha -r ts-node/register tests/**/*.ts"
+    "test": "NODE_OPTIONS='--loader ts-node/esm' mocha tests/**/*.ts"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "vasyas <vasyl@stashuk.com>",
