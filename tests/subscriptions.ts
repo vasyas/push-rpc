@@ -248,7 +248,6 @@ describe("Topics", () => {
     assert.deepEqual(receivedItem, item)
   })
 
-  /*
   it("double subscribe leaves session referenced on unsubscribe", async () => {
     const services = await startTestServer({
       item: async () => 1,
@@ -256,25 +255,61 @@ describe("Topics", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    await remote.item.subscribe(() => {}, {}, "1")
-    await new Promise((r) => setTimeout(r, 20))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+    const sub1 = () => {}
+    const sub2 = () => {}
 
-    await remote.item.subscribe(() => {}, {}, "2")
-    await new Promise((r) => setTimeout(r, 20))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    // assert.equal(2, Object.values(services.item["subscriptions"])[0].sessions.length)
+    await remote.item.subscribe(sub1)
+    await adelay(20)
 
-    await remote.item.unsubscribe({}, "1")
-    await new Promise((r) => setTimeout(r, 100))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+    assert.equal(1, testServer?._subscriptions().size)
+    assert.equal(1, testClient?._allSubscriptions()[0][2].length)
 
-    await client.remote.item.unsubscribe({}, "2")
-    await new Promise((r) => setTimeout(r, 100))
-    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
+    await remote.item.subscribe(sub2)
+    await adelay(20)
+
+    assert.equal(1, testServer?._subscriptions().size)
+    assert.equal(1, testServer?._subscriptions().get("item").byFilter.size)
+    assert.equal(
+      1,
+      testServer?._subscriptions().get("item").byFilter.get("null").subscribedClients.length
+    )
+    assert.equal(1, testClient?._allSubscriptions().length)
+    assert.equal(2, testClient?._allSubscriptions()[0][2].length)
+
+    await remote.item.unsubscribe(sub1)
+    await adelay(100)
+    assert.equal(1, testServer?._subscriptions().size)
+    assert.equal(1, testClient?._allSubscriptions()[0][2].length)
+
+    await remote.item.unsubscribe(sub2)
+    await adelay(100)
+    assert.equal(0, testServer?._subscriptions().size)
+    assert.equal(0, testClient?._allSubscriptions().length)
   })
-  
-   */
+
+  it("double subscribe single consumer", async () => {
+    const services = await startTestServer({
+      item: async () => 1,
+    })
+
+    const remote = await createTestClient<typeof services>()
+
+    const sub = () => {}
+
+    await remote.item.subscribe(sub)
+    await adelay(20)
+    assert.equal(1, testServer?._subscriptions().size)
+
+    await remote.item.subscribe(sub)
+    await adelay(20)
+    assert.equal(1, testServer?._subscriptions().size)
+
+    await remote.item.unsubscribe(sub)
+    await adelay(20)
+    assert.equal(1, testServer?._subscriptions().size)
+
+    await remote.item.unsubscribe(sub)
+    await adelay(20)
+    assert.equal(0, testServer?._subscriptions().size)
+  })
 })

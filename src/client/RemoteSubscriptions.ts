@@ -12,10 +12,10 @@ export class RemoteSubscriptions {
     this.consume(itemName, parameters, initialData)
   }
 
-  unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
+  unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): boolean {
     const parametersKey = getParametersKey(parameters)
 
-    this.removeSubscription(itemName, parametersKey, consumer)
+    return this.removeSubscription(itemName, parametersKey, consumer)
   }
 
   private addSubscription(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
@@ -36,12 +36,12 @@ export class RemoteSubscriptions {
     itemName: string,
     parametersKey: string,
     consumer: (d: unknown) => void
-  ) {
+  ): boolean {
     const itemSubscriptions = this.byItem.get(itemName)
-    if (!itemSubscriptions) return
+    if (!itemSubscriptions) return false
 
     const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
-    if (!filterSubscriptions) return
+    if (!filterSubscriptions) return false
 
     filterSubscriptions.consumers = filterSubscriptions.consumers.filter((c) => c != consumer)
 
@@ -51,7 +51,11 @@ export class RemoteSubscriptions {
       if (itemSubscriptions.byParameters.size == 0) {
         this.byItem.delete(itemName)
       }
+
+      return true
     }
+
+    return false
   }
 
   getCached(itemName: string, parameters: unknown[]): unknown | undefined {

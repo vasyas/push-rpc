@@ -90,9 +90,11 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     parameters: unknown[],
     consumer: (d: unknown) => void
   ) => {
-    this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
+    const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
 
-    await this.httpClient.unsubscribe(itemName, parameters)
+    if (noSubscriptionsLeft) {
+      await this.httpClient.unsubscribe(itemName, parameters)
+    }
   }
 
   private resubscribe = () => {
