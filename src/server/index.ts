@@ -4,9 +4,9 @@ import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
 import {IncomingMessage} from "http"
 
-export async function publishServices<S extends Services>(
+export async function publishServices<S extends Services, C extends RpcContext>(
   services: S,
-  overrideOptions: Partial<PublishServicesOptions> & {port: number}
+  overrideOptions: Partial<PublishServicesOptions<C>> & {port: number}
 ): Promise<{
   server: RpcServer
   services: ServicesWithTriggers<S>
@@ -32,16 +32,16 @@ export type RpcServer = {
   _allSubscriptions(): Array<any[]>
 }
 
-export type PublishServicesOptions = {
+export type PublishServicesOptions<C extends RpcContext> = {
   port: number
   path: string
   host: string
-  middleware: Middleware[]
+  middleware: Middleware<C>[]
   pingInterval: number
   createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext>
 }
 
-const defaultOptions: Omit<PublishServicesOptions, "port"> = {
+const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   path: "",
   host: "0.0.0.0",
   middleware: [],

@@ -1,4 +1,4 @@
-import {Services} from "../rpc.js"
+import {RpcContext, Services} from "../rpc.js"
 import {ServicesWithSubscriptions} from "./remote.js"
 import WebSocket from "ws"
 import {RpcClientImpl} from "./RpcClientImpl.js"
@@ -19,7 +19,7 @@ export type ConsumeServicesOptions = {
   reconnectDelay: number
   errorDelayMaxDuration: number
   pingInterval: number
-  middleware: Middleware[]
+  middleware: Middleware<RpcContext>[]
 }
 
 export async function consumeServices<S extends Services>(
