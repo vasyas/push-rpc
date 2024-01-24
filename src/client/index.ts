@@ -46,13 +46,28 @@ export async function consumeServices<S extends Services>(
   const connection = new WebSocketConnection(
     url,
     clientId,
-    (itemName, parameters, data) => {
-      remoteSubscriptions.consume(itemName, parameters, data)
-    },
     {
       errorDelayMaxDuration: options.errorDelayMaxDuration,
       reconnectDelay: options.reconnectDelay,
       pingInterval: options.pingInterval,
+    },
+    (itemName, parameters, data) => {
+      remoteSubscriptions.consume(itemName, parameters, data)
+    },
+    () => {
+      // resubscribe
+      for (const [itemName, params, consumers] of remoteSubscriptions.getAllSubscriptions()) {
+        client
+          .subscribe(itemName, params)
+          .then((data) => {
+            remoteSubscriptions.consume(itemName, params, data)
+          })
+          .catch((e) => {
+            for (const consumer of consumers) {
+              remoteSubscriptions.unsubscribe(itemName, params, consumer)
+            }
+          })
+      }
     }
   )
 

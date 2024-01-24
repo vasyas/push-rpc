@@ -6,12 +6,13 @@ export class WebSocketConnection {
   constructor(
     private readonly url: string,
     private readonly clientId: string,
-    private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
     private readonly options: {
       reconnectDelay: number
       errorDelayMaxDuration: number
       pingInterval: number
-    }
+    },
+    private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
+    private readonly onConnected: () => void
   ) {
     this.url = url
     this.clientId = clientId
@@ -105,6 +106,8 @@ export class WebSocketConnection {
           resolve()
 
           this.heartbeat()
+
+          this.onConnected()
         })
 
         socket.on("ping", () => {

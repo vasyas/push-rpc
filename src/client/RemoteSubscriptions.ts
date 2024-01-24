@@ -77,6 +77,8 @@ export class RemoteSubscriptions {
     })
   }
 
+  getAllSubscriptions(): Array<[string, unknown[], (Array<((d: unknown) => void)]>) > {}
+
   private byItem: Map<string, ItemSubscription> = new Map()
 
   // test-only
