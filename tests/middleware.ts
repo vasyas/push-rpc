@@ -1,8 +1,8 @@
 import {assert} from "chai"
-import {Middleware, withMiddlewares} from "../src/utils/middleware.js"
-import {startTestServer} from "./testUtils.js"
+import {Middleware, withMiddlewares} from "../src/index.js"
+import {createTestClient, startTestServer} from "./testUtils.js"
+import {adelay} from "../src/utils/promises.js"
 
-// should be implemented after implement context
 describe("middleware", () => {
   it("compose override params", async () => {
     const m1: Middleware = (next, param: any) => {
@@ -28,148 +28,92 @@ describe("middleware", () => {
     assert.equal(r, 0)
   })
 
-  /*
+  it("local", async () => {
+    let contextValue = null
 
-  it("local call", async () => {
-    let mwMessageType = null
-
-    await startTestServer(
+    const services = await startTestServer(
       {
-        item: () => "1",
+        item: async (ctx?: any) => {
+          contextValue = ctx.value
+        },
       },
       {
         middleware: [
-          (ctx, next, ...params) => {
-            mwMessageType = messageType
-            return next(...params)
+          (next, ctx: any) => {
+            ctx.value = 1
+            return next()
           },
         ],
       }
     )
 
-    const client = await createTestClient(0)
-    const r = await client.item.get()
-    assert.equal(r, "1")
-    assert.equal(mwMessageType, MessageType.Get)
-  })
+    const remote = await createTestClient<typeof services>()
+    await remote.item()
+    assert.equal(contextValue, 1)
 
-  it("remote get topic", async () => {
-    let mwMessageType = null
+    contextValue = null
+    await remote.item.subscribe(() => {})
+    assert.equal(contextValue, 1)
 
-    await startTestServer({
-      item: new LocalTopicImpl(async () => "1"),
-    })
-
-    const client = await createTestClient(0, {
-      remoteMiddleware: (ctx, next, params, messageType) => {
-        mwMessageType = messageType
-        return next(params)
-      },
-    })
-
-    const r = await client.item.get()
-    assert.equal(r, "1")
-    assert.equal(mwMessageType, MessageType.Get)
-  })
-
-  it("local topic subscribe", async () => {
-    let mwMessageType = null
-
-    await startTestServer(
-      {
-        item: new LocalTopicImpl(async () => "1"),
-      },
-      {
-        localMiddleware: (ctx, next, params, messageType) => {
-          mwMessageType = messageType
-          return next(params)
-        },
-      }
-    )
-
-    let r = null
-
-    const client = await createTestClient(0)
-    await client.item.subscribe(data => (r = data))
-
-    await new Promise(r => setTimeout(r, 50))
-
-    assert.equal(r, "1")
-    assert.equal(mwMessageType, MessageType.Subscribe)
-  })
-
-  it("remote topic subscribe", async () => {
-    let mwMessageType = null
-
-    await startTestServer({
-      item: new LocalTopicImpl(async () => "1"),
-    })
-
-    let r = null
-
-    const client = await createTestClient(0, {
-      remoteMiddleware: (ctx, next, params, messageType) => {
-        mwMessageType = messageType
-        return next(params)
-      },
-    })
-    await client.item.subscribe(data => (r = data))
-
-    await new Promise(r => setTimeout(r, 50))
-
-    assert.equal(r, "1")
-    assert.equal(mwMessageType, MessageType.Subscribe)
-  })
-
-  it("local param update", async () => {
-    await startTestServer(
-      {
-        async getSomething(req) {
-          return req
-        },
-      },
-      {
-        localMiddleware: (ctx, next, params) => next(params + 1),
-      }
-    )
-
-    const client = await createTestClient(0)
-    const r = await client.getSomething(1)
-    assert.equal(r, 2)
+    contextValue = null
+    services.item.trigger()
+    await adelay(20)
+    assert.equal(contextValue, 1)
   })
 
   it("remote", async () => {
-    await startTestServer({
-      async getSomething(req) {
-        return req
-      },
+    let mwInvoked = false
+
+    const services = await startTestServer({
+      item: async () => "1",
     })
 
-    const client = await createTestClient(0, {
-      remoteMiddleware: (ctx, next, params) => next(params + 1),
+    const remote = await createTestClient<typeof services>({
+      middleware: [
+        (next) => {
+          mwInvoked = true
+          return next()
+        },
+      ],
     })
-    const r = await client.getSomething(1)
-    assert.equal(r, 2)
+
+    await remote.item()
+    assert.isOk(mwInvoked)
+
+    const sub = () => {}
+
+    mwInvoked = false
+    await remote.item.subscribe(sub)
+    assert.isOk(mwInvoked)
+
+    mwInvoked = false
+    await remote.item.unsubscribe(sub)
+    assert.isOk(mwInvoked)
   })
 
-  it("remote rejection", async () => {
-    await startTestServer({
-      async getSomething() {
-        throw new Error("msg")
-      },
-    })
+  /*
 
-    const client = await createTestClient(0, {
-      remoteMiddleware: (ctx, next, params) => next(params),
-    })
 
-    try {
-      await client.getSomething()
-      assert.fail("Error expected")
-    } catch (e) {
-      assert.equal(e.message, "msg")
-    }
+
+
+it("remote with rejection", async () => {
+  await startTestServer({
+    async getSomething() {
+      throw new Error("msg")
+    },
   })
 
-   */
+  const client = await createTestClient(0, {
+    remoteMiddleware: (ctx, next, params) => next(params),
+  })
+
+  try {
+    await client.getSomething()
+    assert.fail("Error expected")
+  } catch (e) {
+    assert.equal(e.message, "msg")
+  }
+})
+
+ */
 })
