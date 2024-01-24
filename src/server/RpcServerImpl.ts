@@ -196,18 +196,18 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
 
   private invokeLocalFunction(
     connectionContext: RpcConnectionContext,
-    remoteFunctionName: string,
+    itemName: string,
     item: {function: RemoteFunction; container: any},
     parameters: unknown[],
     invocationType: InvocationType
   ): Promise<unknown> {
     return this.invocationCache.invoke(
-      {clientId: connectionContext.clientId, remoteFunctionName, parameters},
+      {clientId: connectionContext.clientId, itemName, parameters},
       () => {
         const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
         const ctx = safeParseJson(safeStringify(connectionContext)) as C
-        ctx.remoteFunctionName = remoteFunctionName
+        ctx.itemName = itemName
         ctx.invocationType = invocationType
 
         const invokeItem = (...params: unknown[]) => {

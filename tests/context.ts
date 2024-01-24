@@ -22,7 +22,7 @@ describe("context", () => {
 
     assert.ok(ctx)
     assert.ok(ctx!.clientId)
-    assert.equal(ctx!.remoteFunctionName, "test/call")
+    assert.equal(ctx!.itemName, "test/call")
     assert.equal(ctx!.invocationType, InvocationType.Call)
   })
 

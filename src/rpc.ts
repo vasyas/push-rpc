@@ -32,7 +32,7 @@ export type RpcConnectionContext = {
 }
 
 export type RpcContext = RpcConnectionContext & {
-  remoteFunctionName: string
+  itemName: string
   invocationType: InvocationType
 }
 

@@ -84,11 +84,11 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   }
 
   private subscribe = async (
-    remoteFunctionName: string,
+    itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void
   ): Promise<void> => {
-    const cached = this.remoteSubscriptions.getCached(remoteFunctionName, parameters)
+    const cached = this.remoteSubscriptions.getCached(itemName, parameters)
 
     if (cached !== undefined) {
       consumer(cached)
@@ -102,30 +102,26 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
 
     // TODO callTimeout
     const data = await this.invoke(
-      remoteFunctionName,
+      itemName,
       InvocationType.Subscribe,
-      (...parameters) => this.httpClient.subscribe(remoteFunctionName, parameters),
+      (...parameters) => this.httpClient.subscribe(itemName, parameters),
       parameters
     )
-    this.remoteSubscriptions.subscribe(data, remoteFunctionName, parameters, consumer)
+    this.remoteSubscriptions.subscribe(data, itemName, parameters, consumer)
   }
 
   private unsubscribe = async (
-    remoteFunctionName: string,
+    itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void
   ) => {
-    const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(
-      remoteFunctionName,
-      parameters,
-      consumer
-    )
+    const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
 
     if (noSubscriptionsLeft) {
       await this.invoke(
-        remoteFunctionName,
+        itemName,
         InvocationType.Unsubscribe,
-        (...parameters) => this.httpClient.unsubscribe(remoteFunctionName, parameters),
+        (...parameters) => this.httpClient.unsubscribe(itemName, parameters),
         parameters
       )
     }
@@ -147,14 +143,14 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   }
 
   private invoke(
-    remoteFunctionName: string,
+    itemName: string,
     invocationType: InvocationType,
     next: (...params: unknown[]) => Promise<unknown>,
     parameters: unknown[]
   ) {
     const ctx: RpcContext = {
       clientId: this.clientId,
-      remoteFunctionName: remoteFunctionName,
+      itemName,
       invocationType: invocationType,
     }
 
