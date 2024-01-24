@@ -1,15 +1,14 @@
 import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
-import {CLIENT_ID_HEADER} from "../rpc.js"
+import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
-import {RpcContext} from "./index.js"
 
 export async function serveHttpRequest(
   req: IncomingMessage,
   res: ServerResponse,
   path: string,
   hooks: HttpServerHooks,
-  createContext: (req: IncomingMessage) => Promise<RpcContext>
+  createConnectionContext: (req: IncomingMessage) => Promise<RpcConnectionContext>
 ) {
   try {
     if (!req.url?.startsWith(path)) {
@@ -18,7 +17,7 @@ export async function serveHttpRequest(
       return
     }
 
-    const context = await createContext(req)
+    const context = await createConnectionContext(req)
 
     const itemName = req.url.slice(path.length + 1)
     const body = safeParseJson(await readBody(req))

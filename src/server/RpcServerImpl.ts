@@ -4,7 +4,7 @@ import http from "http"
 import {ConnectionsServer} from "./ConnectionsServer.js"
 import {PromiseCache} from "../utils/promises.js"
 import {serveHttpRequest} from "./http.js"
-import {RemoteFunction, RpcError, RpcErrors, Services} from "../rpc.js"
+import {InvocationType, RemoteFunction, RpcContext, RpcError, RpcErrors, Services} from "../rpc.js"
 import {log} from "../logger.js"
 import {withMiddlewares} from "../utils/middleware.js"
 import {ServicesWithTriggers, withTriggers} from "./local.js"
@@ -33,7 +33,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
           subscribe: this.subscribe,
           unsubscribe: this.unsubscribe,
         },
-        options.createContext
+        options.createConnectionContext
       )
     )
   }
@@ -86,7 +86,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     }
 
     try {
-      return await this.invokeItem(clientId, itemName, item, parameters)
+      return await this.invokeItem(clientId, itemName, item, parameters, InvocationType.Call)
     } catch (e) {
       log.error(`Cannot call item ${itemName}.`, e)
       throw e
@@ -101,11 +101,23 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     }
 
     try {
-      const data = await this.invokeItem(clientId, itemName, item, parameters)
+      const data = await this.invokeItem(
+        clientId,
+        itemName,
+        item,
+        parameters,
+        InvocationType.Unsubscribe
+      )
 
       this.localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
         try {
-          const data = await this.invokeItem(clientId, itemName, item, parameters)
+          const data = await this.invokeItem(
+            clientId,
+            itemName,
+            item,
+            parameters,
+            InvocationType.Subscribe
+          )
 
           // TODO do not send if data is the same
 
@@ -157,18 +169,22 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
 
   private invokeItem(
     clientId: string,
-    itemName: string,
+    remoteFunctionName: string,
     item: {function: RemoteFunction; container: any},
-    parameters: unknown[]
+    parameters: unknown[],
+    invocationType: InvocationType
   ): Promise<unknown> {
-    return this.invocationCache.invoke({clientId, itemName, parameters}, () => {
+    return this.invocationCache.invoke({clientId, remoteFunctionName, parameters}, () => {
       const invokeItem = (...params: unknown[]) => {
         return item.function.call(item.container, ...params)
       }
 
       const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1)
+      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1) as [RpcContext]
+
+      ctx.remoteFunctionName = remoteFunctionName
+      ctx.invocationType = invocationType
 
       return withMiddlewares(ctx, this.options.middleware, invokeItem, ...parametersCopy)
     })

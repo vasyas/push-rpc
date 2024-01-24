@@ -1,7 +1,7 @@
 import {createTestClient, startTestServer} from "./testUtils.js"
 import {assert} from "chai"
-import {RpcContext} from "../src/server/index.js"
 import {adelay} from "../src/utils/promises.js"
+import {RpcContext} from "../src/index.js"
 
 describe("context", () => {
   it("available in call", async () => {
@@ -35,7 +35,7 @@ describe("context", () => {
         },
       },
       {
-        createContext(): Promise<RpcContext> {
+        createConnectionContext(): Promise<RpcContext> {
           return Promise.resolve({clientId: "test", newKey: "bla"})
         },
       }
@@ -80,7 +80,7 @@ describe("context", () => {
         },
       },
       {
-        createContext(): Promise<RpcContext> {
+        createConnectionContext(): Promise<RpcContext> {
           return Promise.resolve({clientId: "test"})
         },
       }
@@ -117,7 +117,7 @@ describe("context", () => {
         },
       },
       {
-        createContext(): Promise<RpcContext> {
+        createConnectionContext(): Promise<RpcContext> {
           return Promise.resolve({clientId: "test"})
         },
       }
@@ -144,7 +144,7 @@ describe("context", () => {
         },
       },
       {
-        createContext(): Promise<RpcContext> {
+        createConnectionContext(): Promise<RpcContext> {
           return Promise.resolve({clientId: "test", count: 0})
         },
         middleware: [

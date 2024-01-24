@@ -26,3 +26,18 @@ export type CallOptions = {
 }
 
 export const CLIENT_ID_HEADER = "x-rpc-client-id"
+
+export type RpcConnectionContext = {
+  clientId: string
+}
+
+export type RpcContext = RpcConnectionContext & {
+  remoteFunctionName: string
+  invocationType: InvocationType
+}
+
+export enum InvocationType {
+  Call = "Call",
+  Subscribe = "Subscribe",
+  Unsubscribe = "Unsubscribe",
+}

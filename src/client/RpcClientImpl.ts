@@ -1,24 +1,23 @@
-import {Services} from "../rpc.js"
+import {InvocationType, RpcContext, Services} from "../rpc.js"
 import {HttpClient} from "./HttpClient.js"
 import {RemoteSubscriptions} from "./RemoteSubscriptions.js"
 import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
-import {ServicesWithSubscriptions, createRemote} from "./remote.js"
+import {createRemote, ServicesWithSubscriptions} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
+import {withMiddlewares} from "../utils/middleware.js"
 
 export class RpcClientImpl<S extends Services> implements RpcClient {
   constructor(
     url: string,
     private readonly options: ConsumeServicesOptions
   ) {
-    const clientId = nanoid()
-
-    this.httpClient = new HttpClient(url, clientId, {callTimeout: options.callTimeout})
+    this.httpClient = new HttpClient(url, this.clientId, {callTimeout: options.callTimeout})
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(
       url,
-      clientId,
+      this.clientId,
       {
         errorDelayMaxDuration: options.errorDelayMaxDuration,
         reconnectDelay: options.reconnectDelay,
@@ -31,6 +30,7 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     )
   }
 
+  private readonly clientId = nanoid()
   private readonly httpClient: HttpClient
   private readonly remoteSubscriptions: RemoteSubscriptions
   private readonly connection: WebSocketConnection
@@ -47,7 +47,7 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     const result: Array<
       [itemName: string, parameters: unknown[], consumers: (d: unknown) => void]
     > = []
-    
+
     for (const [
       itemName,
       parameters,
@@ -72,9 +72,30 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     })
   }
 
+  private invoke(
+    remoteFunctionName: string,
+    invocationType: InvocationType,
+    next: (...params: unknown[]) => Promise<unknown>,
+    parameters: unknown[]
+  ) {
+    const ctx: RpcContext = {
+      clientId: this.clientId,
+      remoteFunctionName: remoteFunctionName,
+      invocationType: invocationType,
+    }
+
+    return withMiddlewares(ctx, this.options.middleware, next, ...parameters)
+  }
+
   private call = (itemName: string, parameters: unknown[]): Promise<unknown> => {
     // TODO per-call callTimeout
-    return this.httpClient.call(itemName, parameters)
+
+    return this.invoke(
+      itemName,
+      InvocationType.Call,
+      (...parameters) => this.httpClient.call(itemName, parameters),
+      parameters
+    )
   }
 
   private subscribe = async (
