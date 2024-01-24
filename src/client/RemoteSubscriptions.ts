@@ -43,7 +43,10 @@ export class RemoteSubscriptions {
     const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
     if (!filterSubscriptions) return false
 
-    filterSubscriptions.consumers = filterSubscriptions.consumers.filter((c) => c != consumer)
+    const index = filterSubscriptions.consumers.indexOf(consumer)
+    if (index == -1) return false
+
+    filterSubscriptions.consumers.splice(index, 1)
 
     if (!filterSubscriptions.consumers.length) {
       itemSubscriptions.byParameters.delete(parametersKey)

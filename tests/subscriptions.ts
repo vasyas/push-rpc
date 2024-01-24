@@ -1,8 +1,9 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
+import {createTestClient, startTestServer, TEST_PORT, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
+import {createRpcClient, LocalTopicImpl} from "../src/index.js"
 
-describe("Topics", () => {
+describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
     const item = {r: "1"}
 
@@ -311,5 +312,36 @@ describe("Topics", () => {
     await remote.item.unsubscribe(sub)
     await adelay(20)
     assert.equal(0, testServer?._subscriptions().size)
+  })
+
+  it("double subscribe leaves session referenced on disconnect", async () => {
+    const services = await startTestServer({
+      item: async () => 1,
+    })
+
+    const remote = await createTestClient<typeof services>()
+
+    const sub1 = () => {}
+    const sub2 = () => {}
+
+    await remote.item.subscribe(sub1)
+    await adelay(20)
+    assert.equal(1, testServer?._subscriptions().size)
+
+    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
+    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+
+    await remote.item.subscribe(sub2)
+    await adelay(20)
+    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
+    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+
+    await remote.item.unsubscribe(sub1)
+    await adelay(100)
+
+    await testClient?.close()
+    await adelay(100)
+
+    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
   })
 })
