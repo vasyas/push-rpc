@@ -1,6 +1,6 @@
 import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
-import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext} from "../rpc.js"
+import {RpcConnectionContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 import {log} from "../logger.js"
 
@@ -18,25 +18,23 @@ export async function serveHttpRequest(
       return
     }
 
-    const context = await createConnectionContext(req)
+    const ctx = await createConnectionContext(req)
 
     const itemName = req.url.slice(path.length + 1)
 
     const isJson = req.headersDistinct["content-type"]?.includes("application/json") ?? false
     const body = isJson ? safeParseJson(await readBody(req)) : []
 
-    body.push(context)
-
     let result: unknown
     switch (req.method) {
       case "POST":
-        result = await hooks.call(context.clientId, itemName, body)
+        result = await hooks.call(ctx, itemName, body)
         break
       case "PUT":
-        result = await hooks.subscribe(context.clientId, itemName, body)
+        result = await hooks.subscribe(ctx, itemName, body)
         break
       case "PATCH":
-        result = await hooks.unsubscribe(context.clientId, itemName, body)
+        result = await hooks.unsubscribe(ctx, itemName, body)
         break
       default:
         throw new Error(`HTTP Method ${req.method} not supported`)
@@ -96,7 +94,15 @@ function readBody(req: http.IncomingMessage) {
 }
 
 export type HttpServerHooks = {
-  call(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
-  subscribe(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
-  unsubscribe(clientId: string, itemName: string, parameters: unknown[]): Promise<unknown>
+  call(ctx: RpcConnectionContext, itemName: string, parameters: unknown[]): Promise<unknown>
+  subscribe(
+    clientId: RpcConnectionContext,
+    itemName: string,
+    parameters: unknown[]
+  ): Promise<unknown>
+  unsubscribe(
+    clientId: RpcConnectionContext,
+    itemName: string,
+    parameters: unknown[]
+  ): Promise<unknown>
 }

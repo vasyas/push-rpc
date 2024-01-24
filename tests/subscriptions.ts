@@ -229,13 +229,9 @@ describe("Subscriptions", () => {
     await adelay(20)
     assert.deepEqual(receivedItem, item)
 
-    console.log("before close")
-
     // disconnect & resubscribe
     testClient?._webSocket()?.close()
     await adelay(50)
-
-    console.log("before trigger")
 
     // session should be re-subscribed, trigger should continue to send items
     item.r = "3"

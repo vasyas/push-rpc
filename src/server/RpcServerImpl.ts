@@ -4,7 +4,15 @@ import http from "http"
 import {ConnectionsServer} from "./ConnectionsServer.js"
 import {PromiseCache} from "../utils/promises.js"
 import {serveHttpRequest} from "./http.js"
-import {InvocationType, RemoteFunction, RpcContext, RpcError, RpcErrors, Services} from "../rpc.js"
+import {
+  InvocationType,
+  RemoteFunction,
+  RpcConnectionContext,
+  RpcContext,
+  RpcError,
+  RpcErrors,
+  Services,
+} from "../rpc.js"
 import {log} from "../logger.js"
 import {withMiddlewares} from "../utils/middleware.js"
 import {ServicesWithTriggers, withTriggers} from "./local.js"
@@ -75,7 +83,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
   private readonly httpServer = http.createServer()
 
   private call = async (
-    clientId: string,
+    connectionContext: RpcConnectionContext,
     itemName: string,
     parameters: unknown[]
   ): Promise<unknown> => {
@@ -87,7 +95,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
 
     try {
       return await this.invokeLocalFunction(
-        clientId,
+        connectionContext,
         itemName,
         item,
         parameters,
@@ -99,7 +107,11 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     }
   }
 
-  private subscribe = async (clientId: string, itemName: string, parameters: unknown[]) => {
+  private subscribe = async (
+    connectionContext: RpcConnectionContext,
+    itemName: string,
+    parameters: unknown[]
+  ) => {
     const item = this.getItem(itemName)
 
     if (!item) {
@@ -108,30 +120,35 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
 
     try {
       const data = await this.invokeLocalFunction(
-        clientId,
+        connectionContext,
         itemName,
         item,
         parameters,
         InvocationType.Subscribe
       )
 
-      this.localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
-        try {
-          const data = await this.invokeLocalFunction(
-            clientId,
-            itemName,
-            item,
-            parameters,
-            InvocationType.Trigger
-          )
+      this.localSubscriptions.subscribe(
+        connectionContext.clientId,
+        itemName,
+        parameters,
+        async () => {
+          try {
+            const data = await this.invokeLocalFunction(
+              connectionContext,
+              itemName,
+              item,
+              parameters,
+              InvocationType.Trigger
+            )
 
-          // TODO do not send if data is the same
+            // TODO do not send if data is the same
 
-          this.connectionsServer.publish(clientId, itemName, parameters, data)
-        } catch (e) {
-          log.error("Cannot get data for subscription", e)
+            this.connectionsServer.publish(connectionContext.clientId, itemName, parameters, data)
+          } catch (e) {
+            log.error("Cannot get data for subscription", e)
+          }
         }
-      })
+      )
 
       return data
     } catch (e) {
@@ -140,9 +157,13 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     }
   }
 
-  private unsubscribe = async (clientId: string, itemName: string, parameters: unknown[]) => {
+  private unsubscribe = async (
+    connectionContext: RpcConnectionContext,
+    itemName: string,
+    parameters: unknown[]
+  ) => {
     try {
-      this.localSubscriptions.unsubscribe(clientId, itemName, parameters)
+      this.localSubscriptions.unsubscribe(connectionContext.clientId, itemName, parameters)
     } catch (e) {
       log.error(`Failed to unsubscribe ${itemName}`, e)
       throw e
@@ -174,24 +195,28 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
   }
 
   private invokeLocalFunction(
-    clientId: string,
+    connectionContext: RpcConnectionContext,
     remoteFunctionName: string,
     item: {function: RemoteFunction; container: any},
     parameters: unknown[],
     invocationType: InvocationType
   ): Promise<unknown> {
-    return this.invocationCache.invoke({clientId, remoteFunctionName, parameters}, () => {
-      const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
+    return this.invocationCache.invoke(
+      {clientId: connectionContext.clientId, remoteFunctionName, parameters},
+      () => {
+        const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1) as [C]
+        const ctx = {
+          clientId: connectionContext.clientId,
+          remoteFunctionName,
+          invocationType,
+        } as C
 
-      ctx.remoteFunctionName = remoteFunctionName
-      ctx.invocationType = invocationType
-
-      const invokeItem = (...params: unknown[]) => {
-        return item.function.call(item.container, ...params, ctx)
+        const invokeItem = (...params: unknown[]) => {
+          return item.function.call(item.container, ...params, ctx)
+        }
+        return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
       }
-      return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
-    })
+    )
   }
 }
