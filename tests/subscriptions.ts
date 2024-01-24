@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, TEST_PORT, testClient, testServer} from "./testUtils.js"
+import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("Subscriptions", () => {
@@ -328,5 +328,44 @@ describe("Subscriptions", () => {
     await adelay(100)
 
     assert.equal(0, testServer?._allSubscriptions().length)
+  })
+
+  it("double subscribe unsubscribe bug", async () => {
+    let delivered = null
+
+    const services = await startTestServer({
+      test: {
+        item: async () => "ok",
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    const sub1 = (r: string) => {
+      console.log("Got sub 1")
+      delivered = r
+    }
+
+    const sub2 = () => {
+      console.log("Got sub 2")
+    }
+
+    await client.test.item.subscribe(sub1)
+
+    await client.test.item.subscribe(sub2)
+
+    assert.isOk(delivered)
+    delivered = null
+
+    await client.test.item.unsubscribe(sub2)
+    console.log("Unsubscribe")
+
+    services.test.item.trigger()
+    console.log("Trigger")
+
+    await adelay(200)
+
+    assert.isOk(delivered)
+    delivered = null
   })
 })

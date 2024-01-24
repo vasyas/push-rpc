@@ -48,47 +48,4 @@ describe("Topic bugs", () => {
 
     assert.equal(0, Object.keys(item["subscriptions"]).length)
   })
-
-  it("double subscribe unsubscribe bug", async () => {
-    let delivered = null
-
-    const server = {
-      test: {
-        item: new LocalTopicImpl(async () => "ok"),
-      },
-    }
-    await startTestServer(server)
-
-    const client = await createTestClient()
-
-    await client.test.item.subscribe(
-      (r) => {
-        console.log("Got sub 1")
-        delivered = r
-      },
-      {},
-      "1"
-    )
-    await client.test.item.subscribe(
-      () => {
-        console.log("Got sub 2")
-      },
-      {},
-      "2"
-    )
-
-    assert.isOk(delivered)
-    delivered = null
-
-    await client.test.item.unsubscribe({}, "2")
-    console.log("Unsubscribe")
-
-    server.test.item.trigger()
-    console.log("Trigger")
-
-    await new Promise((r) => setTimeout(r, 200))
-
-    assert.isOk(delivered)
-    delivered = null
-  })
 })
