@@ -99,8 +99,6 @@ export class WebSocketConnection {
         let connected = false
 
         socket.on("open", () => {
-          console.log("Socket open")
-
           this.socket = socket
           connected = true
           resolve()
@@ -111,12 +109,10 @@ export class WebSocketConnection {
         })
 
         socket.on("ping", () => {
-          console.log("Socket ping")
           this.heartbeat()
         })
 
         socket.on("close", () => {
-          console.log("Socket close")
           this.socket = null
 
           if (connected) {
@@ -156,15 +152,11 @@ export class WebSocketConnection {
   private pingTimeout: NodeJS.Timeout | null = null
 
   private heartbeat() {
-    console.log("Heartbeat")
-
     if (this.pingTimeout) {
       clearTimeout(this.pingTimeout)
     }
 
     this.pingTimeout = setTimeout(() => {
-      console.log("Ping timed out")
-
       this.socket?.terminate()
     }, this.options.pingInterval * 1.5)
   }
