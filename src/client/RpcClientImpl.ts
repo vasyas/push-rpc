@@ -43,8 +43,8 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     return this.connection.close()
   }
 
-  _subscriptions() {
-    return this.remoteSubscriptions._subscriptions()
+  _allSubscriptions() {
+    return this.remoteSubscriptions.getAllSubscriptions()
   }
 
   _webSocket() {

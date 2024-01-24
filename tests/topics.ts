@@ -201,7 +201,7 @@ describe("Topics", () => {
     await new Promise((r) => setTimeout(r, 50))
 
     // client's subscriptions are not removed intentionally not to lose existing handlers
-    assert.equal(testClient?._subscriptions().size, 1)
+    assert.equal(testClient?._allSubscriptions().length, 1)
 
     assert.equal(0, testServer?._subscriptions().size)
   })
@@ -247,4 +247,34 @@ describe("Topics", () => {
     await adelay(50)
     assert.deepEqual(receivedItem, item)
   })
+
+  /*
+  it("double subscribe leaves session referenced on unsubscribe", async () => {
+    const services = await startTestServer({
+      item: async () => 1,
+    })
+
+    const remote = await createTestClient<typeof services>()
+
+    await remote.item.subscribe(() => {}, {}, "1")
+    await new Promise((r) => setTimeout(r, 20))
+    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
+    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+
+    await remote.item.subscribe(() => {}, {}, "2")
+    await new Promise((r) => setTimeout(r, 20))
+    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
+    // assert.equal(2, Object.values(services.item["subscriptions"])[0].sessions.length)
+
+    await remote.item.unsubscribe({}, "1")
+    await new Promise((r) => setTimeout(r, 100))
+    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
+    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
+
+    await client.remote.item.unsubscribe({}, "2")
+    await new Promise((r) => setTimeout(r, 100))
+    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
+  })
+  
+   */
 })

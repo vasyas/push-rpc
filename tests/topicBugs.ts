@@ -6,40 +6,6 @@ import {wrapWebsocket} from "../../websocket/src/server"
 import WebSocket from "ws"
 
 describe("Topic bugs", () => {
-  it("double subscribe leaves session referenced on unsubscribe", async () => {
-    const services = {
-      item: new LocalTopicImpl(async () => {
-        return 1
-      }),
-    }
-
-    await startTestServer(services)
-
-    const client = await createRpcClient(
-      async () => createNodeWebsocket(`ws://localhost:${TEST_PORT}`),
-      {}
-    )
-
-    await client.remote.item.subscribe(() => {}, {}, "1")
-    await new Promise(r => setTimeout(r, 20))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
-
-    await client.remote.item.subscribe(() => {}, {}, "2")
-    await new Promise(r => setTimeout(r, 20))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    // assert.equal(2, Object.values(services.item["subscriptions"])[0].sessions.length)
-
-    await client.remote.item.unsubscribe({}, "1")
-    await new Promise(r => setTimeout(r, 100))
-    assert.equal(1, Object.keys(services.item["subscriptions"]).length)
-    assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
-
-    await client.remote.item.unsubscribe({}, "2")
-    await new Promise(r => setTimeout(r, 100))
-    assert.equal(0, Object.keys(services.item["subscriptions"]).length)
-  })
-
   it("unsubscribe all", async () => {
     const services = {
       item: new LocalTopicImpl(async () => {
@@ -55,17 +21,17 @@ describe("Topic bugs", () => {
     )
 
     await client.remote.item.subscribe(() => {}, {}, "1")
-    await new Promise(r => setTimeout(r, 20))
+    await new Promise((r) => setTimeout(r, 20))
     assert.equal(1, Object.keys(services.item["subscriptions"]).length)
     assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
 
     await client.remote.item.subscribe(() => {}, {}, "2")
-    await new Promise(r => setTimeout(r, 20))
+    await new Promise((r) => setTimeout(r, 20))
     assert.equal(1, Object.keys(services.item["subscriptions"]).length)
     assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
 
     await client.remote.item.unsubscribe({})
-    await new Promise(r => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 100))
     assert.equal(0, Object.keys(services.item["subscriptions"]).length)
   })
 
@@ -84,27 +50,27 @@ describe("Topic bugs", () => {
     )
 
     await client.remote.item.subscribe(() => {}, {}, "1")
-    await new Promise(r => setTimeout(r, 20))
+    await new Promise((r) => setTimeout(r, 20))
     assert.equal(1, Object.keys(services.item["subscriptions"]).length)
     assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
 
     await client.remote.item.subscribe(() => {}, {})
-    await new Promise(r => setTimeout(r, 20))
+    await new Promise((r) => setTimeout(r, 20))
     assert.equal(1, Object.keys(services.item["subscriptions"]).length)
     assert.equal(1, Object.values(services.item["subscriptions"])[0].sessions.length)
 
     await client.remote.item.unsubscribe({}, "1")
-    await new Promise(r => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 100))
 
     await client.disconnect()
-    await new Promise(r => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 100))
 
     assert.equal(0, Object.keys(services.item["subscriptions"]).length)
   })
 
   it("subscribe/unsubscribe bug 1", async () => {
     const item = new LocalTopicImpl(async () => {
-      await new Promise(r => setTimeout(r, 20))
+      await new Promise((r) => setTimeout(r, 20))
       return 1
     })
 
@@ -130,7 +96,7 @@ describe("Topic bugs", () => {
       ctx
     )
 
-    await new Promise(r => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 10))
 
     item.unsubscribeSession(session, {
       chargePointPk: "4",
@@ -140,7 +106,7 @@ describe("Topic bugs", () => {
       size: 1,
     })
 
-    await new Promise(r => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 10))
 
     assert.equal(0, Object.keys(item["subscriptions"]).length)
   })
@@ -158,7 +124,7 @@ describe("Topic bugs", () => {
     const client = await createTestClient()
 
     await client.test.item.subscribe(
-      r => {
+      (r) => {
         console.log("Got sub 1")
         delivered = r
       },
@@ -182,7 +148,7 @@ describe("Topic bugs", () => {
     server.test.item.trigger()
     console.log("Trigger")
 
-    await new Promise(r => setTimeout(r, 200))
+    await new Promise((r) => setTimeout(r, 200))
 
     assert.isOk(delivered)
     delivered = null

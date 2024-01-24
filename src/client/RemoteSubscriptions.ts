@@ -94,11 +94,6 @@ export class RemoteSubscriptions {
   }
 
   private byItem: Map<string, ItemSubscription> = new Map()
-
-  // test-only replace with getAllSubscriptions?
-  _subscriptions() {
-    return this.byItem
-  }
 }
 
 type ItemSubscription = {

@@ -8,7 +8,7 @@ export type RpcClient = {
   close(): Promise<void>
 
   // test-only
-  _subscriptions(): Map<any, any>
+  _allSubscriptions(): Array<any[]>
   _webSocket(): WebSocket | null
 }
 
