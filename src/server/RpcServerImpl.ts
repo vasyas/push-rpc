@@ -119,13 +119,14 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     }
 
     try {
-      let lastData = await this.invokeLocalFunction(
+      const lastData = await this.invokeLocalFunction(
         connectionContext,
         itemName,
         item,
         parameters,
         InvocationType.Subscribe
       )
+      let lastDataJson = safeStringify(lastData)
 
       const update = this.localSubscriptions.throttled(itemName, async (suppliedData?: unknown) => {
         try {
@@ -140,8 +141,10 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
                   InvocationType.Trigger
                 )
 
-          if (safeStringify(newData) != safeStringify(lastData)) {
-            lastData = newData
+          const newDataJson = safeStringify(newData)
+
+          if (newDataJson != lastDataJson) {
+            lastDataJson = newDataJson
             this.connectionsServer.publish(
               connectionContext.clientId,
               itemName,
