@@ -11,8 +11,13 @@ export type ServicesWithTriggers<T extends Services> = {
             filter?: Partial<Parameters<T[K]>[0]>,
             suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
           ): void
+          throttle(settings: ThrottleSettings): void
         }
       : never
+}
+
+export type ThrottleSettings = {
+  timeout: number
 }
 
 export function withTriggers<T extends Services>(
@@ -38,12 +43,14 @@ export function withTriggers<T extends Services>(
           return target[propName](...params)
         }
 
-        delegate.trigger = (filter: Record<string, unknown> = {}) => {
+        delegate.trigger = (filter: Record<string, unknown> = {}, suppliedData?: unknown) => {
           // triggers are delayed for consumers to receive updates after the current call ends.
           setTimeout(() => {
-            localSubscriptions.trigger(itemName, filter)
+            localSubscriptions.trigger(itemName, filter, suppliedData)
           }, 0)
         }
+
+        delegate.throttle = (settings: ThrottleSettings) => {}
 
         return delegate
       } else if (!cachedItems[propName]) {

@@ -131,15 +131,18 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
         connectionContext.clientId,
         itemName,
         parameters,
-        async () => {
+        async (suppliedData?: unknown) => {
           try {
-            const data = await this.invokeLocalFunction(
-              connectionContext,
-              itemName,
-              item,
-              parameters,
-              InvocationType.Trigger
-            )
+            const data =
+              suppliedData !== undefined
+                ? suppliedData
+                : await this.invokeLocalFunction(
+                    connectionContext,
+                    itemName,
+                    item,
+                    parameters,
+                    InvocationType.Trigger
+                  )
 
             // TODO do not send if data is the same
 

@@ -1,7 +1,12 @@
 import {safeStringify} from "../utils/json.js"
 
 export class LocalSubscriptions {
-  subscribe(clientId: string, itemName: string, parameters: unknown[], update: () => void) {
+  subscribe(
+    clientId: string,
+    itemName: string,
+    parameters: unknown[],
+    update: (suppliedData?: unknown) => void
+  ) {
     const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
@@ -58,7 +63,7 @@ export class LocalSubscriptions {
     }
   }
 
-  trigger(itemName: string, triggerFilter: Record<string, unknown> = {}) {
+  trigger(itemName: string, triggerFilter: Record<string, unknown> = {}, suppliedData?: unknown) {
     const itemSub = this.byItem.get(itemName)
     if (!itemSub) return
 
@@ -66,7 +71,7 @@ export class LocalSubscriptions {
       if (!filterContains(triggerFilter, subscriptionFilter)) continue
 
       subscribedClients.forEach((subscribedClient) => {
-        subscribedClient.update()
+        subscribedClient.update(suppliedData)
       })
     }
   }
@@ -100,7 +105,7 @@ type FilterSubscription = {
 
 type SubscribedClient = {
   clientId: string
-  update: () => void
+  update: (suppliedData?: unknown) => void
 }
 
 function filterContains(

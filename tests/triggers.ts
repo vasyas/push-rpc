@@ -52,12 +52,14 @@ describe("Subscription triggers", () => {
   it("trigger throttling", async () => {
     const throttleTimeout = 400
 
-    // configure throttleTimeout,
-
     const services = await startTestServer({
       test: {
         item: async () => "result",
       },
+    })
+
+    services.test.item.throttle({
+      timeout: throttleTimeout,
     })
 
     const remote = await createTestClient<typeof services>()
