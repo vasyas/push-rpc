@@ -81,7 +81,17 @@ export class RemoteSubscriptions {
     })
   }
 
-  getAllSubscriptions(): Array<[string, unknown[], Array<(d: unknown) => void>]> {}
+  getAllSubscriptions(): Array<[string, unknown[], Array<(d: unknown) => void>]> {
+    const result: Array<[string, unknown[], Array<(d: unknown) => void>]> = []
+
+    for (const [itemName, itemSubscriptions] of this.byItem) {
+      for (const [, parameterSubscriptions] of itemSubscriptions.byParameters) {
+        result.push([itemName, parameterSubscriptions.parameters, parameterSubscriptions.consumers])
+      }
+    }
+
+    return result
+  }
 
   private byItem: Map<string, ItemSubscription> = new Map()
 
