@@ -2,6 +2,7 @@ import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
 import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
+import {log} from "../logger.js"
 
 export async function serveHttpRequest(
   req: IncomingMessage,
@@ -20,7 +21,9 @@ export async function serveHttpRequest(
     const context = await createConnectionContext(req)
 
     const itemName = req.url.slice(path.length + 1)
-    const body = safeParseJson(await readBody(req))
+
+    const isJson = req.headersDistinct["Content-Type"]?.includes("application/json") ?? false
+    const body = isJson ? safeParseJson(await readBody(req)) : []
 
     body.push(context)
 
@@ -67,6 +70,8 @@ export async function serveHttpRequest(
       res.end()
       return
     } else {
+      log.warn(`Error in ${req.url}.`, e)
+
       res.statusCode = 500
       res.statusMessage = e["message"] || "Internal Server Error"
       res.end()

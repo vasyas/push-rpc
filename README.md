@@ -20,3 +20,8 @@ JSON-only.
 **Middlewares**. Middlewares are used to intercept client and server requests. Both calls and subscriptions can be
 intercepted?. Middlewares can be attached on both client and server side. Middlewares receive context as the last
 arguments in the invocation. Middleware can modify context.
+
+## Refactoring
+
+- rename itemName to remoteFunctionName?
+- invokeItem to invokeFunction?

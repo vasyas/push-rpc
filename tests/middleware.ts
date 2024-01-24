@@ -5,11 +5,11 @@ import {adelay} from "../src/utils/promises.js"
 
 describe("middleware", () => {
   it("compose override params", async () => {
-    const m1: Middleware = (ctx, next, param: any) => {
+    const m1: Middleware<{}> = (ctx, next, param: any) => {
       return next(param + 1)
     }
 
-    const m2: Middleware = (ctx, next, param: any) => {
+    const m2: Middleware<{}> = (ctx, next, param: any) => {
       return next(param + 2)
     }
 
@@ -19,7 +19,7 @@ describe("middleware", () => {
   })
 
   it("compose use prev params", async () => {
-    const m1: Middleware = (ctx, next) => {
+    const m1: Middleware<{}> = (ctx, next) => {
       return next()
     }
 

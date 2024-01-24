@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer} from "./testUtils.js"
+import {createTestClient, startTestServer, TEST_PORT} from "./testUtils.js"
 import {RpcErrors} from "../src/index.js"
 
 describe("Misc", () => {
@@ -168,5 +168,22 @@ describe("Misc", () => {
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.NotFound)
     }
+  })
+
+  it("invoke with empty body", async () => {
+    await startTestServer({
+      async hello1() {
+        return "yes1"
+      },
+    })
+
+    const r = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/hello1`, {
+      method: "POST",
+    })
+
+    console.log(r.status)
+
+    const body = await r.text()
+    assert.equal(body, "yes1")
   })
 })

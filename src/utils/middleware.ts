@@ -1,14 +1,12 @@
-import {RpcContext} from "../rpc.js"
-
-export type Middleware<C extends RpcContext> = (
-  ctx: C,
+export type Middleware<Context> = (
+  ctx: Context,
   next: (...params: unknown[]) => Promise<unknown>,
   ...params: unknown[]
 ) => Promise<unknown>
 
-export function withMiddlewares<C extends RpcContext>(
-  ctx: C,
-  middlewares: Middleware<C>[],
+export function withMiddlewares<Context>(
+  ctx: Context,
+  middlewares: Middleware<Context>[],
   final: (...params: unknown[]) => Promise<unknown>,
   ...params: any
 ) {
