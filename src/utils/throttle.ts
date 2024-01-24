@@ -4,6 +4,13 @@ export function lastValueReducer<D>(prevValue: D, newValue: D): D {
   return newValue
 }
 
+export function groupReducer<D>(prevValue: D[], newValue: D[]): D[] {
+  if (!Array.isArray(newValue))
+    throw new Error("groupReducer should only be used with topics that return arrays")
+
+  return prevValue ? [...prevValue, ...newValue] : newValue
+}
+
 export function throttle<D>(
   callback: (d: D) => void,
   delay: number,
