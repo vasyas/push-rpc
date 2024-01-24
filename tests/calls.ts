@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils.js"
-import {RpcErrors} from "../src/index.js"
+import {RpcError, RpcErrors} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("calls", () => {
@@ -74,14 +74,13 @@ describe("calls", () => {
     }
   }).timeout(1000)
 
-  /*
   it("per-call timeout override default", async () => {
-    const callTimeout = 200
+    const callTimeout = 2 * 1000
 
     const services = await startTestServer({
       test: {
         async longOp() {
-          await new Promise((r) => setTimeout(r, 2 * callTimeout))
+          await adelay(2 * callTimeout)
         },
       },
     })
@@ -91,14 +90,12 @@ describe("calls", () => {
     })
 
     try {
-      await client.test.longOp(new CallOptions({timeout: 1 * 1000})
+      await client.test.longOp({timeout: 1 * 1000})
       assert.fail()
-    } catch (e) {
+    } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)
     }
   }).timeout(5000)
-  
-   */
 
   it("binds this object", async () => {
     const resp = {r: "asf"}
