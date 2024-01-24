@@ -12,8 +12,10 @@ will be propagated to the client.
 Services can be nested.
 
 **Context**. Only lives at the server side. Contains metadata about request and connection. It is passed to all the
-middlewares and remote functions as the last parameter. A new context object is created for each invocation. For
-subscriptions, context is initially created during 'subscribe' invocation and is copied to each 'trigger' invocation.
+middlewares and remote functions as the last parameter. For subscriptions, context is initially created during '
+subscribe' invocation and copied to each 'trigger' invocation. Context, created by overriding `createContext`, should
+contain only JSON data, to allow copying. Context can be modified in middlewares; these modification doesn't have to be
+JSON-only.
 
 **Middlewares**. Middlewares are used to intercept client and server requests. Both calls and subscriptions can be
 intercepted?. Middlewares can be attached on both client and server side. Middlewares receive context as the last
