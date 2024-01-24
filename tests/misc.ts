@@ -181,8 +181,6 @@ describe("Misc", () => {
       method: "POST",
     })
 
-    console.log(r.status)
-
     const body = await r.text()
     assert.equal(body, "yes1")
   })

@@ -22,7 +22,7 @@ export async function serveHttpRequest(
 
     const itemName = req.url.slice(path.length + 1)
 
-    const isJson = req.headersDistinct["Content-Type"]?.includes("application/json") ?? false
+    const isJson = req.headersDistinct["content-type"]?.includes("application/json") ?? false
     const body = isJson ? safeParseJson(await readBody(req)) : []
 
     body.push(context)
