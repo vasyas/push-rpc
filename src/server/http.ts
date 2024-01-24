@@ -2,12 +2,14 @@ import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
 import {CLIENT_ID_HEADER} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
+import {RpcContext} from "./index.js"
 
 export async function serveHttpRequest(
   req: IncomingMessage,
   res: ServerResponse,
   path: string,
-  hooks: HttpServerHooks
+  hooks: HttpServerHooks,
+  createContext: (req: IncomingMessage) => Promise<RpcContext>
 ) {
   try {
     if (!req.url?.startsWith(path)) {
@@ -16,21 +18,23 @@ export async function serveHttpRequest(
       return
     }
 
-    const clientId = req.headersDistinct[CLIENT_ID_HEADER]?.[0] || "anon"
+    const context = await createContext(req)
 
     const itemName = req.url.slice(path.length + 1)
     const body = safeParseJson(await readBody(req))
 
+    body.push(context)
+
     let result: unknown
     switch (req.method) {
       case "POST":
-        result = await hooks.call(clientId, itemName, body)
+        result = await hooks.call(context.clientId, itemName, body)
         break
       case "PUT":
-        result = await hooks.subscribe(clientId, itemName, body)
+        result = await hooks.subscribe(context.clientId, itemName, body)
         break
       case "PATCH":
-        result = await hooks.unsubscribe(clientId, itemName, body)
+        result = await hooks.unsubscribe(context.clientId, itemName, body)
         break
       default:
         throw new Error(`HTTP Method ${req.method} not supported`)

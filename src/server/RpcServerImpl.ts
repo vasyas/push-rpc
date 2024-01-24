@@ -23,11 +23,17 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     )
 
     this.httpServer.addListener("request", (req, res) =>
-      serveHttpRequest(req, res, options.path, {
-        call: this.call,
-        subscribe: this.subscribe,
-        unsubscribe: this.unsubscribe,
-      })
+      serveHttpRequest(
+        req,
+        res,
+        options.path,
+        {
+          call: this.call,
+          subscribe: this.subscribe,
+          unsubscribe: this.unsubscribe,
+        },
+        options.createContext
+      )
     )
   }
 
@@ -159,7 +165,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
         return item.function.call(item.container, ...params)
       }
 
-      return withMiddlewares(this.options.middleware, invokeItem, ...parameters, {})
+      return withMiddlewares(this.options.middleware, invokeItem, ...parameters)
     })
   }
 }
