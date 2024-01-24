@@ -74,14 +74,14 @@ describe("Subscription triggers", () => {
     assert.equal(count, 1)
     assert.equal(item, "result")
 
-    services.test.item.trigger({}, "1st")
-    services.test.item.trigger({}, "2nd") // throttled
+    services.test.item.trigger(undefined, "1st")
+    services.test.item.trigger(undefined, "2nd") // throttled
     await adelay(50)
     assert.equal(count, 2)
     assert.equal(item, "1st")
 
-    services.test.item.trigger({}, "3rd") // throttled
-    services.test.item.trigger({}, "4th") // delivered on trailing edge
+    services.test.item.trigger(undefined, "3rd") // throttled
+    services.test.item.trigger(undefined, "4th") // delivered on trailing edge
 
     await adelay(50)
     assert.equal(count, 2)

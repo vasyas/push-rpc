@@ -1,11 +1,17 @@
 import {RemoteFunction, Services} from "../rpc.js"
 import {LocalSubscriptions} from "./LocalSubscriptions.js"
+import {ExtractPromiseResult} from "../utils/types.js"
 
 export type ServicesWithTriggers<T extends Services> = {
   [K in keyof T]: T[K] extends Services
     ? ServicesWithTriggers<T[K]>
     : T[K] extends RemoteFunction
-      ? T[K] & {trigger(filter?: Partial<Parameters<T[K]>[0]>): void}
+      ? T[K] & {
+          trigger(
+            filter?: Partial<Parameters<T[K]>[0]>,
+            suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
+          ): void
+        }
       : never
 }
 
