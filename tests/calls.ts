@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testServer} from "./testUtils.js"
+import {createTestClient, startTestServer} from "./testUtils.js"
 import {RpcErrors} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
@@ -9,14 +9,12 @@ describe("calls", () => {
 
     const invocation = {
       req: null as unknown,
-      ctx: null as unknown,
     }
 
     const services = await startTestServer({
       test: {
-        async getSomething(req: unknown, ctx?: unknown) {
+        async getSomething(req: unknown) {
           invocation.req = req
-          invocation.ctx = ctx
           return resp
         },
       },

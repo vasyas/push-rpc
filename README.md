@@ -5,7 +5,8 @@ can either be called synchronously or subscribed to. Subscribed function needs t
 resend the data to the subscribed clients.
 
 Remote function must return Promise and can accept any number of arguments. Note! Variables number of arguments is not
-supported. Remote function can throw an error, which will be propagated to the client.
+supported (because optional argument is used for context and CallOptions). Remote function can throw an error, which
+will be propagated to the client.
 
 **Services**. Services are used to group remote functions. Services object can be instances of classes or plain objects.
 Services can be nested.

@@ -1,7 +1,8 @@
-import {Services} from "../rpc.js"
+import {CLIENT_ID_HEADER, Services} from "../rpc.js"
 import {ServicesWithTriggers} from "./local.js"
 import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
+import {IncomingMessage} from "http"
 
 export async function publishServices<S extends Services>(
   services: S,
@@ -37,6 +38,7 @@ export type PublishServicesOptions = {
   host: string
   middleware: Middleware[]
   pingInterval: number
+  createContext(req: IncomingMessage): Promise<RpcContext>
 }
 
 export type RpcContext = {
@@ -48,4 +50,10 @@ const defaultOptions: Omit<PublishServicesOptions, "port"> = {
   host: "0.0.0.0",
   middleware: [],
   pingInterval: 30 * 1000, // should be in-sync with client
+
+  async createContext(req: IncomingMessage): Promise<RpcContext> {
+    return {
+      clientId: req.headersDistinct[CLIENT_ID_HEADER]?.[0] || "anon",
+    }
+  },
 }
