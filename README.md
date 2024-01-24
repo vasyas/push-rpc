@@ -21,6 +21,10 @@ JSON-only.
 intercepted?. Middlewares can be attached on both client and server side. Middlewares receive context as the last
 arguments in the invocation. Middleware can modify context.
 
+**Throttling**. Used to limit number of notifications from the remote functions. With throttling enabled, not all
+triggers will result in new notifications. Throttling can be used with reducers to aggregate values supplied in
+triggers.
+
 ## Refactoring
 
 - rename itemName to remoteFunctionName?
