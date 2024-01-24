@@ -99,7 +99,7 @@ describe("Subscription triggers", () => {
 
     const services = await startTestServer({
       test: {
-        item: async () => [],
+        item: async () => [] as number[],
       },
     })
 

@@ -79,7 +79,7 @@ export class LocalSubscriptions {
   }
 
   throttled(itemName: string, f: (d: unknown) => void) {
-    const settings: ThrottleSettings = this.itemThrottleSettings.get(itemName) || {
+    const settings: ThrottleSettings<unknown> = this.itemThrottleSettings.get(itemName) || {
       timeout: 500,
       reducer: lastValueReducer,
     }
@@ -89,11 +89,11 @@ export class LocalSubscriptions {
     return throttle(f, settings.timeout, settings.reducer || lastValueReducer)
   }
 
-  throttleItem(itemName: string, settings: ThrottleSettings) {
+  throttleItem(itemName: string, settings: ThrottleSettings<unknown>) {
     this.itemThrottleSettings.set(itemName, settings)
   }
 
-  private itemThrottleSettings: Map<string, ThrottleSettings> = new Map()
+  private itemThrottleSettings: Map<string, ThrottleSettings<unknown>> = new Map()
 
   private byItem: Map<string, ItemSubscription> = new Map()
 

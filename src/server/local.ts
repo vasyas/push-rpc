@@ -12,14 +12,14 @@ export type ServicesWithTriggers<T extends Services> = {
             filter?: Partial<Parameters<T[K]>[0]>,
             suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
           ): void
-          throttle(settings: ThrottleSettings): void
+          throttle(settings: ThrottleSettings<ExtractPromiseResult<ReturnType<T[K]>>>): void
         }
       : never
 }
 
-export type ThrottleSettings = {
+export type ThrottleSettings<D> = {
   timeout: number
-  reducer?: ThrottleArgsReducer<unknown>
+  reducer?: ThrottleArgsReducer<D>
 }
 
 export function withTriggers<T extends Services>(
@@ -52,7 +52,7 @@ export function withTriggers<T extends Services>(
           }, 0)
         }
 
-        delegate.throttle = (settings: ThrottleSettings) => {
+        delegate.throttle = (settings: ThrottleSettings<unknown>) => {
           localSubscriptions.throttleItem(itemName, settings)
         }
 
