@@ -91,25 +91,22 @@ describe("middleware", () => {
     assert.isOk(mwInvoked)
   })
 
-  /*
-it("remote with rejection", async () => {
-  await startTestServer({
-    async getSomething() {
-      throw new Error("msg")
-    },
+  it("remote with rejection", async () => {
+    const services = await startTestServer({
+      async getSomething() {
+        throw new Error("msg")
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      middleware: [(ctx, next, params) => next(params)],
+    })
+
+    try {
+      await client.getSomething()
+      assert.fail("Error expected")
+    } catch (e: any) {
+      assert.equal(e.message, "msg")
+    }
   })
-
-  const client = await createTestClient(0, {
-    remoteMiddleware: (ctx, next, params) => next(params),
-  })
-
-  try {
-    await client.getSomething()
-    assert.fail("Error expected")
-  } catch (e) {
-    assert.equal(e.message, "msg")
-  }
-})
-
- */
 })
