@@ -1,8 +1,10 @@
 import {
   consumeServices,
   ConsumeServicesOptions,
-  publishServices, PublishServicesOptions,
+  publishServices,
+  PublishServicesOptions,
   RpcClient,
+  RpcContext,
   RpcServer,
   Services,
   ServicesWithSubscriptions,
@@ -13,11 +15,14 @@ export const TEST_PORT = 5555
 
 export let testServer: RpcServer | null = null
 
-export async function startTestServer<S extends Services>(local: S, options: Partial<PublishServicesOptions> = {}): Promise<ServicesWithTriggers<S>> {
-  const r = await publishServices<S>(local, {
+export async function startTestServer<S extends Services, C extends RpcContext>(
+  local: S,
+  options: Partial<PublishServicesOptions<C>> = {}
+): Promise<ServicesWithTriggers<S>> {
+  const r = await publishServices<S, C>(local, {
     port: TEST_PORT,
     path: "/rpc",
-    ...options
+    ...options,
   })
   testServer = r.server
   return r.services

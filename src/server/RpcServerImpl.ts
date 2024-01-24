@@ -10,10 +10,10 @@ import {withMiddlewares} from "../utils/middleware.js"
 import {ServicesWithTriggers, withTriggers} from "./local.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 
-export class RpcServerImpl<S extends Services> implements RpcServer {
+export class RpcServerImpl<S extends Services, C extends RpcContext> implements RpcServer {
   constructor(
     private readonly services: S,
-    private readonly options: PublishServicesOptions
+    private readonly options: PublishServicesOptions<C>
   ) {
     this.connectionsServer = new ConnectionsServer(
       this.httpServer,
@@ -183,7 +183,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
     return this.invocationCache.invoke({clientId, remoteFunctionName, parameters}, () => {
       const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1) as [RpcContext]
+      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1) as [C]
 
       ctx.remoteFunctionName = remoteFunctionName
       ctx.invocationType = invocationType
@@ -191,7 +191,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
       const invokeItem = (...params: unknown[]) => {
         return item.function.call(item.container, ...params, ctx)
       }
-      return withMiddlewares(ctx, this.options.middleware, invokeItem, ...parametersCopy)
+      return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
     })
   }
 }

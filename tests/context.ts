@@ -140,6 +140,8 @@ describe("context", () => {
   it("modified in middleware", async () => {
     let ctx = null
 
+    type Ctx = RpcContext & {count: number}
+
     const services = await startTestServer(
       {
         test: {
@@ -153,7 +155,7 @@ describe("context", () => {
           return {clientId: "test", count: 0}
         },
         middleware: [
-          (ctx, next) => {
+          (ctx: Ctx, next) => {
             ctx.count++
             return next(ctx)
           },

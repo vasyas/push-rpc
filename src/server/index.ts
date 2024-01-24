@@ -16,7 +16,7 @@ export async function publishServices<S extends Services, C extends RpcContext>(
     ...overrideOptions,
   }
 
-  const rpcServer = new RpcServerImpl<S>(services, options)
+  const rpcServer = new RpcServerImpl<S, C>(services, options)
 
   await rpcServer.start()
 
