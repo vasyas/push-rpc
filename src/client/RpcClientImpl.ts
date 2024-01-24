@@ -72,21 +72,6 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     })
   }
 
-  private invoke(
-    remoteFunctionName: string,
-    invocationType: InvocationType,
-    next: (...params: unknown[]) => Promise<unknown>,
-    parameters: unknown[]
-  ) {
-    const ctx: RpcContext = {
-      clientId: this.clientId,
-      remoteFunctionName: remoteFunctionName,
-      invocationType: invocationType,
-    }
-
-    return withMiddlewares(ctx, this.options.middleware, next, ...parameters)
-  }
-
   private call = (itemName: string, parameters: unknown[]): Promise<unknown> => {
     // TODO per-call callTimeout
 
@@ -99,11 +84,11 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   }
 
   private subscribe = async (
-    itemName: string,
+    remoteFunctionName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void
   ): Promise<void> => {
-    const cached = this.remoteSubscriptions.getCached(itemName, parameters)
+    const cached = this.remoteSubscriptions.getCached(remoteFunctionName, parameters)
 
     if (cached !== undefined) {
       consumer(cached)
@@ -115,19 +100,34 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
       })
     }
 
-    const data = await this.httpClient.subscribe(itemName, parameters) // TODO callTimeout
-    this.remoteSubscriptions.subscribe(data, itemName, parameters, consumer)
+    // TODO callTimeout
+    const data = await this.invoke(
+      remoteFunctionName,
+      InvocationType.Subscribe,
+      (...parameters) => this.httpClient.subscribe(remoteFunctionName, parameters),
+      parameters
+    )
+    this.remoteSubscriptions.subscribe(data, remoteFunctionName, parameters, consumer)
   }
 
   private unsubscribe = async (
-    itemName: string,
+    remoteFunctionName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void
   ) => {
-    const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
+    const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(
+      remoteFunctionName,
+      parameters,
+      consumer
+    )
 
     if (noSubscriptionsLeft) {
-      await this.httpClient.unsubscribe(itemName, parameters)
+      await this.invoke(
+        remoteFunctionName,
+        InvocationType.Unsubscribe,
+        (...parameters) => this.httpClient.unsubscribe(remoteFunctionName, parameters),
+        parameters
+      )
     }
   }
 
@@ -144,5 +144,20 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
           }
         })
     }
+  }
+
+  private invoke(
+    remoteFunctionName: string,
+    invocationType: InvocationType,
+    next: (...params: unknown[]) => Promise<unknown>,
+    parameters: unknown[]
+  ) {
+    const ctx: RpcContext = {
+      clientId: this.clientId,
+      remoteFunctionName: remoteFunctionName,
+      invocationType: invocationType,
+    }
+
+    return withMiddlewares(ctx, this.options.middleware, next, ...parameters)
   }
 }
