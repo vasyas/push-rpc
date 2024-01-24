@@ -44,7 +44,20 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   }
 
   _allSubscriptions() {
-    return this.remoteSubscriptions.getAllSubscriptions()
+    const result: Array<
+      [itemName: string, parameters: unknown[], consumers: (d: unknown) => void]
+    > = []
+    
+    for (const [
+      itemName,
+      parameters,
+      consumers,
+    ] of this.remoteSubscriptions.getAllSubscriptions()) {
+      for (const consumer of consumers) {
+        result.push([itemName, parameters, consumer])
+      }
+    }
+    return result
   }
 
   _webSocket() {

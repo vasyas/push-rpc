@@ -75,15 +75,13 @@ export class LocalSubscriptions {
 
   // test-only
   _allSubscriptions() {
-    const result: Array<[string, unknown[], unknown[]]> = []
+    const result: Array<[itemName: string, parameters: unknown[], consumer: unknown]> = []
 
     for (const [itemName, itemSubscriptions] of this.byItem) {
       for (const [, parameterSubscriptions] of itemSubscriptions.byFilter) {
-        result.push([
-          itemName,
-          [parameterSubscriptions.filter],
-          parameterSubscriptions.subscribedClients,
-        ])
+        for (const client of parameterSubscriptions.subscribedClients) {
+          result.push([itemName, [parameterSubscriptions.filter], client.clientId])
+        }
       }
     }
 

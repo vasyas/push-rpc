@@ -88,7 +88,9 @@ export class RemoteSubscriptions {
     })
   }
 
-  getAllSubscriptions(): Array<[string, unknown[], Array<(d: unknown) => void>]> {
+  getAllSubscriptions(): Array<
+    [itemName: string, parameters: unknown[], consumers: Array<(d: unknown) => void>]
+  > {
     const result: Array<[string, unknown[], Array<(d: unknown) => void>]> = []
 
     for (const [itemName, itemSubscriptions] of this.byItem) {

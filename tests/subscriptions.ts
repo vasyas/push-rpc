@@ -101,7 +101,6 @@ describe("Subscriptions", () => {
     // a single subscription present on server
     assert.equal(testServer?._allSubscriptions().length, 1)
     assert.equal(testServer?._allSubscriptions()[0][0], "test/item")
-    assert.equal(testServer?._allSubscriptions()[0][2].length, 1)
   })
 
   it("concurrent subscribe cache", async () => {
@@ -259,20 +258,18 @@ describe("Subscriptions", () => {
     await adelay(20)
 
     assert.equal(1, testServer?._allSubscriptions().length)
-    assert.equal(1, testClient?._allSubscriptions()[0][2].length)
+    assert.equal(1, testClient?._allSubscriptions().length)
 
     await remote.item.subscribe(sub2)
     await adelay(20)
 
     assert.equal(1, testServer?._allSubscriptions().length)
-    assert.equal(1, testServer?._allSubscriptions().length)
-    assert.equal(1, testClient?._allSubscriptions().length)
-    assert.equal(2, testClient?._allSubscriptions()[0][2].length)
+    assert.equal(2, testClient?._allSubscriptions().length)
 
     await remote.item.unsubscribe(sub1)
     await adelay(100)
     assert.equal(1, testServer?._allSubscriptions().length)
-    assert.equal(1, testClient?._allSubscriptions()[0][2].length)
+    assert.equal(1, testClient?._allSubscriptions().length)
 
     await remote.item.unsubscribe(sub2)
     await adelay(100)
