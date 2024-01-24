@@ -52,8 +52,6 @@ describe("context", () => {
     assert.equal(ctx!.newKey, "bla")
   })
 
-  /*
-
   it("available in subscribe", async () => {
     let ctx = null
 
@@ -71,6 +69,7 @@ describe("context", () => {
 
     assert.ok(ctx)
     assert.ok(ctx!.clientId)
+    assert.equal(ctx!.invocationType, InvocationType.Subscribe)
   })
 
   it("available in trigger", async () => {
@@ -85,8 +84,8 @@ describe("context", () => {
         },
       },
       {
-        createConnectionContext(): Promise<RpcContext> {
-          return Promise.resolve({clientId: "test"})
+        async createConnectionContext() {
+          return {clientId: "test"}
         },
       }
     )
@@ -100,6 +99,7 @@ describe("context", () => {
     services.test.call.trigger()
     await adelay(20)
     assert.equal(ctx!.clientId, "test")
+    assert.equal(ctx!.invocationType, InvocationType.Trigger)
   })
 
   it("trigger has a copy", async () => {
@@ -122,8 +122,8 @@ describe("context", () => {
         },
       },
       {
-        createConnectionContext(): Promise<RpcContext> {
-          return Promise.resolve({clientId: "test"})
+        async createConnectionContext() {
+          return {clientId: "test"}
         },
       }
     )
@@ -149,11 +149,11 @@ describe("context", () => {
         },
       },
       {
-        createConnectionContext(): Promise<RpcContext> {
-          return Promise.resolve({clientId: "test", count: 0})
+        async createConnectionContext() {
+          return {clientId: "test", count: 0}
         },
         middleware: [
-          (next, ctx: any) => {
+          (ctx, next) => {
             ctx.count++
             return next(ctx)
           },
@@ -171,6 +171,4 @@ describe("context", () => {
     await adelay(20)
     assert.equal(ctx!.count, 1)
   })
-
-   */
 })

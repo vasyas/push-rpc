@@ -39,5 +39,6 @@ export type RpcContext = RpcConnectionContext & {
 export enum InvocationType {
   Call = "Call",
   Subscribe = "Subscribe",
-  Unsubscribe = "Unsubscribe",
+  Unsubscribe = "Unsubscribe", // client only
+  Trigger = "Trigger", // server only
 }

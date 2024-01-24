@@ -112,7 +112,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
         itemName,
         item,
         parameters,
-        InvocationType.Unsubscribe
+        InvocationType.Subscribe
       )
 
       this.localSubscriptions.subscribe(clientId, itemName, parameters, async () => {
@@ -122,7 +122,7 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
             itemName,
             item,
             parameters,
-            InvocationType.Subscribe
+            InvocationType.Trigger
           )
 
           // TODO do not send if data is the same
