@@ -1,9 +1,11 @@
 export type Middleware = (
+  ctx: unknown,
   next: (...params: unknown[]) => Promise<unknown>,
   ...params: unknown[]
 ) => Promise<unknown>
 
 export function withMiddlewares(
+  ctx: unknown,
   middlewares: Middleware[],
   final: (...params: unknown[]) => Promise<unknown>,
   ...params: any
@@ -24,9 +26,9 @@ export function withMiddlewares(
 
       try {
         if (i === middlewares.length) {
-          return Promise.resolve(next(...p))
+          return Promise.resolve(next(...[...p, ctx]))
         } else {
-          return Promise.resolve(middlewares[i](dispatch.bind(null, i + 1), ...p))
+          return Promise.resolve(middlewares[i](ctx, dispatch.bind(null, i + 1), ...p))
         }
       } catch (err) {
         return Promise.reject(err)

@@ -5,25 +5,25 @@ import {adelay} from "../src/utils/promises.js"
 
 describe("middleware", () => {
   it("compose override params", async () => {
-    const m1: Middleware = (next, param: any) => {
+    const m1: Middleware = (ctx, next, param: any) => {
       return next(param + 1)
     }
 
-    const m2: Middleware = (next, param: any) => {
+    const m2: Middleware = (ctx, next, param: any) => {
       return next(param + 2)
     }
 
-    const r = await withMiddlewares([m1, m2], async (p) => p, 0)
+    const r = await withMiddlewares({}, [m1, m2], async (p, ctx) => p, 0)
 
     assert.equal(r, 3)
   })
 
   it("compose use prev params", async () => {
-    const m1: Middleware = (next) => {
+    const m1: Middleware = (ctx, next) => {
       return next()
     }
 
-    const r = await withMiddlewares([m1], async (p) => p, 0)
+    const r = await withMiddlewares({}, [m1], async (p) => p, 0)
 
     assert.equal(r, 0)
   })
@@ -39,7 +39,7 @@ describe("middleware", () => {
       },
       {
         middleware: [
-          (next, ctx: any) => {
+          (ctx: any, next) => {
             ctx.value = 1
             return next()
           },
@@ -70,7 +70,7 @@ describe("middleware", () => {
 
     const remote = await createTestClient<typeof services>({
       middleware: [
-        (next) => {
+        (ctx, next) => {
           mwInvoked = true
           return next()
         },
@@ -92,10 +92,6 @@ describe("middleware", () => {
   })
 
   /*
-
-
-
-
 it("remote with rejection", async () => {
   await startTestServer({
     async getSomething() {

@@ -166,9 +166,11 @@ export class RpcServerImpl<S extends Services> implements RpcServer {
         return item.function.call(item.container, ...params)
       }
 
-      const parametersCopy = safeParseJson(safeStringify(parameters))
+      const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-      return withMiddlewares(this.options.middleware, invokeItem, ...parametersCopy)
+      const [ctx] = parametersCopy.splice(parametersCopy.length - 1, 1)
+
+      return withMiddlewares(ctx, this.options.middleware, invokeItem, ...parametersCopy)
     })
   }
 }
