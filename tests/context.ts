@@ -20,4 +20,13 @@ describe("context", () => {
     assert.ok(ctx)
     assert.ok(ctx!.clientId)
   })
+
+  it("override creation", async () => {})
+
+  it("available in subscribe", async () => {})
+  it("available in trigger", async () => {})
+
+  it("trigger has a copy", async () => {})
+
+  it("modified in middleware", async () => {})
 })
