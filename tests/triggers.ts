@@ -1,49 +1,41 @@
+import {createTestClient, startTestServer} from "./testUtils.js"
+import {adelay} from "../src/utils/promises.js"
+import {assert} from "chai"
+
 describe("Subscription triggers", () => {
   it("trigger filter", async () => {
     interface Item {
       key: string
     }
 
-    const server = {
+    const services = await startTestServer({
       test: {
-        item: new LocalTopicImpl<Item, {key: string}>(async ({key}) => ({key}), {
-          throttleTimeout: 0,
-        }),
+        async item({key}: Item): Promise<Item> {
+          return {key}
+        },
       },
-    }
+    })
 
-    await startTestServer(server)
-
-    const {remote: client} = await createRpcClient(async () =>
-      createNodeWebsocket(`ws://localhost:${TEST_PORT}`)
-    )
+    const remote = await createTestClient<typeof services>()
 
     let item1
     let item2
 
-    await client.test.item.subscribe(
-      (item) => {
-        item1 = item
-      },
-      {key: "1"}
-    )
+    const sub1 = (item: Item) => (item1 = item)
+    const sub2 = (item: Item) => (item2 = item)
 
-    await client.test.item.subscribe(
-      (item) => {
-        item2 = item
-      },
-      {key: "2"}
-    )
+    await remote.test.item.subscribe(sub1, {key: "1"})
+    await remote.test.item.subscribe(sub2, {key: "2"})
 
     // first notificaiton right after subscription, clear items
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await adelay(20)
 
     // trigger sends 1st item, but not second
     item1 = null
     item2 = null
 
-    server.test.item.trigger({key: "1"})
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    services.test.item.trigger({key: "1"})
+    await adelay(20)
     assert.deepEqual(item1, {key: "1"})
     assert.isNull(item2)
 
@@ -51,8 +43,8 @@ describe("Subscription triggers", () => {
     item1 = null
     item2 = null
 
-    server.test.item.trigger(null)
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    services.test.item.trigger()
+    await adelay(20)
     assert.deepEqual(item1, {key: "1"})
     assert.deepEqual(item2, {key: "2"})
   })
