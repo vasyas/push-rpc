@@ -17,6 +17,10 @@ describe("Subscription triggers", () => {
       },
     })
 
+    services.test.item.throttle({
+      timeout: 0,
+    })
+
     const remote = await createTestClient<typeof services>()
 
     let item1

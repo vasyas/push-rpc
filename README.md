@@ -2,7 +2,7 @@
 
 **Remote function**. A function that is implemented at the server side and can be called from the client side. Function
 can either be called synchronously or subscribed to. Subscribed function needs to be "triggered" at the server side to
-resend the data to the subscribed clients.
+resend the data to the subscribed clients. Sometimes remote function is called "item".
 
 Remote function must return Promise and can accept any number of arguments. Note! Variables number of arguments is not
 supported (because optional argument is used for context and CallOptions). Remote function can throw an error, which

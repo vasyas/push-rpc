@@ -206,11 +206,9 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
       () => {
         const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-        const ctx = {
-          clientId: connectionContext.clientId,
-          remoteFunctionName,
-          invocationType,
-        } as C
+        const ctx = safeParseJson(safeStringify(connectionContext)) as C
+        ctx.remoteFunctionName = remoteFunctionName
+        ctx.invocationType = invocationType
 
         const invokeItem = (...params: unknown[]) => {
           return item.function.call(item.container, ...params, ctx)
