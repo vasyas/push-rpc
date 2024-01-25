@@ -21,8 +21,15 @@ export enum RpcErrors {
   Timeout = 504,
 }
 
-export type CallOptions = {
-  timeout: number
+export class CallOptions {
+  constructor(options: {timeout: number}) {
+    this.timeout = options.timeout
+  }
+
+  public readonly timeout
+  public readonly kind = CallOptions.KIND // to distinguish from other parameters in remote call
+
+  public static KIND = "CallOptions"
 }
 
 export const CLIENT_ID_HEADER = "x-rpc-client-id"

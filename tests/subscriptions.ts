@@ -1,6 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
+import {CallOptions, RpcErrors} from "../src/index.js"
 
 describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
@@ -412,4 +413,30 @@ describe("Subscriptions", () => {
     await adelay(20)
     assert.isNotOk(receivedItem)
   })
+
+  it("per-subscribe timeout", async () => {
+    const callTimeout = 2 * 1000
+
+    const services = await startTestServer({
+      test: {
+        async longOp() {
+          await adelay(2 * callTimeout)
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      callTimeout: 10 * 1000,
+    })
+
+    try {
+      await client.test.longOp.subscribe(() => {}, new CallOptions({timeout: 1 * 1000}))
+      assert.fail()
+    } catch (e: any) {
+      assert.equal(e.code, RpcErrors.Timeout)
+    }
+
+    assert.equal(0, testClient!._allSubscriptions().length)
+    assert.equal(0, testServer!._allSubscriptions().length)
+  }).timeout(5000)
 })

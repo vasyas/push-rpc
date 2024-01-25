@@ -1,20 +1,26 @@
-import {Consumer, RemoteFunction, Services} from "../rpc.js"
+import {CallOptions, Consumer, RemoteFunction, Services} from "../rpc.js"
 
 export function createRemote<S extends Services>(
   hooks: RemoteHooks,
   name = ""
 ): ServicesWithSubscriptions<S> {
   // start with remote function
-  const remoteItem = (...params: unknown[]) => {
-    return hooks.call(name, params)
+  const remoteItem = (...paramsWithCallOptions: unknown[]) => {
+    const {params, callOptions} = extractCallOptions(paramsWithCallOptions)
+
+    return hooks.call(name, params, callOptions)
   }
 
   // add subscription methods
   const subscription = {
-    subscribe: (consumer: (d: unknown) => void, ...args: unknown[]) =>
-      hooks.subscribe(name, args, consumer),
-    unsubscribe: (consumer: (d: unknown) => void, ...args: unknown[]) =>
-      hooks.unsubscribe(name, args, consumer),
+    subscribe: (consumer: (d: unknown) => void, ...paramsWithCallOptions: unknown[]) => {
+      const {params, callOptions} = extractCallOptions(paramsWithCallOptions)
+      return hooks.subscribe(name, params, consumer, callOptions)
+    },
+    unsubscribe: (consumer: (d: unknown) => void, ...paramsWithCallOptions: unknown[]) => {
+      const {params, callOptions} = extractCallOptions(paramsWithCallOptions)
+      return hooks.unsubscribe(name, params, consumer, callOptions)
+    },
   }
 
   Object.assign(remoteItem, subscription)
@@ -54,23 +60,56 @@ export function createRemote<S extends Services>(
   })
 }
 
+function extractCallOptions(params: unknown[]): {params: unknown[]; callOptions?: CallOptions} {
+  if (
+    params.length > 0 &&
+    typeof params[params.length - 1] == "object" &&
+    (params[params.length - 1] as any).kind == CallOptions.KIND
+  ) {
+    const options = params.pop() as CallOptions
+    return {
+      params,
+      callOptions: options,
+    }
+  }
+
+  return {params}
+}
+
 export type RemoteHooks = {
-  call(itemName: string, parameters: unknown[]): Promise<unknown>
-  subscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): Promise<void>
+  call(itemName: string, parameters: unknown[], callOptions?: CallOptions): Promise<unknown>
+  subscribe(
+    itemName: string,
+    parameters: unknown[],
+    consumer: (d: unknown) => void,
+    callOptions?: CallOptions
+  ): Promise<void>
   unsubscribe(
     itemName: string,
     parameters: unknown[],
-    consumer: (d: unknown) => void
+    consumer: (d: unknown) => void,
+    callOptions?: CallOptions
   ): Promise<void>
 }
+
+export type AddParameters<
+  TFunction extends (...args: any) => any,
+  TParameters extends [...args: any],
+> = (...args: [...Parameters<TFunction>, ...TParameters]) => ReturnType<TFunction>
 
 export type ServicesWithSubscriptions<T extends Services> = {
   [K in keyof T]: T[K] extends Services
     ? ServicesWithSubscriptions<T[K]>
     : T[K] extends RemoteFunction
-      ? T[K] & {
-          subscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>
-          unsubscribe(consumer: Consumer<T[K]>, ...parameters: Parameters<T[K]>): Promise<void>
+      ? AddParameters<T[K], [CallOptions?]> & {
+          subscribe(
+            consumer: Consumer<T[K]>,
+            ...parameters: [...Parameters<T[K]>, CallOptions?]
+          ): Promise<void>
+          unsubscribe(
+            consumer: Consumer<T[K]>,
+            ...parameters: [...Parameters<T[K]>, CallOptions?]
+          ): Promise<void>
         }
       : never
 }

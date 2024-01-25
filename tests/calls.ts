@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils.js"
-import {RpcError, RpcErrors} from "../src/index.js"
+import {CallOptions, RpcError, RpcErrors} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("calls", () => {
@@ -90,7 +90,7 @@ describe("calls", () => {
     })
 
     try {
-      await client.test.longOp({timeout: 1 * 1000})
+      await client.test.longOp(new CallOptions({timeout: 1 * 1000}))
       assert.fail()
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)

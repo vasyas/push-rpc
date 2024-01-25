@@ -1,4 +1,4 @@
-import {InvocationType, RpcContext, Services} from "../rpc.js"
+import {CallOptions, InvocationType, RpcContext, Services} from "../rpc.js"
 import {HttpClient} from "./HttpClient.js"
 import {RemoteSubscriptions} from "./RemoteSubscriptions.js"
 import {WebSocketConnection} from "./WebSocketConnection.js"
@@ -12,7 +12,7 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     url: string,
     private readonly options: ConsumeServicesOptions
   ) {
-    this.httpClient = new HttpClient(url, this.clientId, {callTimeout: options.callTimeout})
+    this.httpClient = new HttpClient(url, this.clientId)
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(
@@ -72,13 +72,20 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
     })
   }
 
-  private call = (itemName: string, parameters: unknown[]): Promise<unknown> => {
-    // TODO per-call callTimeout
-
+  private call = (
+    itemName: string,
+    parameters: unknown[],
+    callOptions?: CallOptions
+  ): Promise<unknown> => {
     return this.invoke(
       itemName,
       InvocationType.Call,
-      (...parameters) => this.httpClient.call(itemName, parameters),
+      (...parameters) =>
+        this.httpClient.call(
+          itemName,
+          parameters,
+          callOptions?.timeout ?? this.options.callTimeout
+        ),
       parameters
     )
   }
@@ -86,7 +93,8 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   private subscribe = async (
     itemName: string,
     parameters: unknown[],
-    consumer: (d: unknown) => void
+    consumer: (d: unknown) => void,
+    callOptions?: CallOptions
   ): Promise<void> => {
     const cached = this.remoteSubscriptions.getCached(itemName, parameters)
 
@@ -100,11 +108,15 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
       })
     }
 
-    // TODO callTimeout
     const data = await this.invoke(
       itemName,
       InvocationType.Subscribe,
-      (...parameters) => this.httpClient.subscribe(itemName, parameters),
+      (...parameters) =>
+        this.httpClient.subscribe(
+          itemName,
+          parameters,
+          callOptions?.timeout ?? this.options.callTimeout
+        ),
       parameters
     )
     this.remoteSubscriptions.subscribe(data, itemName, parameters, consumer)
@@ -113,7 +125,8 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   private unsubscribe = async (
     itemName: string,
     parameters: unknown[],
-    consumer: (d: unknown) => void
+    consumer: (d: unknown) => void,
+    callOptions?: CallOptions
   ) => {
     const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
 
@@ -121,7 +134,12 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
       await this.invoke(
         itemName,
         InvocationType.Unsubscribe,
-        (...parameters) => this.httpClient.unsubscribe(itemName, parameters),
+        (...parameters) =>
+          this.httpClient.unsubscribe(
+            itemName,
+            parameters,
+            callOptions?.timeout ?? this.options.callTimeout
+          ),
         parameters
       )
     }
@@ -130,7 +148,7 @@ export class RpcClientImpl<S extends Services> implements RpcClient {
   private resubscribe = () => {
     for (const [itemName, params, consumers] of this.remoteSubscriptions.getAllSubscriptions()) {
       this.httpClient
-        .subscribe(itemName, params)
+        .subscribe(itemName, params, this.options.callTimeout)
         .then((data) => {
           this.remoteSubscriptions.consume(itemName, params, data)
         })
