@@ -43,8 +43,10 @@ afterEach(async function () {
 
   if (testClient) {
     await testClient.close()
+    testClient = null
   }
   if (testServer) {
     await testServer.close()
+    testServer = null
   }
 })
