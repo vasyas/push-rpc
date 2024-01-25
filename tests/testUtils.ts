@@ -38,7 +38,9 @@ export async function createTestClient<S extends Services>(
   return r.remote
 }
 
-afterEach(async () => {
+afterEach(async function () {
+  this.timeout(4000)
+
   if (testClient) {
     await testClient.close()
   }
