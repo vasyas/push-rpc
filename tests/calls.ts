@@ -75,7 +75,7 @@ describe("calls", () => {
   }).timeout(1000)
 
   it("per-call timeout override default", async () => {
-    const callTimeout = 2 * 1000
+    const callTimeout = 200
 
     const services = await startTestServer({
       test: {
@@ -86,11 +86,11 @@ describe("calls", () => {
     })
 
     const client = await createTestClient<typeof services>({
-      callTimeout: 10 * 1000,
+      callTimeout: 4 * callTimeout,
     })
 
     try {
-      await client.test.longOp(new CallOptions({timeout: 1 * 1000}))
+      await client.test.longOp(new CallOptions({timeout: callTimeout}))
       assert.fail()
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)

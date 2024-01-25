@@ -415,7 +415,7 @@ describe("Subscriptions", () => {
   })
 
   it("per-subscribe timeout", async () => {
-    const callTimeout = 2 * 1000
+    const callTimeout = 200
 
     const services = await startTestServer({
       test: {
@@ -426,11 +426,11 @@ describe("Subscriptions", () => {
     })
 
     const client = await createTestClient<typeof services>({
-      callTimeout: 10 * 1000,
+      callTimeout: 4 * callTimeout,
     })
 
     try {
-      await client.test.longOp.subscribe(() => {}, new CallOptions({timeout: 1 * 1000}))
+      await client.test.longOp.subscribe(() => {}, new CallOptions({timeout: callTimeout}))
       assert.fail()
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)
