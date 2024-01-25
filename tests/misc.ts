@@ -146,24 +146,24 @@ describe("Misc", () => {
       },
     })
 
-    const client = await createTestClient<any>()
+    const remote: any = await createTestClient<any>()
 
     try {
-      await client.hello()
+      await remote.hello()
       assert.fail("Error expected")
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.NotFound)
     }
 
     try {
-      await client.nested.hello()
+      await remote.nested.hello()
       assert.fail("Error expected")
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.NotFound)
     }
 
     try {
-      await client.nested.nested2.hello()
+      await remote.nested.nested2.hello()
       assert.fail("Error expected")
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.NotFound)
