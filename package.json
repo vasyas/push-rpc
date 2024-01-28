@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "prepublishOnly": "npm run build && npm run test",
-    "build": "tsc",
+    "build": "rm -fr dist && tsc",
     "test": "NODE_OPTIONS='--loader ts-node/esm' mocha tests/**/*.ts"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
