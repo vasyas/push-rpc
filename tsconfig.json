@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "NodeNext",
+    "module": "CommonJS",
     "lib": [
       "es2020"
     ],
@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "dist"
   },
   "ts-node": {
     "esm": true

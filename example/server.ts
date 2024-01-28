@@ -1,6 +1,6 @@
-import {Todo, TodoService} from "./api.js"
-import {publishServices} from "../server/index.js"
-import {RemoteFunction} from "../rpc.js"
+import {Todo, TodoService} from "./api"
+import {publishServices} from "../src/server/index"
+import {RemoteFunction} from "../src/rpc"
 
 const storage: Todo[] = []
 
@@ -29,7 +29,7 @@ const {services} = await publishServices(
   },
   {
     port: 8080,
-    path: "/rpc"
+    path: "/rpc",
   }
 )
 

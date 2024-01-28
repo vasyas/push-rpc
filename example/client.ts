@@ -1,5 +1,5 @@
-import {Services} from "./api.js"
-import {consumeServices} from "../client/index.js"
+import {Services} from "./api"
+import {consumeServices} from "../src/client/index"
 
 const {remote} = await consumeServices<Services>("http://127.0.0.1:8080/rpc")
 
