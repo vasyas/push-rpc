@@ -14,7 +14,9 @@
   "license": "MIT",
   "dependencies": {
     "fast-stringify": "^2.0.0",
-    "nanoid": "^5.0.4",
+    "nanoid": "^5.0.4"
+  },
+  "optionalDependencies": {
     "ws": "^8.16.0"
   },
   "devDependencies": {
