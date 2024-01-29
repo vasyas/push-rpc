@@ -3,35 +3,21 @@ import {LocalSubscriptions} from "./LocalSubscriptions.js"
 import {ExtractPromiseResult} from "../utils/types.js"
 import {ThrottleArgsReducer} from "../utils/throttle.js"
 
-export type ServicesWithTriggers<T extends Services> = {
-  [K in keyof T]: T[K] extends Services
-    ? ServicesWithTriggers<T[K]>
-    : T[K] extends RemoteFunction
-      ? T[K] & {
-          trigger(
-            filter?: Partial<Parameters<T[K]>[0]>,
-            suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
-          ): void
-          throttle(settings: ThrottleSettings<ExtractPromiseResult<ReturnType<T[K]>>>): void
-        }
-      : never
-}
-
 export type ThrottleSettings<D> = {
   timeout: number
   reducer?: ThrottleArgsReducer<D>
 }
 
-export function withTriggers<T extends Services>(
+export function withTriggers<T extends Services<T>>(
   localSubscriptions: LocalSubscriptions,
-  services: Services,
+  services: T,
   name = ""
 ): ServicesWithTriggers<T> {
   const cachedItems: any = {}
   const skippedProps = ["length", "name", "prototype", "arguments", "caller"]
 
   return new Proxy(services, {
-    get(target: any, propName: any) {
+    get(target: any, propName: string) {
       // skip internal props
       if (typeof propName != "string") return target[propName]
 
@@ -60,7 +46,7 @@ export function withTriggers<T extends Services>(
       } else if (!cachedItems[propName]) {
         cachedItems[propName] = withTriggers(
           localSubscriptions,
-          services[propName] as Services,
+          services[propName as keyof T] as any,
           itemName
         )
       }
@@ -77,4 +63,18 @@ export function withTriggers<T extends Services>(
       return [...skippedProps, ...Object.keys(cachedItems)]
     },
   })
+}
+
+export type ServicesWithTriggers<T extends Services<T>> = {
+  [K in keyof T]: T[K] extends RemoteFunction
+    ? T[K] & {
+        trigger(
+          filter?: Partial<Parameters<T[K]>[0]>,
+          suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
+        ): void
+        throttle(settings: ThrottleSettings<ExtractPromiseResult<ReturnType<T[K]>>>): void
+      }
+    : T[K] extends object
+      ? ServicesWithTriggers<T[K]>
+      : never
 }

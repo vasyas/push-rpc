@@ -1,6 +1,5 @@
 import {Todo, TodoService} from "./api"
 import {publishServices} from "../src/server/index"
-import {RemoteFunction} from "../src/rpc"
 
 const storage: Todo[] = []
 
@@ -20,8 +19,6 @@ async function startServer() {
     async getTodos() {
       return storage
     }
-
-    [key: string]: RemoteFunction // TODO get rid of this
   }
 
   const {services} = await publishServices(

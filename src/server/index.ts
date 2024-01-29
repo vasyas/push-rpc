@@ -4,7 +4,7 @@ import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
 import {IncomingMessage} from "http"
 
-export async function publishServices<S extends Services, C extends RpcContext>(
+export async function publishServices<S extends Services<S>, C extends RpcContext>(
   services: S,
   overrideOptions: Partial<PublishServicesOptions<C>> & {port: number}
 ): Promise<{

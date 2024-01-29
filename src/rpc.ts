@@ -1,8 +1,8 @@
 import {ExtractPromiseResult} from "./utils/types.js"
 
 export type RemoteFunction = (...args: any[]) => Promise<any>
-export type Services = {
-  [key: string]: Services | RemoteFunction
+export type Services<SubType> = {
+  [K in keyof SubType]: Services<SubType[K]> | RemoteFunction
 }
 
 export type Consumer<T extends RemoteFunction> = (data: ExtractPromiseResult<ReturnType<T>>) => void

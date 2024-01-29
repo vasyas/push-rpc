@@ -1,6 +1,6 @@
 import {CallOptions, Consumer, RemoteFunction, Services} from "../rpc.js"
 
-export function createRemote<S extends Services>(
+export function createRemote<S extends Services<S>>(
   hooks: RemoteHooks,
   name = ""
 ): ServicesWithSubscriptions<S> {
@@ -97,20 +97,20 @@ export type AddParameters<
   TParameters extends [...args: any],
 > = (...args: [...Parameters<TFunction>, ...TParameters]) => ReturnType<TFunction>
 
-export type ServicesWithSubscriptions<T extends Services> = {
-  [K in keyof T]: T[K] extends Services
-    ? ServicesWithSubscriptions<T[K]>
-    : T[K] extends RemoteFunction
-      ? AddParameters<T[K], [CallOptions?]> & {
-          subscribe(
-            consumer: Consumer<T[K]>,
-            ...parameters: [...Parameters<T[K]>, CallOptions?]
-          ): Promise<void>
-          unsubscribe(
-            consumer: Consumer<T[K]>,
-            ...parameters: [...Parameters<T[K]>, CallOptions?]
-          ): Promise<void>
-        }
+export type ServicesWithSubscriptions<T extends Services<T>> = {
+  [K in keyof T]: T[K] extends RemoteFunction
+    ? AddParameters<T[K], [CallOptions?]> & {
+        subscribe(
+          consumer: Consumer<T[K]>,
+          ...parameters: [...Parameters<T[K]>, CallOptions?]
+        ): Promise<void>
+        unsubscribe(
+          consumer: Consumer<T[K]>,
+          ...parameters: [...Parameters<T[K]>, CallOptions?]
+        ): Promise<void>
+      }
+    : T[K] extends object
+      ? ServicesWithSubscriptions<T[K]>
       : never
 }
 
