@@ -22,7 +22,7 @@ export type ConsumeServicesOptions = {
   middleware: Middleware<RpcContext>[]
 }
 
-export async function consumeServices<S extends Services>(
+export async function consumeServices<S extends Services<S>>(
   url: string,
   overrideOptions: Partial<ConsumeServicesOptions> = {}
 ): Promise<{

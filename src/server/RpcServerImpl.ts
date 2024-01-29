@@ -18,7 +18,7 @@ import {withMiddlewares} from "../utils/middleware.js"
 import {ServicesWithTriggers, withTriggers} from "./local.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 
-export class RpcServerImpl<S extends Services, C extends RpcContext> implements RpcServer {
+export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implements RpcServer {
   constructor(
     private readonly services: S,
     private readonly options: PublishServicesOptions<C>
