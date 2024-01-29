@@ -87,7 +87,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     itemName: string,
     parameters: unknown[]
   ): Promise<unknown> => {
-    const item = this.getItem(itemName)
+    const item = this.getRemoteFunction(itemName)
 
     if (!item) {
       throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
@@ -112,7 +112,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     itemName: string,
     parameters: unknown[]
   ) => {
-    const item = this.getItem(itemName)
+    const item = this.getRemoteFunction(itemName)
 
     if (!item) {
       throw new RpcError(RpcErrors.NotFound, `Item ${itemName} not found`)
@@ -179,7 +179,7 @@ export class RpcServerImpl<S extends Services, C extends RpcContext> implements 
     }
   }
 
-  private getItem(
+  private getRemoteFunction(
     itemName: string,
     root: any = this.services
   ): {function: RemoteFunction; container: any} | undefined {
