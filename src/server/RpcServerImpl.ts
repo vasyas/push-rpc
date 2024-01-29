@@ -80,7 +80,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   private readonly localSubscriptions = new LocalSubscriptions()
   private readonly invocationCache = new PromiseCache()
   private readonly connectionsServer: ConnectionsServer
-  private readonly httpServer = http.createServer()
+  readonly httpServer = http.createServer()
 
   private call = async (
     connectionContext: RpcConnectionContext,

@@ -2,7 +2,7 @@ import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext, Services} from "../r
 import {ServicesWithTriggers} from "./local.js"
 import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
-import {IncomingMessage} from "http"
+import http, {IncomingMessage} from "http"
 
 export async function publishServices<S extends Services<S>, C extends RpcContext>(
   services: S,
@@ -10,6 +10,7 @@ export async function publishServices<S extends Services<S>, C extends RpcContex
 ): Promise<{
   server: RpcServer
   services: ServicesWithTriggers<S>
+  httpServer: http.Server
 }> {
   const options = {
     ...defaultOptions,
@@ -23,6 +24,7 @@ export async function publishServices<S extends Services<S>, C extends RpcContex
   return {
     services: rpcServer.createServicesWithTriggers(),
     server: rpcServer,
+    httpServer: rpcServer.httpServer,
   }
 }
 
