@@ -1,17 +1,19 @@
 {
-  "private": true,
   "name": "@push-rpc/next",
   "version": "2.0.0-beta.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "npm run build && npm run test",
+    "prepublishOnly": "npm run build",
     "build": "rm -fr dist && tsc -p tsconfig.cjs.json",
     "test": "NODE_OPTIONS='--loader ts-node/esm' mocha tests/**/*.ts"
   },
   "repository": "https://github.com/vasyas/push-rpc.git",
   "author": "vasyas <vasyl@stashuk.com>",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "fast-stringify": "^2.0.0",
     "nanoid": "^3.3.7"
