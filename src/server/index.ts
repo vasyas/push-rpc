@@ -6,7 +6,7 @@ import http, {IncomingMessage} from "http"
 
 export async function publishServices<S extends Services<S>, C extends RpcContext>(
   services: S,
-  overrideOptions: Partial<PublishServicesOptions<C>> & {port: number}
+  overrideOptions: Partial<PublishServicesOptions<C>> & ({port: number} | {server: http.Server})
 ): Promise<{
   server: RpcServer
   services: ServicesWithTriggers<S>
@@ -35,13 +35,21 @@ export type RpcServer = {
 }
 
 export type PublishServicesOptions<C extends RpcContext> = {
-  port: number
-  path: string
   host: string
+
+  path: string
   middleware: Middleware<C>[]
   pingInterval: number
   createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext>
-}
+} & (
+  | {
+      server: http.Server
+    }
+  | {
+      port: number
+    }
+  | {}
+)
 
 const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   path: "",

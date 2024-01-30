@@ -11,71 +11,70 @@ export async function serveHttpRequest(
   hooks: HttpServerHooks,
   createConnectionContext: (req: IncomingMessage) => Promise<RpcConnectionContext>
 ) {
-  try {
-    if (!req.url?.startsWith(path)) {
-      res.statusCode = 404
-      res.end()
-      return
-    }
+  // if port is in options - response 404 on other URLs
+  // oherwise just handle request
 
-    const ctx = await createConnectionContext(req)
+  if (req.url?.startsWith(path)) {
+    try {
+      const ctx = await createConnectionContext(req)
 
-    const itemName = req.url.slice(path.length + 1)
+      const itemName = req.url.slice(path.length + 1)
 
-    const isJson = req.headersDistinct["content-type"]?.includes("application/json") ?? false
-    const body = isJson ? safeParseJson(await readBody(req)) : []
+      const isJson = req.headersDistinct["content-type"]?.includes("application/json") ?? false
+      const body = isJson ? safeParseJson(await readBody(req)) : []
 
-    let result: unknown
-    switch (req.method) {
-      case "POST":
-        result = await hooks.call(ctx, itemName, body)
-        break
-      case "PUT":
-        result = await hooks.subscribe(ctx, itemName, body)
-        break
-      case "PATCH":
-        result = await hooks.unsubscribe(ctx, itemName, body)
-        break
-      default:
-        res.statusCode = 404
+      let result: unknown
+      switch (req.method) {
+        case "POST":
+          result = await hooks.call(ctx, itemName, body)
+          break
+        case "PUT":
+          result = await hooks.subscribe(ctx, itemName, body)
+          break
+        case "PATCH":
+          result = await hooks.unsubscribe(ctx, itemName, body)
+          break
+        default:
+          res.statusCode = 404
+          res.end()
+          return
+      }
+
+      if (typeof result == "undefined") {
+        res.statusCode = 204
         res.end()
         return
-    }
-
-    if (typeof result == "undefined") {
-      res.statusCode = 204
-      res.end()
-      return
-    }
-
-    if (typeof result == "string") {
-      res.setHeader("Content-Type", "text/plain")
-      res.write(result)
-      res.end()
-      return
-    }
-
-    res.setHeader("Content-Type", "application/json")
-    res.write(safeStringify(result))
-    res.end()
-  } catch (e: any) {
-    if (e.code) {
-      res.statusCode = e.code
-      res.statusMessage = e.message
-      const {code, message, stack, ...rest} = e
-      if (Object.keys(rest).length > 0) {
-        res.setHeader("Content-Type", "application/json")
-        res.write(safeStringify(rest))
       }
-      res.end()
-      return
-    } else {
-      log.warn(`Error in ${req.url}.`, e)
 
-      res.statusCode = 500
-      res.statusMessage = e["message"] || "Internal Server Error"
+      if (typeof result == "string") {
+        res.setHeader("Content-Type", "text/plain")
+        res.write(result)
+        res.end()
+        return
+      }
+
+      res.setHeader("Content-Type", "application/json")
+      res.write(safeStringify(result))
       res.end()
-      return
+    } catch (e: any) {
+      if (e.code) {
+        res.statusCode = e.code
+        res.statusMessage = e.message
+        const {code, message, stack, ...rest} = e
+        if (Object.keys(rest).length > 0) {
+          res.setHeader("Content-Type", "application/json")
+          res.write(safeStringify(rest))
+        }
+        res.end()
+        return
+      } else {
+        log.warn(`Error in ${req.url}.`, e)
+
+        res.statusCode = 500
+        res.statusMessage = e["message"] || "Internal Server Error"
+        res.end()
+        return
+      }
     }
   }
 }

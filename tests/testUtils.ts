@@ -15,7 +15,7 @@ export const TEST_PORT = 5555
 
 export let testServer: RpcServer | null = null
 
-export async function startTestServer<S extends Services, C extends RpcContext>(
+export async function startTestServer<S extends Services<S>, C extends RpcContext>(
   local: S,
   options: Partial<PublishServicesOptions<C>> = {}
 ): Promise<ServicesWithTriggers<S>> {
@@ -30,7 +30,7 @@ export async function startTestServer<S extends Services, C extends RpcContext>(
 
 export let testClient: RpcClient | null = null
 
-export async function createTestClient<S extends Services>(
+export async function createTestClient<S extends Services<S>>(
   options?: Partial<ConsumeServicesOptions>
 ): Promise<ServicesWithSubscriptions<S>> {
   const r = await consumeServices<S>(`http://127.0.0.1:${TEST_PORT}/rpc`, options)

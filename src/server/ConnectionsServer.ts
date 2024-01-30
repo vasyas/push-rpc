@@ -4,10 +4,14 @@ import http from "http"
 import {log} from "../logger.js"
 
 export class ConnectionsServer {
-  constructor(server: http.Server, options: ConnectionsServerOptions, connectionClosed: (clientId: string) => void) {
-    this.wss = new WebSocketServer({server})
+  constructor(
+    server: http.Server,
+    options: ConnectionsServerOptions,
+    connectionClosed: (clientId: string) => void
+  ) {
+    this.wss = new WebSocketServer({server, path: options.path})
 
-    this.wss.on("connection", (ws: WebSocket & { alive: boolean }) => {
+    this.wss.on("connection", (ws: WebSocket & {alive: boolean}) => {
       ws.alive = true
 
       const clientId = ws.protocol || "anon"
@@ -22,25 +26,25 @@ export class ConnectionsServer {
         connectionClosed(clientId)
       })
 
-      ws.on('pong', () => {
+      ws.on("pong", () => {
         ws.alive = true
-      });
+      })
     })
 
     const pingTimer = setInterval(() => {
-      this.clientSockets.forEach(ws => {
+      this.clientSockets.forEach((ws) => {
         if (!ws.alive) {
           // missing 2nd keep-alive period
-          ws.terminate();
+          ws.terminate()
           return
         }
 
-        ws.alive = false;
-        ws.ping();
-      });
-    }, options.pingInterval);
+        ws.alive = false
+        ws.ping()
+      })
+    }, options.pingInterval)
 
-    this.wss.on('close', () => {
+    this.wss.on("close", () => {
       clearInterval(pingTimer)
     })
   }
@@ -56,7 +60,7 @@ export class ConnectionsServer {
   }
 
   private wss: WebSocketServer
-  private clientSockets = new Map<string, WebSocket & { alive: boolean }>()
+  private clientSockets = new Map<string, WebSocket & {alive: boolean}>()
 
   async close() {
     return new Promise<void>((resolve, reject) => {
@@ -70,4 +74,5 @@ export class ConnectionsServer {
 
 export type ConnectionsServerOptions = {
   pingInterval: number
+  path: string
 }

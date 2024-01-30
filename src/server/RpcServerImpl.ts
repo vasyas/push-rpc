@@ -23,9 +23,24 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     private readonly services: S,
     private readonly options: PublishServicesOptions<C>
   ) {
+    if ("server" in this.options) {
+      this.httpServer = this.options.server
+    } else {
+      this.httpServer = http.createServer()
+
+      // for our own server, respond 404 on unhandled URLs
+      this.httpServer.addListener("request", (req, res) => {
+        if (!req.url?.startsWith(options.path)) {
+          res.statusCode = 404
+          res.end()
+          return
+        }
+      })
+    }
+
     this.connectionsServer = new ConnectionsServer(
       this.httpServer,
-      {pingInterval: options.pingInterval},
+      {pingInterval: options.pingInterval, path: options.path},
       (clientId) => {
         this.localSubscriptions.unsubscribeAll(clientId)
       }
@@ -47,15 +62,23 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   }
 
   start() {
-    return new Promise<void>((resolve, reject) => {
-      this.httpServer.on("error", (err) => {
-        reject(err)
-      })
+    if ("server" in this.options) {
+      return Promise.resolve()
+    }
 
-      this.httpServer.listen(this.options.port, this.options.host, () => {
-        resolve()
+    if ("port" in this.options) {
+      const {port} = this.options
+
+      return new Promise<void>((resolve, reject) => {
+        this.httpServer.on("error", (err) => {
+          reject(err)
+        })
+
+        this.httpServer.listen(port, this.options.host, () => {
+          resolve()
+        })
       })
-    })
+    }
   }
 
   async close() {
@@ -80,7 +103,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   private readonly localSubscriptions = new LocalSubscriptions()
   private readonly invocationCache = new PromiseCache()
   private readonly connectionsServer: ConnectionsServer
-  readonly httpServer = http.createServer()
+  readonly httpServer
 
   private call = async (
     connectionContext: RpcConnectionContext,
