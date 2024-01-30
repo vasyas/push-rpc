@@ -64,6 +64,7 @@ function extractCallOptions(params: unknown[]): {params: unknown[]; callOptions?
   if (
     params.length > 0 &&
     typeof params[params.length - 1] == "object" &&
+    params[params.length - 1] != null &&
     (params[params.length - 1] as any).kind == CallOptions.KIND
   ) {
     const options = params.pop() as CallOptions
