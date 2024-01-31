@@ -43,7 +43,8 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       {pingInterval: options.pingInterval, path: options.path},
       (clientId) => {
         this.localSubscriptions.unsubscribeAll(clientId)
-      }
+      },
+      !("server" in this.options)
     )
 
     this.httpServer.addListener("request", (req, res) =>

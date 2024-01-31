@@ -7,9 +7,22 @@ export class ConnectionsServer {
   constructor(
     server: http.Server,
     options: ConnectionsServerOptions,
-    connectionClosed: (clientId: string) => void
+    connectionClosed: (clientId: string) => void,
+    closeSocketsWithDifferentPath: boolean
   ) {
-    this.wss = new WebSocketServer({server, path: options.path})
+    this.wss = new WebSocketServer({noServer: true})
+
+    server.on("upgrade", (request, socket, head) => {
+      if (request.url?.startsWith(options.path)) {
+        this.wss.handleUpgrade(request, socket, head, (ws) => {
+          this.wss.emit("connection", ws, request)
+        })
+      } else {
+        if (closeSocketsWithDifferentPath) {
+          socket.destroy()
+        }
+      }
+    })
 
     this.wss.on("connection", (ws: WebSocket & {alive: boolean}) => {
       ws.alive = true

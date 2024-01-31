@@ -184,4 +184,24 @@ describe("Misc", () => {
     const body = await r.text()
     assert.equal(body, "yes1")
   })
+
+  it("non array in params converts to 1st param", async () => {
+    let param: any
+
+    await startTestServer({
+      async hello1(param1) {
+        param = param1
+      },
+    })
+
+    await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/hello1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({param1: "yes1"}),
+    })
+
+    assert.deepEqual(param, {param1: "yes1"})
+  })
 })
