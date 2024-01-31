@@ -1,6 +1,6 @@
 {
   "name": "@push-rpc/next",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -18,8 +18,13 @@
     "fast-stringify": "^2.0.0",
     "nanoid": "^3.3.7"
   },
-  "optionalDependencies": {
+  "peerDependencies": {
     "ws": "^8.16.0"
+  },
+  "peerDependenciesMeta": {
+    "ws": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",
