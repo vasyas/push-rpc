@@ -36,10 +36,10 @@ export type RpcServer = {
 
 export type PublishServicesOptions<C extends RpcContext> = {
   host: string
-
   path: string
   middleware: Middleware<C>[]
   pingInterval: number
+  subscriptions: boolean
   createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext>
 } & (
   | {
@@ -56,6 +56,7 @@ const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   host: "0.0.0.0",
   middleware: [],
   pingInterval: 30 * 1000, // should be in-sync with client
+  subscriptions: true,
 
   async createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext> {
     return {

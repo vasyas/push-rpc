@@ -38,14 +38,16 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       })
     }
 
-    this.connectionsServer = new ConnectionsServer(
-      this.httpServer,
-      {pingInterval: options.pingInterval, path: options.path},
-      (clientId) => {
-        this.localSubscriptions.unsubscribeAll(clientId)
-      },
-      !("server" in this.options)
-    )
+    this.connectionsServer = options.subscriptions
+      ? new ConnectionsServer(
+          this.httpServer,
+          {pingInterval: options.pingInterval, path: options.path},
+          (clientId) => {
+            this.localSubscriptions.unsubscribeAll(clientId)
+          },
+          !("server" in this.options)
+        )
+      : null
 
     this.httpServer.addListener("request", (req, res) =>
       serveHttpRequest(
@@ -83,7 +85,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   }
 
   async close() {
-    await this.connectionsServer.close()
+    await this.connectionsServer?.close()
     await new Promise<void>((resolve, reject) => {
       this.httpServer.closeIdleConnections()
       this.httpServer.close((err) => {
@@ -103,7 +105,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
   private readonly localSubscriptions = new LocalSubscriptions()
   private readonly invocationCache = new PromiseCache()
-  private readonly connectionsServer: ConnectionsServer
+  private readonly connectionsServer: ConnectionsServer | null
   readonly httpServer
 
   private call = async (
@@ -169,7 +171,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
           if (newDataJson != lastDataJson) {
             lastDataJson = newDataJson
-            this.connectionsServer.publish(
+            this.connectionsServer?.publish(
               connectionContext.clientId,
               itemName,
               parameters,

@@ -17,12 +17,43 @@ describe("Subscriptions", () => {
 
     let receivedItem
 
-    await client.test.item.subscribe(() => {
+    await client.test.item.subscribe((item) => {
       receivedItem = item
     })
 
     await adelay(50)
     assert.deepEqual(receivedItem, item)
+  })
+
+  it("disabled subscribe", async () => {
+    const item = {r: "1"}
+
+    const services = await startTestServer(
+      {
+        test: {
+          item: async () => item,
+        },
+      },
+      {
+        subscriptions: false,
+      }
+    )
+
+    const client = await createTestClient<typeof services>()
+
+    let receivedItem
+
+    await client.test.item.subscribe((item) => {
+      receivedItem = item
+    })
+
+    receivedItem = null
+
+    item.r = "2"
+    services.test.item.trigger()
+    await adelay(20)
+
+    assert.equal(receivedItem, null)
   })
 
   it("error in supplier breaks subscribe", async () => {
