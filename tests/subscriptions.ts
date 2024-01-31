@@ -39,7 +39,9 @@ describe("Subscriptions", () => {
       }
     )
 
-    const client = await createTestClient<typeof services>()
+    const client = await createTestClient<typeof services>({
+      subscriptions: false,
+    })
 
     let receivedItem
 

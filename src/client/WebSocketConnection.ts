@@ -1,4 +1,4 @@
-import WebSocket from "ws"
+import type WebSocket from "ws"
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
@@ -97,6 +97,8 @@ export class WebSocketConnection {
   private async establishConnection(onDisconnected: () => void): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
+        const {WebSocket} = await import("ws")
+
         const socket = new WebSocket(this.url, this.clientId)
 
         let connected = false

@@ -102,7 +102,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
-    if (this.options.subscribe) {
+    if (this.options.subscriptions) {
       this.connection.connect().catch((e) => {
         // ignored
       })

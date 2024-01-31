@@ -1,7 +1,7 @@
 import {PublishServicesOptions, RpcServer} from "./index.js"
 import {LocalSubscriptions} from "./LocalSubscriptions.js"
 import http from "http"
-import {ConnectionsServer} from "./ConnectionsServer.js"
+import type {ConnectionsServer} from "./ConnectionsServer.js"
 import {PromiseCache} from "../utils/promises.js"
 import {serveHttpRequest} from "./http.js"
 import {
@@ -38,17 +38,6 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       })
     }
 
-    this.connectionsServer = options.subscriptions
-      ? new ConnectionsServer(
-          this.httpServer,
-          {pingInterval: options.pingInterval, path: options.path},
-          (clientId) => {
-            this.localSubscriptions.unsubscribeAll(clientId)
-          },
-          !("server" in this.options)
-        )
-      : null
-
     this.httpServer.addListener("request", (req, res) =>
       serveHttpRequest(
         req,
@@ -64,7 +53,24 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     )
   }
 
-  start() {
+  private async createConnectionsServer() {
+    const {ConnectionsServer} = await import("./ConnectionsServer.js")
+
+    return new ConnectionsServer(
+      this.httpServer,
+      {pingInterval: this.options.pingInterval, path: this.options.path},
+      (clientId) => {
+        this.localSubscriptions.unsubscribeAll(clientId)
+      },
+      !("server" in this.options)
+    )
+  }
+
+  async start() {
+    this.connectionsServer = this.options.subscriptions
+      ? await this.createConnectionsServer()
+      : null
+
     if ("server" in this.options) {
       return Promise.resolve()
     }
@@ -105,7 +111,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
   private readonly localSubscriptions = new LocalSubscriptions()
   private readonly invocationCache = new PromiseCache()
-  private readonly connectionsServer: ConnectionsServer | null
+  private connectionsServer: ConnectionsServer | null = null
   readonly httpServer
 
   private call = async (
