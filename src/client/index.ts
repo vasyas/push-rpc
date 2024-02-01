@@ -20,6 +20,7 @@ export type ConsumeServicesOptions = {
   pingInterval: number
   subscriptions: boolean
   middleware: Middleware<RpcContext>[]
+  connectOnCreate: boolean
 }
 
 export async function consumeServices<S extends Services<S>>(
@@ -40,6 +41,10 @@ export async function consumeServices<S extends Services<S>>(
 
   const client = new RpcClientImpl<S>(url, options)
 
+  if (options.connectOnCreate && options.subscriptions) {
+    await client.connect()
+  }
+
   return {
     client,
     remote: client.createRemote(),
@@ -53,4 +58,5 @@ const defaultOptions: ConsumeServicesOptions = {
   pingInterval: 30 * 1000, // should be in-sync with server
   subscriptions: true,
   middleware: [],
+  connectOnCreate: false,
 }

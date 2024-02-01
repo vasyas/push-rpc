@@ -72,6 +72,10 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     })
   }
 
+  async connect() {
+    await this.connection.connect()
+  }
+
   private call = (
     itemName: string,
     parameters: unknown[],
