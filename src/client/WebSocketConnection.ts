@@ -8,6 +8,7 @@ export class WebSocketConnection {
     private readonly url: string,
     private readonly clientId: string,
     private readonly options: {
+      subscriptions: boolean
       reconnectDelay: number
       errorDelayMaxDuration: number
       pingInterval: number
@@ -38,6 +39,10 @@ export class WebSocketConnection {
    * Never rejects
    */
   connect() {
+    if (!this.options.subscriptions) {
+      return Promise.resolve()
+    }
+
     if (this.socket || !this.disconnectedMark) return Promise.resolve()
 
     this.disconnectedMark = false

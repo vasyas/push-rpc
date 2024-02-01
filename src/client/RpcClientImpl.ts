@@ -19,6 +19,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       url,
       this.clientId,
       {
+        subscriptions: options.subscriptions,
         errorDelayMaxDuration: options.errorDelayMaxDuration,
         reconnectDelay: options.reconnectDelay,
         pingInterval: options.pingInterval,
@@ -106,11 +107,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
-    if (this.options.subscriptions) {
-      this.connection.connect().catch((e) => {
-        // ignored
-      })
-    }
+    void this.connection.connect()
 
     const data = await this.invoke(
       itemName,

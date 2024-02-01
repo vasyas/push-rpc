@@ -41,7 +41,7 @@ export async function consumeServices<S extends Services<S>>(
 
   const client = new RpcClientImpl<S>(url, options)
 
-  if (options.connectOnCreate && options.subscriptions) {
+  if (options.connectOnCreate) {
     await client.connect()
   }
 
