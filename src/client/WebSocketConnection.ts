@@ -15,7 +15,7 @@ export class WebSocketConnection {
     private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
     private readonly onConnected: () => void
   ) {
-    this.url = url
+    this.url = url.replace(/^https(.*)/, "wss$1").replace(/^http(.*)/, "ws$1")
     this.clientId = clientId
   }
 
