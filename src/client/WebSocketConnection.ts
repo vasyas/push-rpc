@@ -61,7 +61,9 @@ export class WebSocketConnection {
               onFirstConnection()
               onFirstConnection = () => {}
             },
-            () => {
+            (e) => {
+              log.warn("Unable to connect WS", e)
+
               // 2. ... unable to establish connection
               resolve()
             }
