@@ -1,4 +1,3 @@
-import type WebSocket from "ws"
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
@@ -11,7 +10,7 @@ export class WebSocketConnection {
       subscriptions: boolean
       reconnectDelay: number
       errorDelayMaxDuration: number
-      pingInterval: number
+      pingInterval: number | null
     },
     private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
     private readonly onConnected: () => void
@@ -24,7 +23,7 @@ export class WebSocketConnection {
     this.disconnectedMark = true
 
     if (this.socket) {
-      this.socket!.terminate()
+      this.socket!.close()
       this.socket = null
     }
 
@@ -39,12 +38,15 @@ export class WebSocketConnection {
    * Never rejects
    */
   connect() {
+    // no subscriptions support, no need to connect
     if (!this.options.subscriptions) {
       return Promise.resolve()
     }
 
+    // already started connecting
     if (this.socket || !this.disconnectedMark) return Promise.resolve()
 
+    // start connection process
     this.disconnectedMark = false
 
     return new Promise<void>(async (resolve) => {
@@ -104,13 +106,11 @@ export class WebSocketConnection {
   private async establishConnection(onDisconnected: () => void): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        const {WebSocket} = await import("ws")
-
         const socket = new WebSocket(this.url, this.clientId)
 
         let connected = false
 
-        socket.on("open", () => {
+        socket.addEventListener("open", () => {
           this.socket = socket
           connected = true
           resolve()
@@ -120,11 +120,11 @@ export class WebSocketConnection {
           this.onConnected()
         })
 
-        socket.on("ping", () => {
+        socket.addEventListener("ping", () => {
           this.heartbeat()
         })
 
-        socket.on("close", () => {
+        socket.addEventListener("close", () => {
           this.socket = null
 
           if (connected) {
@@ -136,12 +136,10 @@ export class WebSocketConnection {
           }
         })
 
-        socket.on("error", (e) => {
+        socket.addEventListener("error", (e) => {
           if (!connected) {
             reject(e)
           }
-
-          log.warn("WS connection error", e.message)
 
           try {
             socket.close()
@@ -150,8 +148,8 @@ export class WebSocketConnection {
           }
         })
 
-        socket.on("message", (message) => {
-          this.receiveSocketMessage(message)
+        socket.addEventListener("message", (message) => {
+          this.receiveSocketMessage(message.data)
         })
       } catch (e) {
         reject(e)
@@ -168,12 +166,14 @@ export class WebSocketConnection {
       clearTimeout(this.pingTimeout)
     }
 
-    this.pingTimeout = setTimeout(() => {
-      this.socket?.terminate()
-    }, this.options.pingInterval * 1.5)
+    if (this.options.pingInterval) {
+      this.pingTimeout = setTimeout(() => {
+        this.socket?.close()
+      }, this.options.pingInterval * 1.5)
+    }
   }
 
-  private async receiveSocketMessage(rawMessage: WebSocket.RawData) {
+  private async receiveSocketMessage(rawMessage: string | ArrayBuffer | Blob) {
     try {
       const msg = rawMessage.toString()
 

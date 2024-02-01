@@ -10,6 +10,9 @@ import {
   ServicesWithSubscriptions,
   ServicesWithTriggers,
 } from "../src/index.js"
+import WebSocket from "ws"
+
+;(global as any).WebSocket = WebSocket
 
 export const TEST_PORT = 5555
 
