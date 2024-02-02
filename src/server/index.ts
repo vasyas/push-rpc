@@ -59,8 +59,10 @@ const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   subscriptions: true,
 
   async createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext> {
+    const header = req.headers[CLIENT_ID_HEADER]
+
     return {
-      clientId: req.headersDistinct[CLIENT_ID_HEADER]?.[0] || "anon",
+      clientId: (Array.isArray(header) ? header[0] : header) || "anon",
     }
   },
 }

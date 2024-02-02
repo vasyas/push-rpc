@@ -27,4 +27,5 @@ triggers.
 
 ## Issues / TBDs
 
+- [important] Importing index.js from the root of the package will import node's http package. Not good for clients.
 - Browser sockets don't have 'ping' event. Need to find a different way to detect connection loss.
