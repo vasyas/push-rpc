@@ -3,6 +3,7 @@ import {IncomingMessage, ServerResponse} from "http"
 import {RpcConnectionContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 import {log} from "../logger.js"
+import {decompressRequest} from "../utils/server"
 
 export async function serveHttpRequest(
   req: IncomingMessage,
@@ -85,15 +86,17 @@ export async function serveHttpRequest(
 }
 
 function readBody(req: http.IncomingMessage) {
+  const decompressed = decompressRequest(req)
+
   return new Promise<string>((resolve, reject) => {
     let body = ""
-    req.on("data", (chunk: Buffer) => {
+    decompressed.on("data", (chunk: Buffer) => {
       body += chunk.toString()
     })
-    req.on("end", () => {
+    decompressed.on("end", () => {
       resolve(body)
     })
-    req.on("error", (error: any) => {
+    decompressed.on("error", (error: any) => {
       reject(error)
     })
   })
