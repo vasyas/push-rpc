@@ -3,7 +3,7 @@ import {IncomingMessage, ServerResponse} from "http"
 import {RpcConnectionContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 import {log} from "../logger.js"
-import {decompressRequest} from "../utils/server"
+import {decompressRequest} from "../utils/server.js"
 
 export async function serveHttpRequest(
   req: IncomingMessage,

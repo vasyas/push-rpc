@@ -104,4 +104,32 @@ describe("connection", () => {
 
     assert.equal(testClient!.isConnected(), false)
   })
+
+  it("calls listeners", async () => {
+    const services = await startTestServer({
+      item: async () => "1",
+    })
+
+    let connected = false
+    let disconnected = false
+
+    const remote = await createTestClient<typeof services>({
+      onConnected: () => {
+        connected = true
+      },
+      onDisconnected: () => {
+        disconnected = true
+      },
+    })
+
+    await remote.item.subscribe(() => {})
+
+    assert.equal(connected, true)
+
+    await testClient!.close()
+
+    await adelay(10)
+
+    assert.equal(disconnected, true)
+  })
 })

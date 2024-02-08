@@ -27,7 +27,13 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       (itemName, parameters, data) => {
         this.remoteSubscriptions.consume(itemName, parameters, data)
       },
-      this.resubscribe
+      () => {
+        this.resubscribe()
+        options.onConnected()
+      },
+      () => {
+        options.onDisconnected()
+      }
     )
   }
 

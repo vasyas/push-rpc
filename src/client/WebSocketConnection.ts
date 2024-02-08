@@ -13,7 +13,8 @@ export class WebSocketConnection {
       pingInterval: number | null
     },
     private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
-    private readonly onConnected: () => void
+    private readonly onConnected: () => void,
+    private readonly onDisconnected: () => void
   ) {
     this.url = url.replace(/^https(.*)/, "wss$1").replace(/^http(.*)/, "ws$1")
     this.clientId = clientId
@@ -129,6 +130,7 @@ export class WebSocketConnection {
 
           if (connected) {
             onDisconnected()
+            this.onDisconnected()
           }
 
           if (this.pingTimeout) {

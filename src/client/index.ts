@@ -20,6 +20,8 @@ export type ConsumeServicesOptions = {
   subscriptions: boolean
   middleware: Middleware<RpcContext>[]
   connectOnCreate: boolean
+  onConnected: () => void
+  onDisconnected: () => void
 }
 
 export async function consumeServices<S extends Services<S>>(
@@ -58,4 +60,6 @@ const defaultOptions: ConsumeServicesOptions = {
   subscriptions: true,
   middleware: [],
   connectOnCreate: false,
+  onConnected: () => {},
+  onDisconnected: () => {},
 }
