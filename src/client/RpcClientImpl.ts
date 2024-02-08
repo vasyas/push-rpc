@@ -12,7 +12,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     url: string,
     private readonly options: ConsumeServicesOptions
   ) {
-    this.httpClient = new HttpClient(url, this.clientId)
+    this.httpClient = new HttpClient(url, this.clientId, options.getHeaders)
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(

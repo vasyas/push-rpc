@@ -4,19 +4,20 @@ import {safeParseJson, safeStringify} from "../utils/json.js"
 export class HttpClient {
   constructor(
     private url: string,
-    private clientId: string
+    private clientId: string,
+    private getHeaders: () => Promise<Record<string, string>>
   ) {}
 
-  call(itemName: string, params: unknown[], callTimeout: number): Promise<unknown> {
-    return this.httpRequest("POST", itemName, params, callTimeout)
+  async call(itemName: string, params: unknown[], callTimeout: number): Promise<unknown> {
+    return this.httpRequest("POST", itemName, params, callTimeout, await this.getHeaders())
   }
 
   async subscribe(itemName: string, params: unknown[], callTimeout: number) {
-    return this.httpRequest("PUT", itemName, params, callTimeout)
+    return this.httpRequest("PUT", itemName, params, callTimeout, await this.getHeaders())
   }
 
   async unsubscribe(itemName: string, params: unknown[], callTimeout: number) {
-    await this.httpRequest("PATCH", itemName, params, callTimeout)
+    await this.httpRequest("PATCH", itemName, params, callTimeout, await this.getHeaders())
   }
 
   private getItemUrl(itemName: string): string {
@@ -27,7 +28,8 @@ export class HttpClient {
     method: "POST" | "PUT" | "PATCH",
     itemName: string,
     params: unknown[],
-    callTimeout: number
+    callTimeout: number,
+    headers: Record<string, string>
   ): Promise<unknown> {
     try {
       const response = await fetch(this.getItemUrl(itemName), {
@@ -35,6 +37,7 @@ export class HttpClient {
         headers: {
           "Content-Type": "application/json",
           [CLIENT_ID_HEADER]: this.clientId,
+          ...headers,
         },
         body: safeStringify(params),
         signal: AbortSignal.timeout(callTimeout),

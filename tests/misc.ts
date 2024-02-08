@@ -1,6 +1,7 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, TEST_PORT} from "./testUtils.js"
-import {RpcErrors} from "../src/index.js"
+import {RpcConnectionContext, RpcErrors} from "../src/index.js"
+import {IncomingMessage} from "http"
 
 describe("Misc", () => {
   it("Send array in parameter", async () => {
@@ -203,5 +204,39 @@ describe("Misc", () => {
     })
 
     assert.deepEqual(param, {param1: "yes1"})
+  })
+
+  it("pass headers to server", async () => {
+    let userName: string | undefined
+
+    const services = await startTestServer(
+      {
+        async hello1(ctx?) {
+          userName = ctx.userName
+        },
+      },
+      {
+        async createConnectionContext(
+          req: IncomingMessage
+        ): Promise<RpcConnectionContext & {userName: string}> {
+          return {
+            clientId: "test",
+            userName: req.headers["x-user-name"] as string,
+          }
+        },
+      }
+    )
+
+    const remote = await createTestClient<typeof services>({
+      async getHeaders() {
+        return {
+          ["X-User-Name"]: "testUser",
+        }
+      },
+    })
+
+    await remote.hello1()
+
+    assert.equal(userName, "testUser")
   })
 })

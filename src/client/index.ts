@@ -22,6 +22,7 @@ export type ConsumeServicesOptions = {
   connectOnCreate: boolean
   onConnected: () => void
   onDisconnected: () => void
+  getHeaders: () => Promise<Record<string, string>>
 }
 
 export async function consumeServices<S extends Services<S>>(
@@ -62,4 +63,5 @@ const defaultOptions: ConsumeServicesOptions = {
   connectOnCreate: false,
   onConnected: () => {},
   onDisconnected: () => {},
+  getHeaders: async () => ({}),
 }
