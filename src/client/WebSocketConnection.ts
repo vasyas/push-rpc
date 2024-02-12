@@ -20,16 +20,17 @@ export class WebSocketConnection {
     this.clientId = clientId
   }
 
+  private resolveClose = () => {}
+
   async close() {
     this.disconnectedMark = true
 
     if (this.socket) {
       this.socket!.close()
-      this.socket = null
-    }
 
-    if (this.pingTimeout) {
-      clearTimeout(this.pingTimeout)
+      return new Promise<void>((resolve, reject) => {
+        this.resolveClose = resolve
+      })
     }
   }
 
@@ -136,6 +137,8 @@ export class WebSocketConnection {
           if (this.pingTimeout) {
             clearTimeout(this.pingTimeout)
           }
+
+          this.resolveClose()
         })
 
         socket.addEventListener("error", (e) => {
