@@ -113,20 +113,29 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
+    // Probably needs to be awaited, b/c server needs the connection to be established before making a subscription
     void this.connection.connect()
 
-    const data = await this.invoke(
-      itemName,
-      InvocationType.Subscribe,
-      (...parameters) =>
-        this.httpClient.subscribe(
-          itemName,
-          parameters,
-          callOptions?.timeout ?? this.options.callTimeout
-        ),
-      parameters
-    )
-    this.remoteSubscriptions.subscribe(data, itemName, parameters, consumer)
+    try {
+      this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
+
+      const data = await this.invoke(
+        itemName,
+        InvocationType.Subscribe,
+        (...parameters) =>
+          this.httpClient.subscribe(
+            itemName,
+            parameters,
+            callOptions?.timeout ?? this.options.callTimeout
+          ),
+        parameters
+      )
+
+      this.remoteSubscriptions.consume(itemName, parameters, data)
+    } catch (e) {
+      this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
+      throw e
+    }
   }
 
   private unsubscribe = async (

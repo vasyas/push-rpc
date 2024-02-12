@@ -394,7 +394,7 @@ describe("Subscriptions", () => {
     delivered = null
   })
 
-  it.skip("unsubscribe before supply bug", async () => {
+  it("unsubscribe before supply bug", async () => {
     const services = await startTestServer({
       item: async () => {
         await adelay(20)
@@ -411,10 +411,10 @@ describe("Subscriptions", () => {
 
     client.item.unsubscribe(sub)
 
-    await adelay(20)
+    await adelay(30)
 
-    assert.equal(0, testClient!._allSubscriptions().length)
-    assert.equal(0, testServer!._allSubscriptions().length)
+    assert.equal(testClient!._allSubscriptions().length, 0)
+    assert.equal(testServer!._allSubscriptions().length, 0)
   })
 
   it("skip unchanged data", async () => {

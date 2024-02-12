@@ -1,24 +1,13 @@
 import {safeStringify} from "../utils/json.js"
 
 export class RemoteSubscriptions {
-  subscribe(
-    initialData: unknown,
-    itemName: string,
-    parameters: unknown[],
-    consumer: (d: unknown) => void
-  ) {
-    this.addSubscription(itemName, parameters, consumer)
-
-    this.consume(itemName, parameters, initialData)
-  }
-
   unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): boolean {
     const parametersKey = getParametersKey(parameters)
 
     return this.removeSubscription(itemName, parametersKey, consumer)
   }
 
-  private addSubscription(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
+  addSubscription(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
     const itemSubscriptions = this.byItem.get(itemName) || {byParameters: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
