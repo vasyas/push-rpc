@@ -113,8 +113,9 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
-    // Probably needs to be awaited, b/c server needs the connection to be established before making a subscription
-    void this.connection.connect()
+    // Needs to be awaited b/c resubscribe will make a 2nd request then.
+    // Also, server needs the connection to be established before making a subscription
+    await this.connection.connect()
 
     try {
       this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
