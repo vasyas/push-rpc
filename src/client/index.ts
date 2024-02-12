@@ -23,6 +23,7 @@ export type ConsumeServicesOptions = {
   onConnected: () => void
   onDisconnected: () => void
   getHeaders: () => Promise<Record<string, string>>
+  getSubscriptionsUrl(url: string): string
 }
 
 export async function consumeServices<S extends Services<S>>(
@@ -64,4 +65,8 @@ const defaultOptions: ConsumeServicesOptions = {
   onConnected: () => {},
   onDisconnected: () => {},
   getHeaders: async () => ({}),
+  
+  getSubscriptionsUrl(url: string): string {
+    return url.replace(/^https(.*)/, "wss$1").replace(/^http(.*)/, "ws$1")
+  },
 }

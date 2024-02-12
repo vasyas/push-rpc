@@ -16,7 +16,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(
-      url,
+      options.getSubscriptionsUrl(url),
       this.clientId,
       {
         subscriptions: options.subscriptions,
