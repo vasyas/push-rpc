@@ -151,14 +151,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     }
 
     try {
-      const lastData = await this.invokeLocalFunction(
-        connectionContext,
-        itemName,
-        item,
-        parameters,
-        InvocationType.Subscribe
-      )
-      let lastDataJson = safeStringify(lastData)
+      let lastDataJson: string = ""
 
       const update = this.localSubscriptions.throttled(itemName, async (suppliedData?: unknown) => {
         try {
@@ -191,8 +184,19 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
       this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
 
+      const lastData = await this.invokeLocalFunction(
+        connectionContext,
+        itemName,
+        item,
+        parameters,
+        InvocationType.Subscribe
+      )
+      lastDataJson = safeStringify(lastData)
+
       return lastData
     } catch (e) {
+      this.localSubscriptions.unsubscribe(connectionContext.clientId, itemName, parameters)
+
       log.error(`Failed to subscribe ${itemName}`, e)
       throw e
     }

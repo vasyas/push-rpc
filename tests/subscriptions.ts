@@ -469,7 +469,7 @@ describe("Subscriptions", () => {
       assert.equal(e.code, RpcErrors.Timeout)
     }
 
-    assert.equal(0, testClient!._allSubscriptions().length)
-    assert.equal(0, testServer!._allSubscriptions().length)
+    assert.equal(testClient!._allSubscriptions().length, 0)
+    assert.equal(testServer!._allSubscriptions().length, 0)
   }).timeout(5000)
 })
