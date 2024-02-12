@@ -144,7 +144,7 @@ describe("Subscriptions", () => {
     const server = {
       test: {
         item: async () => {
-          await adelay(1)
+          await adelay(20)
           supplied++
           return item
         },
