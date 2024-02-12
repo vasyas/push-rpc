@@ -93,7 +93,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   async close() {
     await this.connectionsServer?.close()
     await new Promise<void>((resolve, reject) => {
-      this.httpServer.closeIdleConnections()
+      this.httpServer.closeAllConnections()
       this.httpServer.close((err) => {
         if (err) reject(err)
         else resolve(err)
