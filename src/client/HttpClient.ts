@@ -32,6 +32,8 @@ export class HttpClient {
     headers: Record<string, string>
   ): Promise<unknown> {
     try {
+      const {signal, finished} = timeoutSignal(callTimeout)
+
       const response = await fetch(this.getItemUrl(itemName), {
         method,
         headers: {
@@ -40,8 +42,10 @@ export class HttpClient {
           ...headers,
         },
         body: safeStringify(params),
-        signal: AbortSignal.timeout(callTimeout),
+        signal,
       })
+
+      finished()
 
       if (response.status == 204) {
         return
@@ -79,5 +83,16 @@ export class HttpClient {
       }
       throw e
     }
+  }
+}
+
+// AbortSignal.timeout polyfill for RN
+function timeoutSignal(time: number): {signal: AbortSignal; finished(): void} {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(new Error("TimeoutError")), time)
+
+  return {
+    signal: controller.signal,
+    finished: () => clearTimeout(timeout),
   }
 }

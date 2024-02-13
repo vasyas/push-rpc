@@ -32,4 +32,10 @@ triggers.
 
 ## Features
 
+- Developer friendly - everything is plain TypeScript calls, easy call tracing between client and server, good
+  integration with IDE & Browser DevTools
+- Based on HTTP, easy to integrate with existing infrastructure
+- Gradually upgradeable - WS is only used when you need subscriptions
 - Supports compressed HTTP requests.
+- Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. Bun/Deno should also work, but not officially
+  supported.
