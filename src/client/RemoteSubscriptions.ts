@@ -12,11 +12,17 @@ export class RemoteSubscriptions {
     this.byItem.set(itemName, itemSubscriptions)
 
     const parametersKey = getParametersKey(parameters)
-    const parameterSubscriptions = itemSubscriptions.byParameters.get(parametersKey) || {
+    const parameterSubscriptions: ParametersSubscription = itemSubscriptions.byParameters.get(
+      parametersKey
+    ) || {
       parameters,
       cached: null,
       consumers: [],
+      queue: [],
     }
+
+    parameterSubscriptions.paused = true
+
     itemSubscriptions.byParameters.set(parametersKey, parameterSubscriptions)
     parameterSubscriptions.consumers.push(consumer)
   }
@@ -61,7 +67,7 @@ export class RemoteSubscriptions {
     return filterSubscriptions?.cached
   }
 
-  consume(itemName: string, parameters: unknown[], data: unknown) {
+  consume(itemName: string, parameters: unknown[], data: unknown, resume: boolean = false) {
     const parametersKey = getParametersKey(parameters)
 
     const itemSubscriptions = this.byItem.get(itemName)
@@ -71,10 +77,28 @@ export class RemoteSubscriptions {
 
     if (!filterSubscriptions) return
 
-    filterSubscriptions.cached = data
-    filterSubscriptions.consumers.forEach((consumer) => {
-      consumer(data)
-    })
+    if (filterSubscriptions.paused && !resume) {
+      filterSubscriptions.queue.push(data)
+    } else {
+      filterSubscriptions.cached = data
+      filterSubscriptions.consumers.forEach((consumer) => {
+        consumer(data)
+      })
+    }
+
+    if (resume) {
+      filterSubscriptions.paused = false
+
+      const queue = filterSubscriptions.queue
+      filterSubscriptions.queue = []
+
+      for (const data of queue) {
+        filterSubscriptions.cached = data
+        filterSubscriptions.consumers.forEach((consumer) => {
+          consumer(data)
+        })
+      }
+    }
   }
 
   getAllSubscriptions(): Array<
@@ -95,14 +119,16 @@ export class RemoteSubscriptions {
 }
 
 type ItemSubscription = {
-  byParameters: Map<
-    string,
-    {
-      parameters: unknown[]
-      cached: unknown
-      consumers: Array<(d: unknown) => void>
-    }
-  >
+  byParameters: Map<string, ParametersSubscription>
+}
+
+type ParametersSubscription = {
+  parameters: unknown[]
+  cached: unknown
+  consumers: Array<(d: unknown) => void>
+
+  paused: boolean
+  queue: unknown[]
 }
 
 function getParametersKey(parameters: unknown[]) {

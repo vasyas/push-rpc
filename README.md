@@ -29,6 +29,7 @@ triggers.
 
 - [important] Importing index.js from the root of the package will import node's http package. Not good for clients.
 - Browser sockets don't have 'ping' event. Need to find a different way to detect connection loss.
+- Перевірити, що throttling працює відразу для всіх підписників
 
 ## Features
 
@@ -37,5 +38,5 @@ triggers.
 - Based on HTTP, easy to integrate with existing infrastructure
 - Gradually upgradeable - WS is only used when you need subscriptions
 - Supports compressed HTTP requests.
-- Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. Bun/Deno should also work, but not officially
-  supported.
+- Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. For RN some extra setup is required (
+  document). Bun/Deno should also work, but not officially supported.

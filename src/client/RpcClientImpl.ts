@@ -132,7 +132,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         parameters
       )
 
-      this.remoteSubscriptions.consume(itemName, parameters, data)
+      this.remoteSubscriptions.consume(itemName, parameters, data, true)
     } catch (e) {
       await this.unsubscribe(itemName, parameters, consumer)
       throw e

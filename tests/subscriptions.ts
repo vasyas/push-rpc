@@ -472,4 +472,73 @@ describe("Subscriptions", () => {
     assert.equal(testClient!._allSubscriptions().length, 0)
     assert.equal(testServer!._allSubscriptions().length, 0)
   }).timeout(5000)
+
+  it("missing update in case of slow subscribe", async () => {
+    const delay = 50
+
+    const services = await startTestServer({
+      test: {
+        async longOp() {
+          await adelay(delay)
+          return 1
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      callTimeout: 2 * delay,
+    })
+
+    let received = 0
+
+    client.test.longOp.subscribe((val) => {
+      console.log("got ", val)
+
+      received = val
+    })
+
+    await adelay(20)
+    services.test.longOp.trigger(undefined, 2)
+
+    await adelay(2 * delay)
+
+    assert.equal(received, 2)
+  })
+
+  it("concurrent slow subscribe", async () => {
+    const delay = 50
+
+    const services = await startTestServer({
+      test: {
+        async longOp() {
+          await adelay(delay)
+          return 1
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      callTimeout: 2 * delay,
+    })
+
+    let received1 = 0
+    let received2 = 0
+
+    client.test.longOp.subscribe((val) => {
+      console.log("gotA", val)
+      received1 = val
+    })
+
+    client.test.longOp.subscribe((val) => {
+      console.log("gotB", val)
+      received2 = val
+    })
+
+    await adelay(20)
+    services.test.longOp.trigger(undefined, 2)
+
+    await adelay(2 * delay)
+
+    assert.equal(received1, 2)
+  })
 })
