@@ -505,7 +505,7 @@ describe("Subscriptions", () => {
     assert.equal(received, 2)
   })
 
-  it("concurrent subscribe/trigger", async () => {
+  it("two concurrent subscribes and trigger", async () => {
     const delay = 50
 
     const services = await startTestServer({
