@@ -72,6 +72,10 @@ export class HttpClient {
         return res
       }
     } catch (e: any) {
+      if (e.message == "Error" && e.code) {
+        e.message = `Error ${e.code}`
+      }
+
       if (e.message == "fetch failed" && e.cause) {
         e = e.cause
       }
