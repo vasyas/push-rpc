@@ -27,6 +27,41 @@ export class RemoteSubscriptions {
     parameterSubscriptions.consumers.push(consumer)
   }
 
+  pause(itemName: string, parameters: unknown[]) {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    if (!filterSubscriptions) return
+
+    filterSubscriptions.paused = true
+  }
+
+  unpause(itemName: string, parameters: unknown[]) {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    if (!filterSubscriptions) return
+
+    filterSubscriptions.paused = false
+  }
+
+  flushQueue(itemName: string, parameters: unknown[]) {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    if (!filterSubscriptions) return
+
+    filterSubscriptions.queue.forEach((data) => {
+      filterSubscriptions.cached = data
+      filterSubscriptions.consumers.forEach((consumer) => {
+        consumer(data)
+      })
+    })
+
+    filterSubscriptions.queue = []
+  }
+
+  emptyQueue(itemName: string, parameters: unknown[]) {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    if (!filterSubscriptions) return
+
+    filterSubscriptions.queue = []
+  }
+
   private removeSubscription(
     itemName: string,
     parametersKey: string,
@@ -57,47 +92,23 @@ export class RemoteSubscriptions {
   }
 
   getCached(itemName: string, parameters: unknown[]): unknown | undefined {
-    const parametersKey = getParametersKey(parameters)
-
-    const itemSubscriptions = this.byItem.get(itemName)
-    if (!itemSubscriptions) return
-
-    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
-
-    return filterSubscriptions?.cached
-  }
-
-  consume(itemName: string, parameters: unknown[], data: unknown, resume: boolean = false) {
-    const parametersKey = getParametersKey(parameters)
-
-    const itemSubscriptions = this.byItem.get(itemName)
-    if (!itemSubscriptions) return
-
-    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
-
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
     if (!filterSubscriptions) return
 
-    if (filterSubscriptions.paused && !resume) {
+    return filterSubscriptions.cached
+  }
+
+  consume(itemName: string, parameters: unknown[], data: unknown) {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    if (!filterSubscriptions) return
+
+    if (filterSubscriptions.paused) {
       filterSubscriptions.queue.push(data)
     } else {
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
         consumer(data)
       })
-    }
-
-    if (resume) {
-      filterSubscriptions.paused = false
-
-      const queue = filterSubscriptions.queue
-      filterSubscriptions.queue = []
-
-      for (const data of queue) {
-        filterSubscriptions.cached = data
-        filterSubscriptions.consumers.forEach((consumer) => {
-          consumer(data)
-        })
-      }
     }
   }
 
@@ -113,6 +124,21 @@ export class RemoteSubscriptions {
     }
 
     return result
+  }
+
+  private getFilterSubscriptions(
+    itemName: string,
+    parameters: unknown[]
+  ): ParametersSubscription | undefined {
+    const parametersKey = getParametersKey(parameters)
+
+    const itemSubscriptions = this.byItem.get(itemName)
+    if (!itemSubscriptions) return
+
+    const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
+    if (!filterSubscriptions) return
+
+    return filterSubscriptions
   }
 
   private byItem: Map<string, ItemSubscription> = new Map()

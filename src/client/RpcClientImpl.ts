@@ -119,6 +119,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
 
     try {
       this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
+      this.remoteSubscriptions.pause(itemName, parameters)
 
       const data = await this.invoke(
         itemName,
@@ -132,8 +133,12 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         parameters
       )
 
-      this.remoteSubscriptions.consume(itemName, parameters, data, true)
+      this.remoteSubscriptions.unpause(itemName, parameters)
+      this.remoteSubscriptions.consume(itemName, parameters, data)
+      this.remoteSubscriptions.flushQueue(itemName, parameters)
     } catch (e) {
+      this.remoteSubscriptions.unpause(itemName, parameters)
+      this.remoteSubscriptions.emptyQueue(itemName, parameters)
       await this.unsubscribe(itemName, parameters, consumer)
       throw e
     }
