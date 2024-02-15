@@ -473,7 +473,7 @@ describe("Subscriptions", () => {
     assert.equal(testServer!._allSubscriptions().length, 0)
   }).timeout(5000)
 
-  it("missing update in case of slow subscribe", async () => {
+  it("missing update in case of concurrent subscribe/trigger", async () => {
     const delay = 50
 
     const services = await startTestServer({
@@ -505,7 +505,7 @@ describe("Subscriptions", () => {
     assert.equal(received, 2)
   })
 
-  it("concurrent slow subscribe", async () => {
+  it("concurrent subscribe/trigger", async () => {
     const delay = 50
 
     const services = await startTestServer({
