@@ -540,5 +540,57 @@ describe("Subscriptions", () => {
     await adelay(2 * delay)
 
     assert.equal(received1, 2)
+    assert.equal(received2, 2)
+  })
+
+  it("clear queue on subscription failure", async () => {
+    const delay = 50
+
+    let invocation = 0
+    const services = await startTestServer({
+      test: {
+        async longOp(): Promise<number> {
+          await adelay(delay)
+          if (invocation++ == 1) {
+            throw new Error("AA")
+          }
+
+          return 1
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      callTimeout: 2 * delay,
+    })
+
+    let received = 0
+
+    client.test.longOp.subscribe((val) => {
+      received = val
+    })
+
+    await adelay(1.5 * delay)
+
+    client.test.longOp
+      .subscribe((val) => {
+        received = val
+      })
+      .catch((e) => {
+        // ok
+      })
+
+    await adelay(20)
+    services.test.longOp.trigger(undefined, 2) // this should be skipped
+
+    await adelay(1.5 * delay - 20)
+
+    client.test.longOp.subscribe((val) => {
+      received = val
+    })
+
+    await adelay(1.5 * delay)
+
+    assert.equal(received, 1)
   })
 })
