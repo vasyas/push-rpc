@@ -31,10 +31,12 @@ export class HttpClient {
     callTimeout: number,
     headers: Record<string, string>
   ): Promise<unknown> {
+    const itemUrl = this.getItemUrl(itemName)
+
     try {
       const {signal, finished} = timeoutSignal(callTimeout)
 
-      const response = await fetch(this.getItemUrl(itemName), {
+      const response = await fetch(itemUrl, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -72,8 +74,8 @@ export class HttpClient {
         return res
       }
     } catch (e: any) {
-      if (e.message == "Error" && e.code) {
-        e.message = `Error ${e.code}`
+      if (e.message == "Error" || !e.message) {
+        e.message = `Error ${e.code} while ${itemUrl}`
       }
 
       if (e.message == "fetch failed" && e.cause) {
