@@ -21,8 +21,6 @@ export class RemoteSubscriptions {
       queue: [],
     }
 
-    parameterSubscriptions.paused = true
-
     itemSubscriptions.byParameters.set(parametersKey, parameterSubscriptions)
     parameterSubscriptions.consumers.push(consumer)
   }

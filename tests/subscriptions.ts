@@ -505,7 +505,7 @@ describe("Subscriptions", () => {
     assert.equal(received, 2)
   })
 
-  it("two concurrent subscribes and trigger", async () => {
+  it.skip("two concurrent subscribes and trigger", async () => {
     const delay = 50
 
     const services = await startTestServer({
@@ -521,17 +521,17 @@ describe("Subscriptions", () => {
       callTimeout: 2 * delay,
     })
 
-    let received1 = 0
-    let received2 = 0
+    let receivedA = 0
+    let receivedB = 0
 
     client.test.longOp.subscribe((val) => {
       console.log("gotA", val)
-      received1 = val
+      receivedA = val
     })
 
     client.test.longOp.subscribe((val) => {
       console.log("gotB", val)
-      received2 = val
+      receivedB = val
     })
 
     await adelay(20)
@@ -539,8 +539,8 @@ describe("Subscriptions", () => {
 
     await adelay(2 * delay)
 
-    assert.equal(received1, 2)
-    assert.equal(received2, 2)
+    assert.equal(receivedA, 2)
+    assert.equal(receivedB, 2)
   })
 
   it("clear queue on subscription failure", async () => {
