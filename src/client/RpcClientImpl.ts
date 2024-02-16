@@ -37,7 +37,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     )
   }
 
-  private readonly clientId = nanoid()
+  public readonly clientId = nanoid()
   private readonly httpClient: HttpClient
   private readonly remoteSubscriptions: RemoteSubscriptions
   private readonly connection: WebSocketConnection

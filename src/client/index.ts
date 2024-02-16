@@ -4,6 +4,8 @@ import {RpcClientImpl} from "./RpcClientImpl.js"
 import {Middleware} from "../utils/middleware.js"
 
 export type RpcClient = {
+  readonly clientId: string
+
   isConnected(): boolean
   close(): Promise<void>
 
@@ -65,7 +67,7 @@ const defaultOptions: ConsumeServicesOptions = {
   onConnected: () => {},
   onDisconnected: () => {},
   getHeaders: async () => ({}),
-  
+
   getSubscriptionsUrl(url: string): string {
     return url.replace(/^https(.*)/, "wss$1").replace(/^http(.*)/, "ws$1")
   },
