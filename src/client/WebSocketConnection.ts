@@ -33,9 +33,11 @@ export class WebSocketConnection {
     }
   }
 
+  private waitConnectionPromise: Promise<void> | undefined
+
   /**
    * Connect to the server, on each disconnect try to disconnect.
-   * Resolves at first successful connect. Reconnection loop continues even after resolution
+   * Resolves at next successful connect. Reconnection loop continues even after resolution
    * Never rejects
    */
   connect() {
@@ -45,29 +47,36 @@ export class WebSocketConnection {
     }
 
     // already started connecting
-    if (this.socket || !this.disconnectedMark) return Promise.resolve()
+    if (this.waitConnectionPromise) return this.waitConnectionPromise
 
     // start connection process
-    this.disconnectedMark = false
 
-    return new Promise<void>(async (resolve) => {
-      let onFirstConnection = resolve
-      let errorDelay = 0
+    let resolveConnectionPromise: () => void
+    let errorDelay = 0
+
+    this.waitConnectionPromise = new Promise(async (resolve) => {
+      resolveConnectionPromise = resolve
 
       while (true) {
         // connect, and wait for ...
         await new Promise<void>((resolve) => {
-          // 1. ...disconnected
-          const connectionPromise = this.establishConnection(resolve)
+          const connectionPromise = this.establishConnection(() => {
+            // 1. ...disconnected
+
+            // recreate promise so new clients will wait for new connection
+            this.waitConnectionPromise = new Promise(
+              (resolve) => (resolveConnectionPromise = resolve)
+            )
+
+            resolve()
+          })
 
           connectionPromise.then(
             () => {
               // first reconnect after successful connection is done without delay
               errorDelay = 0
 
-              // signal about first connection
-              onFirstConnection()
-              onFirstConnection = () => {}
+              resolveConnectionPromise()
             },
             (e) => {
               log.warn("Unable to connect WS", e)
@@ -93,6 +102,8 @@ export class WebSocketConnection {
         errorDelay = Math.round(Math.random() * this.options.errorDelayMaxDuration)
       }
     })
+
+    return this.waitConnectionPromise
   }
 
   public isConnected() {
@@ -162,7 +173,7 @@ export class WebSocketConnection {
   }
 
   private socket: WebSocket | null = null
-  private disconnectedMark = true
+  private disconnectedMark = false
   private pingTimeout: NodeJS.Timeout | null = null
 
   private heartbeat() {

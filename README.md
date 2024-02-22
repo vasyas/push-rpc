@@ -1,3 +1,5 @@
+Client/server framework
+
 ## Glossary
 
 **Remote function**. A function that is implemented at the server side and can be called from the client side. Function

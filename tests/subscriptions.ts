@@ -1,7 +1,9 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
-import {CallOptions, RpcErrors} from "../src/index.js"
+import {CallOptions, RpcConnectionContext, RpcErrors} from "../src/index.js"
+import {IncomingMessage} from "http"
+import {CLIENT_ID_HEADER} from "../src/rpc.js"
 
 describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
@@ -592,5 +594,64 @@ describe("Subscriptions", () => {
     await adelay(1.5 * delay)
 
     assert.equal(received, 1)
+  })
+
+  it("subscribe waits for connection", async () => {
+    const delay = 50
+
+    let connectedClients = 0
+    let serverCalled = 0
+
+    const services = await startTestServer(
+      {
+        test: {
+          async op(params: {key: number}): Promise<number> {
+            serverCalled++
+            return 1
+          },
+        },
+      },
+      {
+        async createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext> {
+          const header = req.headers[CLIENT_ID_HEADER]
+
+          connectedClients++
+
+          return {
+            clientId: (Array.isArray(header) ? header[0] : header) || "anon",
+          }
+        },
+      }
+    )
+
+    const client = await createTestClient<typeof services>({
+      callTimeout: 2 * delay,
+    })
+
+    let received1
+    let received2
+
+    client.test.op.subscribe(
+      (val) => {
+        received1 = val
+      },
+      {key: 1}
+    )
+
+    await adelay(40)
+
+    client.test.op.subscribe(
+      (val) => {
+        received2 = val
+      },
+      {key: 2}
+    )
+
+    await adelay(1.5 * delay)
+
+    assert.equal(received1, 1)
+    assert.equal(received2, 1)
+    assert.equal(serverCalled, 2)
+    assert.equal(testServer!._allSubscriptions().length, 2)
   })
 })
