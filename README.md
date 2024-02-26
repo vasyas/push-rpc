@@ -42,3 +42,10 @@ triggers.
 - Supports compressed HTTP requests.
 - Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. For RN some extra setup is required (
   document). Bun/Deno should also work, but not officially supported.
+
+## Known issues and limitations
+
+- Cookies are not supported on Node.JS / React Native clients. React Native WS implementation doesn't support cookies,
+  so we don't support cookies on platforms where they are not supported by underlying framework. So currently, only Web
+  clients are sending cookies. You need to roll your own solution for cases where cookies are required on the server (ie
+  ALB sticky sessions).
