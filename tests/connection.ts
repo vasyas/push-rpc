@@ -207,8 +207,11 @@ describe("connection", () => {
       assert.equal(Object.keys(sentClientCookies).length, 1)
       assert.equal(sentClientCookies["name"], "value")
 
+      await testClient!.close()
+
       let resolveStopped = () => {}
       const stopped = new Promise<void>((r) => (resolveStopped = r))
+      httpServer.closeIdleConnections()
       httpServer.closeAllConnections()
       httpServer.close(() => resolveStopped())
       await stopped

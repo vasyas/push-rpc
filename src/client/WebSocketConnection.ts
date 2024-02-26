@@ -125,16 +125,18 @@ export class WebSocketConnection {
 
         if ([Environment.ReactNative, Environment.Node].includes(environment)) {
           // use RN WS or node-ws headers extensions
-          let headers = undefined
+          let optoins = undefined
 
           const cookie = this.cookies.getCookieString()
           if (cookie) {
-            headers = {
-              Cookie: cookie,
+            optoins = {
+              headers: {
+                Cookie: cookie,
+              },
             }
           }
 
-          socket = new (WebSocket as any)(this.url, this.clientId, headers)
+          socket = new (WebSocket as any)(this.url, this.clientId, optoins)
         } else {
           // rely on browser cookie handling
           socket = new WebSocket(this.url, this.clientId)
