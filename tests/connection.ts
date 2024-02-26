@@ -3,7 +3,7 @@ import {createTestClient, startTestServer, TEST_PORT, testClient, testServer} fr
 import WebSocket from "ws"
 import {adelay} from "../src/utils/promises.js"
 import http from "http"
-import {parseClientCookies} from "../src/utils/cookies.js"
+import {parseCookies} from "../src/utils/cookies.js"
 
 describe("connection", () => {
   it("server close connection on ping timeout", async () => {
@@ -147,7 +147,7 @@ describe("connection", () => {
         if (!call++) {
           headers["Set-Cookie"] = `name=value; path=/; secure; samesite=none; httponly`
         } else {
-          sentClientCookies = parseClientCookies(req.headers.cookie || "")
+          sentClientCookies = parseCookies(req.headers.cookie || "")
         }
 
         res.writeHead(200, headers)

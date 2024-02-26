@@ -1,13 +1,22 @@
-/** Limited Cookie support */
-export class CookieJar {
-  updateCookies(response: Response) {}
+/** Limited Cookie support for non-browser clients */
+export class ClientCookies {
+  private cookies: Record<string, string> = {}
+
+  updateCookies(setCookies: string[]) {
+    setCookies.forEach((c) => {
+      const [name, value] = c.split(";")[0].split("=")
+      this.cookies[name] = value
+    })
+  }
 
   getCookieString(): string {
-    return ""
+    return Object.entries(this.cookies)
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ")
   }
 }
 
-export function parseClientCookies(str: string): Record<string, string> {
+export function parseCookies(str: string): Record<string, string> {
   const rx = /([^;=\s]*)=([^;]*)/g
   const r: Record<string, string> = {}
 

@@ -6,13 +6,14 @@ import {nanoid} from "nanoid"
 import {createRemote, ServicesWithSubscriptions} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
 import {withMiddlewares} from "../utils/middleware.js"
+import {ClientCookies} from "../utils/cookies.js"
 
 export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   constructor(
     url: string,
     private readonly options: ConsumeServicesOptions
   ) {
-    this.httpClient = new HttpClient(url, this.clientId, options.getHeaders)
+    this.httpClient = new HttpClient(url, this.clientId, options.getHeaders, this.cookies)
     this.remoteSubscriptions = new RemoteSubscriptions()
 
     this.connection = new WebSocketConnection(
@@ -41,6 +42,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   private readonly httpClient: HttpClient
   private readonly remoteSubscriptions: RemoteSubscriptions
   private readonly connection: WebSocketConnection
+  private readonly cookies: ClientCookies = new ClientCookies()
 
   isConnected() {
     return this.connection.isConnected()
