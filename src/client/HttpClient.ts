@@ -1,6 +1,7 @@
 import {CLIENT_ID_HEADER, RpcErrors} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
-import {ClientCookies} from "../utils/cookies"
+import {ClientCookies} from "../utils/cookies.js"
+import {environment, Environment} from "../utils/env.js"
 
 export class HttpClient {
   constructor(
@@ -38,9 +39,12 @@ export class HttpClient {
     try {
       const {signal, finished} = timeoutSignal(callTimeout)
 
-      const cookie = this.cookies.getCookieString()
-      if (cookie) {
-        headers["Cookie"] = cookie
+      if (environment != Environment.Browser) {
+        const cookie = this.cookies.getCookieString()
+
+        if (cookie) {
+          headers["Cookie"] = cookie
+        }
       }
 
       const response = await fetch(itemUrl, {
@@ -56,7 +60,9 @@ export class HttpClient {
 
       finished()
 
-      this.cookies.updateCookies(response.headers.getSetCookie())
+      if (environment != Environment.Browser) {
+        this.cookies.updateCookies(response.headers.getSetCookie())
+      }
 
       if (response.status == 204) {
         return

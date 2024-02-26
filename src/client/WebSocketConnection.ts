@@ -1,11 +1,14 @@
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
+import {environment, Environment} from "../utils/env.js"
+import {ClientCookies} from "../utils/cookies.js"
 
 export class WebSocketConnection {
   constructor(
     private readonly url: string,
     private readonly clientId: string,
+    private readonly cookies: ClientCookies,
     private readonly options: {
       subscriptions: boolean
       reconnectDelay: number
@@ -118,7 +121,24 @@ export class WebSocketConnection {
   private async establishConnection(onDisconnected: () => void): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        const socket = new WebSocket(this.url, this.clientId)
+        let socket: WebSocket
+
+        if ([Environment.ReactNative, Environment.Node].includes(environment)) {
+          // use RN WS or node-ws headers extensions
+          let headers = undefined
+
+          const cookie = this.cookies.getCookieString()
+          if (cookie) {
+            headers = {
+              Cookie: cookie,
+            }
+          }
+
+          socket = new (WebSocket as any)(this.url, this.clientId, headers)
+        } else {
+          // rely on browser cookie handling
+          socket = new WebSocket(this.url, this.clientId)
+        }
 
         let connected = false
 

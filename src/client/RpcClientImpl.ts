@@ -19,6 +19,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     this.connection = new WebSocketConnection(
       options.getSubscriptionsUrl(url),
       this.clientId,
+      this.cookies,
       {
         subscriptions: options.subscriptions,
         errorDelayMaxDuration: options.errorDelayMaxDuration,
