@@ -1,8 +1,8 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, TEST_PORT, testClient, testServer} from "./testUtils.js"
-import WebSocket from "ws"
+import WebSocket, {WebSocketServer} from "ws"
 import {adelay} from "../src/utils/promises.js"
-import http from "http"
+import http, {IncomingMessage} from "http"
 import {parseCookies} from "../src/utils/cookies.js"
 
 describe("connection", () => {
@@ -174,5 +174,46 @@ describe("connection", () => {
       httpServer.close(() => resolveStopped())
       await stopped
     })
+
+    it("set cookie in http, use in ws", async () => {
+      const httpServer = http.createServer((req, res) => {
+        const headers: Record<string, string> = {
+          "Content-Type": "text/plain",
+          "Set-Cookie": "name=value; path=/; secure; samesite=none; httponly",
+        }
+
+        res.writeHead(200, headers)
+
+        res.end("ok")
+      })
+
+      const wss = new WebSocketServer({server: httpServer})
+
+      let sentClientCookies: Record<string, string> = {}
+      wss.on("connection", (ws: unknown, req: IncomingMessage) => {
+        sentClientCookies = parseCookies(req.headers.cookie || "")
+      })
+
+      let resolveStarted = () => {}
+      const started = new Promise<void>((r) => (resolveStarted = r))
+      httpServer.listen(TEST_PORT, () => resolveStarted())
+      await started
+
+      const client = await createTestClient<{call(): Promise<string>}>()
+      await client.call()
+
+      await client.call.subscribe(() => {})
+
+      assert.equal(Object.keys(sentClientCookies).length, 1)
+      assert.equal(sentClientCookies["name"], "value")
+
+      let resolveStopped = () => {}
+      const stopped = new Promise<void>((r) => (resolveStopped = r))
+      httpServer.closeAllConnections()
+      httpServer.close(() => resolveStopped())
+      await stopped
+    })
+
+    it("set cookie in ws, use in http", async () => {})
   })
 })
