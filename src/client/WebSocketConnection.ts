@@ -3,6 +3,7 @@ import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
 import {environment, Environment} from "../utils/env.js"
 import {ClientCookies} from "../utils/cookies.js"
+import type {IncomingMessage} from "http"
 
 export class WebSocketConnection {
   constructor(
@@ -124,7 +125,7 @@ export class WebSocketConnection {
         let socket: WebSocket
 
         if ([Environment.ReactNative, Environment.Node].includes(environment)) {
-          // use RN WS or node-ws headers extensions
+          // use RN WS or node-ws headers extensions to set cookie
           let optoins = undefined
 
           const cookie = this.cookies.getCookieString()
@@ -153,6 +154,13 @@ export class WebSocketConnection {
 
           this.onConnected()
         })
+
+        // use RN WS or node-ws headers extensions to read set-cookie
+        if ("on" in socket) {
+          ;(socket as any).on("upgrade", (res: IncomingMessage) => {
+            this.cookies.updateCookies(res.headers["set-cookie"] || [])
+          })
+        }
 
         socket.addEventListener("ping", () => {
           this.heartbeat()
