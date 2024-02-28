@@ -126,18 +126,18 @@ export class WebSocketConnection {
 
         if ([Environment.ReactNative, Environment.Node].includes(environment)) {
           // use RN WS or node-ws headers extensions to set cookie
-          let optoins = undefined
+          let options = undefined
 
           const cookie = this.cookies.getCookieString()
           if (cookie) {
-            optoins = {
+            options = {
               headers: {
                 Cookie: cookie,
               },
             }
           }
 
-          socket = new (WebSocket as any)(this.url, this.clientId, optoins)
+          socket = new (WebSocket as any)(this.url, this.clientId, options)
         } else {
           // rely on browser cookie handling
           socket = new WebSocket(this.url, this.clientId)
@@ -154,13 +154,6 @@ export class WebSocketConnection {
 
           this.onConnected()
         })
-
-        // use RN WS or node-ws headers extensions to read set-cookie
-        if ("on" in socket) {
-          ;(socket as any).on("upgrade", (res: IncomingMessage) => {
-            this.cookies.updateCookies(res.headers["set-cookie"] || [])
-          })
-        }
 
         socket.addEventListener("ping", () => {
           this.heartbeat()

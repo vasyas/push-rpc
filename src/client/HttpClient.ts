@@ -61,7 +61,11 @@ export class HttpClient {
       finished()
 
       if (environment != Environment.Browser) {
-        this.cookies.updateCookies(response.headers.getSetCookie())
+        const cookie = response.headers.get("set-cookie")
+
+        if (cookie) {
+          this.cookies.updateCookies(cookie.split(","))
+        }
       }
 
       if (response.status == 204) {
