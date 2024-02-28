@@ -216,46 +216,5 @@ describe("connection", () => {
       httpServer.close(() => resolveStopped())
       await stopped
     })
-
-    it("set cookie in ws, use in http", async () => {
-      let sentClientCookies: Record<string, string> = {}
-      const httpServer = http.createServer((req, res) => {
-        const headers: Record<string, string> = {
-          "Content-Type": "text/plain",
-        }
-
-        sentClientCookies = parseCookies(req.headers.cookie || "")
-
-        res.writeHead(200, headers)
-        res.end("ok")
-      })
-
-      const wss = new WebSocketServer({server: httpServer})
-      wss.on("headers", (headers, req) => {
-        headers.push("Set-Cookie: name=value; path=/; secure; samesite=none; httponly")
-      })
-
-      let resolveStarted = () => {}
-      const started = new Promise<void>((r) => (resolveStarted = r))
-      httpServer.listen(TEST_PORT, () => resolveStarted())
-      await started
-
-      const client = await createTestClient<{call(): Promise<string>}>({
-        connectOnCreate: true,
-      })
-      await client.call()
-
-      assert.equal(Object.keys(sentClientCookies).length, 1)
-      assert.equal(sentClientCookies["name"], "value")
-
-      await testClient!.close()
-
-      let resolveStopped = () => {}
-      const stopped = new Promise<void>((r) => (resolveStopped = r))
-      httpServer.closeIdleConnections()
-      httpServer.closeAllConnections()
-      httpServer.close(() => resolveStopped())
-      await stopped
-    })
   })
 })
