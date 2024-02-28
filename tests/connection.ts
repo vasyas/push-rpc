@@ -1,7 +1,9 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
-import WebSocket from "ws"
+import {createTestClient, startTestServer, TEST_PORT, testClient, testServer} from "./testUtils.js"
+import WebSocket, {WebSocketServer} from "ws"
 import {adelay} from "../src/utils/promises.js"
+import http, {IncomingMessage} from "http"
+import {parseCookies} from "../src/utils/cookies.js"
 
 describe("connection", () => {
   it("server close connection on ping timeout", async () => {
@@ -131,5 +133,88 @@ describe("connection", () => {
     await adelay(10)
 
     assert.equal(disconnected, true)
+  })
+
+  describe("cookies", () => {
+    it("handle cookies in subseq requests", async () => {
+      let call = 0
+
+      let sentClientCookies: Record<string, string> = {}
+
+      const httpServer = http.createServer((req, res) => {
+        const headers: Record<string, string> = {"Content-Type": "text/plain"}
+
+        if (!call++) {
+          headers["Set-Cookie"] = `name=value; path=/; secure; samesite=none; httponly`
+        } else {
+          sentClientCookies = parseCookies(req.headers.cookie || "")
+        }
+
+        res.writeHead(200, headers)
+
+        res.end("ok")
+      })
+
+      let resolveStarted = () => {}
+      const started = new Promise<void>((r) => (resolveStarted = r))
+      httpServer.listen(TEST_PORT, () => resolveStarted())
+      await started
+
+      const client = await createTestClient<{call(): Promise<string>}>()
+
+      await client.call()
+      await client.call()
+
+      assert.equal(Object.keys(sentClientCookies).length, 1)
+      assert.equal(sentClientCookies["name"], "value")
+
+      let resolveStopped = () => {}
+      const stopped = new Promise<void>((r) => (resolveStopped = r))
+      httpServer.closeAllConnections()
+      httpServer.close(() => resolveStopped())
+      await stopped
+    })
+
+    it("set cookie in http, use in ws", async () => {
+      const httpServer = http.createServer((req, res) => {
+        const headers: Record<string, string> = {
+          "Content-Type": "text/plain",
+          "Set-Cookie": "name=value; path=/; secure; samesite=none; httponly",
+        }
+
+        res.writeHead(200, headers)
+
+        res.end("ok")
+      })
+
+      const wss = new WebSocketServer({server: httpServer})
+
+      let sentClientCookies: Record<string, string> = {}
+      wss.on("connection", (ws: unknown, req: IncomingMessage) => {
+        sentClientCookies = parseCookies(req.headers.cookie || "")
+      })
+
+      let resolveStarted = () => {}
+      const started = new Promise<void>((r) => (resolveStarted = r))
+      httpServer.listen(TEST_PORT, () => resolveStarted())
+      await started
+
+      const client = await createTestClient<{call(): Promise<string>}>()
+      await client.call()
+
+      await client.call.subscribe(() => {})
+
+      assert.equal(Object.keys(sentClientCookies).length, 1)
+      assert.equal(sentClientCookies["name"], "value")
+
+      await testClient!.close()
+
+      let resolveStopped = () => {}
+      const stopped = new Promise<void>((r) => (resolveStopped = r))
+      httpServer.closeIdleConnections()
+      httpServer.closeAllConnections()
+      httpServer.close(() => resolveStopped())
+      await stopped
+    })
   })
 })
