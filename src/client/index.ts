@@ -6,6 +6,7 @@ import {Middleware} from "../utils/middleware.js"
 export type RpcClient = {
   readonly clientId: string
 
+  connect(): Promise<void>
   isConnected(): boolean
   close(): Promise<void>
 
