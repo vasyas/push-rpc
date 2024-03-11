@@ -42,7 +42,7 @@ triggers.
 - Supports compressed HTTP requests.
 - Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. For RN some extra setup is required (
   document). Bun/Deno should also work, but not officially supported.
-- Limited cookie support. Due to limited support in React Native, Cookies can be set and read during HTTP requests and
-  set during WS connection establishment. So if you need to share cookies between HTTP and WS, you need to make call (
-  HTTP POST) right after creating client, and establish WS connection (ie make subscribe, HTTP PUT) only after that.
-  Cookies cannot be shared when `connectOnCreate` client option is true.
+
+# Limitations
+
+- Cookies are not supported.
