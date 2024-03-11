@@ -25,7 +25,14 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         pingInterval: options.pingInterval,
       },
       (itemName, parameters, data) => {
-        this.remoteSubscriptions.consume(itemName, parameters, data)
+        const ctx: RpcContext = {
+          clientId: this.clientId,
+          itemName,
+          invocationType: InvocationType.Update,
+        }
+
+        const next = async (p = data) => this.remoteSubscriptions.consume(itemName, parameters, p)
+        return withMiddlewares(ctx, this.options.updatesMiddleware, next, data)
       },
       () => {
         this.resubscribe()

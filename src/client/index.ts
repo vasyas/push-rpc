@@ -22,6 +22,7 @@ export type ConsumeServicesOptions = {
   pingInterval: number | null
   subscriptions: boolean
   middleware: Middleware<RpcContext>[]
+  updatesMiddleware: Middleware<RpcContext>[]
   connectOnCreate: boolean
   onConnected: () => void
   onDisconnected: () => void
@@ -64,6 +65,7 @@ const defaultOptions: ConsumeServicesOptions = {
   pingInterval: null, // if set, should be in-sync with server, ie 30 * 1000
   subscriptions: true,
   middleware: [],
+  updatesMiddleware: [],
   connectOnCreate: false,
   onConnected: () => {},
   onDisconnected: () => {},

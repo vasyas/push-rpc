@@ -20,7 +20,7 @@ contain only JSON data, to allow copying. Context can be modified in middlewares
 JSON-only.
 
 **Middlewares**. Middlewares are used to intercept client and server requests. Both calls and subscriptions can be
-intercepted?. Middlewares can be attached on both client and server side. Middlewares receive context as the last
+intercepted. Middlewares can be attached on both client and server side. Middlewares receive context as the last
 arguments in the invocation. Middleware can modify context.
 
 **Throttling**. Used to limit number of notifications from the remote functions. With throttling enabled, not all
@@ -45,4 +45,4 @@ triggers.
 
 # Limitations
 
-- Cookies are not supported.
+- Cookies are not been sent during HTTP & WS requests.

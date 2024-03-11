@@ -47,5 +47,6 @@ export enum InvocationType {
   Call = "Call",
   Subscribe = "Subscribe",
   Unsubscribe = "Unsubscribe", // client only
+  Update = "Update", // client only
   Trigger = "Trigger", // server only
 }

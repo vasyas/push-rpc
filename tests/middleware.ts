@@ -109,4 +109,35 @@ describe("middleware", () => {
       assert.equal(e.message, "msg")
     }
   })
+
+  it("updates middlewares", async () => {
+    let count = 1
+
+    const services = await startTestServer({
+      async remote() {
+        return count++
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      updatesMiddleware: [
+        (ctx, next, r) => {
+          assert.ok(ctx.itemName)
+
+          return next((r as number) + 1)
+        },
+      ],
+    })
+
+    let response
+    await client.remote.subscribe((r) => {
+      response = r
+    })
+
+    services.remote.trigger()
+
+    await adelay(20)
+
+    assert.equal(response, 3)
+  })
 })

@@ -36,6 +36,12 @@ export let testClient: RpcClient | null = null
 export async function createTestClient<S extends Services<S>>(
   options?: Partial<ConsumeServicesOptions>
 ): Promise<ServicesWithSubscriptions<S>> {
+  if (!options) options = {}
+  if (!options.middleware) options.middleware = []
+  options.middleware = [logMiddleware, ...options.middleware]
+  if (!options.updatesMiddleware) options.updatesMiddleware = []
+  options.updatesMiddleware = [logUpdatesMiddleware, ...options.updatesMiddleware]
+
   const r = await consumeServices<S>(`http://127.0.0.1:${TEST_PORT}/rpc`, options)
   testClient = r.client
   return r.remote
@@ -53,3 +59,22 @@ afterEach(async function () {
     testServer = null
   }
 })
+
+async function logMiddleware(ctx: RpcContext, next: any, ...params: any) {
+  try {
+    console.log(`OUT:${ctx.invocationType} '${ctx.itemName}'`, ...params)
+
+    const r = await next()
+
+    console.log(`IN:${ctx.invocationType} '${ctx.itemName}'`, r)
+    return r
+  } catch (e) {
+    console.log(`ERR:${ctx.invocationType} '${ctx.itemName}'`, e)
+    throw e
+  }
+}
+
+async function logUpdatesMiddleware(ctx: RpcContext, next: any, res: any) {
+  console.log(`IN:${ctx.invocationType} '${ctx.itemName}'`, res)
+  return next()
+}
