@@ -38,19 +38,23 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       })
     }
 
-    this.httpServer.addListener("request", (req, res) =>
+    this.httpServer.addListener("request", (req, res) => {
+      const hooks = {
+        call: this.call,
+        subscribe: this.subscribe,
+        unsubscribe: this.unsubscribe,
+      }
+
       serveHttpRequest(
         req,
         res,
         options.path,
-        {
-          call: this.call,
-          subscribe: this.subscribe,
-          unsubscribe: this.unsubscribe,
-        },
+        options.createServerHooks ? options.createServerHooks(hooks, req) : hooks,
         options.createConnectionContext
-      )
-    )
+      ).catch((e) => {
+        log.warn("Unhandled error serving HTTP request", e)
+      })
+    })
   }
 
   private async createConnectionsServer() {

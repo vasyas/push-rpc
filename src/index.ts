@@ -5,6 +5,7 @@ export type {Middleware} from "./utils/middleware.js"
 export {withMiddlewares} from "./utils/middleware.js"
 
 export type {RpcServer, PublishServicesOptions} from "./server/index.js"
+export type {HttpServerHooks} from "./server/http.js"
 export {publishServices} from "./server/index.js"
 
 export type {ServicesWithTriggers} from "./server/local.js"

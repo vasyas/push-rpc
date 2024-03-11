@@ -3,6 +3,7 @@ import {ServicesWithTriggers} from "./local.js"
 import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
 import http, {IncomingMessage} from "http"
+import {HttpServerHooks} from "./http"
 
 export async function publishServices<S extends Services<S>, C extends RpcContext>(
   services: S,
@@ -41,6 +42,7 @@ export type PublishServicesOptions<C extends RpcContext> = {
   pingInterval: number
   subscriptions: boolean
   createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext>
+  createServerHooks?(hooks: HttpServerHooks, req: IncomingMessage): HttpServerHooks
 } & (
   | {
       server: http.Server
