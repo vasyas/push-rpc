@@ -1,9 +1,9 @@
 import {Todo, TodoService} from "./api"
 import {publishServices} from "../src/server/index"
 
-const storage: Todo[] = []
-
 async function startServer() {
+  const storage: Todo[] = []
+
   class TodoServiceImpl implements TodoService {
     async addTodo({text}: {text: string}) {
       storage.push({

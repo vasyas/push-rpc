@@ -8,7 +8,7 @@ async function startClient() {
 
   await remote.todo.getTodos.subscribe((todos) => {
     console.log("Got todo items", todos)
-  }, null)
+  })
 
   await remote.todo.addTodo({text: "Buy groceries"})
 }
