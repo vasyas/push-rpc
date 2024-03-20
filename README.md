@@ -1,18 +1,23 @@
-A TypeScript framework for organizing bidirectional typesafe client-server communication, including
+A TypeScript framework for organizing bidirectional typesafe client-server communication. Supports
 server-initiated data push (subscriptions). Uses HTTP, JSON and, optionally, WebSockets.
-Main focus is on simplicity and developer experience.
+Main focus is on simplicity and good developer experience.
 
 Best used with monorepos using TypeScript. Can also be used with JavaScript and non-JS clients.
 
 ## Features
 
-- Developer friendly - remote call is plain TypeScript calls for easy call tracing between client and server and good
-  integration with IDE. Call visibility in Browser DevTools.
-- Based on HTTP, easy to integrate with existing infrastructure.
+- Developer friendly - remote call is a plain TS call for easy tracing between client and server and good
+  IDE integration.
+- Based on HTTP, easy to integrate with existing infrastructure. Call visibility in browser DevTools.
 - Gradually upgradeable - WS is only used when you need subscriptions.
-- Supports compressed HTTP requests.
-- Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative. Bun/Deno should also work, but not officially
-  supported.
+- Server runs on Node.JS, client runs in the Node.JS/Browser/ReactNative.
+
+Extra:
+
+- Client & Server middlewares.
+- Consume compressed HTTP requests.
+- Send & receive plain-text data.
+- Throttling for subscriptions.
 
 ## Getting Started
 
@@ -20,7 +25,7 @@ Best used with monorepos using TypeScript. Can also be used with JavaScript and 
 npm install @push-rpc/next
 ```
 
-For implmeneting subscriptions at backend, you'll also need to install ws package:
+For implementing subscriptions at backend, you'll also need to install ws package:
 
 ```
 npm install ws
@@ -120,10 +125,78 @@ Server will send empty todo list on client connecting and then will send updated
 
 ## Protocol Details
 
-## History
+There are the types of messages that can be sent from client to server:
 
-Started in 2019, the project was called `Push-RPC`. All messaging between client and server was over WebSockets.
-But it appeared that HTTP is a better fit for most of the use cases. So, in 2024, the project was renamed to `Push-RPC
+1. **Call** - a request to synchronously execute a remote function. Implemented as HTTP POST request. URL contains the
+   remote function name. Body contains JSON-encoded list of arguments. Response is JSON-encoded result of the
+   function.
+
+   ```
+   POST /rpc/todo/addTodo HTTP/1.1
+   Content-Type: application/json
+   X-Rpc-Client-Id: GoQ_xVYcthSEqMxDGV212
+    
+   [{"text": "Buy groceries"}]
+   
+   ...
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   {"id": "123"}
+    ```
+
+   `X-Rpc-Client-Id` header is used to identify caller clients. In can be used for session tracking. Client ID is
+   available at server side in the context.
+
+2. **Subscribe** - a request to subscribe to a remote function updates. Implemented as HTTP PUT request. URL contains
+   the remote function name. Body contains JSON-encoded list of arguments. Response is JSON-encoded result of the
+   function.
+
+   ```
+   PUT /rpc/todo/getTodos HTTP/1.1
+   Content-Type: application/json
+    
+   []
+   
+   ...
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   [{"id": 1, text: "Buy groceries", status: "open"}]
+   ```
+
+   Before subscribing, client would establish a WebSocket connection to the server. Server would then use established
+   connection to send subscription updates. Client ID is used to link WebSocket connection and HTTP requests.
+
+3. **Unsubscribe** - a request to unsubscribe from a remote function updates. Implemented as HTTP PATCH request. URL
+   contains the remote function name. Body contains JSON-encoded list of arguments. Response is always empty.
+
+   ```
+   PATCH /rpc/todo/getTodos HTTP/1.1
+   Content-Type: application/json
+    
+   []
+   
+   ...
+   HTTP/1.1 204 No Content
+   ```
+
+Server sends updates to subscribed clients using WebSocket connection. Clients establish WebSocket connection using
+the base URL:
+
+```
+GET /rpc HTTP/1.1
+Connection: Upgrade
+Upgrade: websocket
+Sec-Websocket-Protocol: GoQ_xVYcthSEqMxDGV212
+```
+
+`Sec-Websocket-Protocol` header is used to transfer client ID.
+
+After successful subscription, server sends updates to the client. Each update is a JSON-encoded message containing
+topic name, remote function result and subscription parameters if any:
+
+```
+["todo/getTodos", [{"id": 1, text: "Buy groceries", status: "open"}], ...]
+```
 
 ## Glossary
 
@@ -151,11 +224,6 @@ arguments in the invocation. Middleware can modify context.
 **Throttling**. Used to limit number of notifications from the remote functions. With throttling enabled, not all
 triggers will result in new notifications. Throttling can be used with reducers to aggregate values supplied in
 triggers.
-
-## Issues / TBDs
-
-- [important] Importing index.js from the root of the package will import node's http package. Not good for clients.
-- Browser sockets don't have 'ping' event. Need to find a different way to detect connection loss.
 
 # Limitations
 
