@@ -20,6 +20,12 @@ Extra:
 - Throttling for subscriptions.
 - Broken WS connection detection & auto-reconnecting.
 
+## History note!
+
+Initially this project supported WS-only communication akin to OCPP-J protocol for EV charging stations.
+Since that, library for OCPP-J was extracted to a separate project and this project was reworked to focus on generic
+client/server communication.
+
 ## Getting Started
 
 ```
