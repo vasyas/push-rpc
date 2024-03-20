@@ -18,6 +18,7 @@ Extra:
 - Consume compressed HTTP requests.
 - Send & receive plain-text data.
 - Throttling for subscriptions.
+- Broken WS connection detection & auto-reconnecting.
 
 ## Getting Started
 
@@ -197,6 +198,8 @@ topic name, remote function result and subscription parameters if any:
 ```
 ["todo/getTodos", [{"id": 1, text: "Buy groceries", status: "open"}], ...]
 ```
+
+Both client & server will try to connect broken connections by sending WS ping/pongs.
 
 ## Glossary
 
