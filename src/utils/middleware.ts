@@ -25,11 +25,16 @@ export function withMiddlewares<Context>(
       index = i
 
       try {
+        let result
+
         if (i === middlewares.length) {
-          return Promise.resolve(next(...p))
+          result = next(...p)
         } else {
-          return Promise.resolve(middlewares[i](ctx, dispatch.bind(null, i + 1), ...p))
+          const dispatchNextMiddleware = dispatch.bind(null, i + 1)
+          result = middlewares[i](ctx, dispatchNextMiddleware, ...p)
         }
+
+        return Promise.resolve(result)
       } catch (err) {
         return Promise.reject(err)
       }

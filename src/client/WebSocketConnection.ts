@@ -12,7 +12,11 @@ export class WebSocketConnection {
       errorDelayMaxDuration: number
       pingInterval: number | null
     },
-    private readonly consume: (itemName: string, parameters: unknown[], data: unknown) => void,
+    private readonly consume: (
+      itemName: string,
+      parameters: unknown[],
+      data: unknown
+    ) => Promise<unknown>,
     private readonly onConnected: () => void,
     private readonly onDisconnected: () => void
   ) {
@@ -194,9 +198,9 @@ export class WebSocketConnection {
 
       const [itemName, data, ...parameters] = safeParseJson(msg)
 
-      this.consume(itemName, parameters, data)
+      await this.consume(itemName, parameters, data)
     } catch (e) {
-      log.warn("Can't handle notification", e)
+      log.error("Can't handle notification", e)
     }
   }
 

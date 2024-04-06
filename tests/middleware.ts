@@ -1,5 +1,5 @@
 import {assert} from "chai"
-import {Middleware, withMiddlewares} from "../src/index.js"
+import {Middleware, setLogger, withMiddlewares} from "../src/index.js"
 import {createTestClient, startTestServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
 
@@ -146,6 +146,17 @@ describe("middleware", () => {
   })
 
   it("error in notificationsMiddleware logged", async () => {
+    let log = ""
+
+    setLogger({
+      error(s: unknown, ...params) {
+        log += s + "\n" + params
+      },
+      warn: console.warn,
+      debug: console.debug,
+      info: console.info,
+    })
+
     let count = 1
     let result = 0
 
@@ -158,7 +169,7 @@ describe("middleware", () => {
     const client = await createTestClient<typeof services>({
       notificationsMiddleware: [
         () => {
-          throw new Error("Error")
+          throw new Error("Test error")
         },
       ],
     })
@@ -172,6 +183,10 @@ describe("middleware", () => {
     await adelay(20)
 
     assert.equal(result, 1)
+
+    assert.include(log, "Test error")
+
+    setLogger(console)
   })
 
   it("error in client request middleware propagated", async () => {
