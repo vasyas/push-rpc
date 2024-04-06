@@ -5,7 +5,7 @@ import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
 import {createRemote, ServicesWithSubscriptions} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
-import {withMiddlewares} from "../utils/middleware.js"
+import {Middleware, withMiddlewares} from "../utils/middleware.js"
 
 export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   constructor(
@@ -31,8 +31,16 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
           invocationType: InvocationType.Update,
         }
 
-        const next = async (p = data) => this.remoteSubscriptions.consume(itemName, parameters, p)
-        return withMiddlewares(ctx, this.options.updatesMiddleware, next, data)
+        const next = async (nextData = data, nextParameters = parameters) =>
+          this.remoteSubscriptions.consume(itemName, nextParameters, nextData)
+
+        return withMiddlewares(
+          ctx,
+          this.options.notificationsMiddleware,
+          next as any,
+          data,
+          parameters
+        )
       },
       () => {
         this.resubscribe()

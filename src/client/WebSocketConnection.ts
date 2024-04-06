@@ -196,7 +196,7 @@ export class WebSocketConnection {
 
       this.consume(itemName, parameters, data)
     } catch (e) {
-      log.warn("Invalid message received", e)
+      log.warn("Can't handle notification", e)
     }
   }
 

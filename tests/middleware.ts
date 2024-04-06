@@ -110,7 +110,71 @@ describe("middleware", () => {
     }
   })
 
-  it("updates middlewares", async () => {
+  it("notifications middlewares", async () => {
+    let count = 1
+
+    const services = await startTestServer({
+      async remote(filter: {param: number}) {
+        return count++
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      notificationsMiddleware: [
+        (ctx, next, r, params) => {
+          assert.ok(ctx.itemName)
+          assert.deepEqual(params, [{param: 1}])
+
+          return next((r as number) + 1)
+        },
+      ],
+    })
+
+    let response
+    await client.remote.subscribe(
+      (r) => {
+        response = r
+      },
+      {param: 1}
+    )
+
+    services.remote.trigger({param: 1})
+
+    await adelay(20)
+
+    assert.equal(response, 3)
+  })
+
+  it("error in notificationsMiddleware logged", async () => {
+    let count = 1
+    let result = 0
+
+    const services = await startTestServer({
+      async remote() {
+        return count++
+      },
+    })
+
+    const client = await createTestClient<typeof services>({
+      notificationsMiddleware: [
+        () => {
+          throw new Error("Error")
+        },
+      ],
+    })
+
+    await client.remote.subscribe((r) => {
+      result = r
+    })
+
+    services.remote.trigger()
+
+    await adelay(20)
+
+    assert.equal(result, 1)
+  })
+
+  it("error in client request middleware propagated", async () => {
     let count = 1
 
     const services = await startTestServer({
@@ -120,24 +184,42 @@ describe("middleware", () => {
     })
 
     const client = await createTestClient<typeof services>({
-      updatesMiddleware: [
-        (ctx, next, r) => {
-          assert.ok(ctx.itemName)
-
-          return next((r as number) + 1)
+      middleware: [
+        () => {
+          throw new Error("Error")
         },
       ],
     })
 
-    let response
-    await client.remote.subscribe((r) => {
-      response = r
-    })
+    try {
+      await client.remote()
+      assert.fail("Expected to fail")
+    } catch (e) {}
+  })
 
-    services.remote.trigger()
+  it("error in server request middleware propagated", async () => {
+    let count = 1
 
-    await adelay(20)
+    const services = await startTestServer(
+      {
+        async remote() {
+          return count++
+        },
+      },
+      {
+        middleware: [
+          () => {
+            throw new Error("Error")
+          },
+        ],
+      }
+    )
 
-    assert.equal(response, 3)
+    const client = await createTestClient<typeof services>({})
+
+    try {
+      await client.remote()
+      assert.fail("Expected to fail")
+    } catch (e) {}
   })
 })

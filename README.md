@@ -226,9 +226,12 @@ subscribe' invocation and copied to each 'trigger' invocation. Context, created 
 contain only JSON data, to allow copying. Context can be modified in middlewares; these modification doesn't have to be
 JSON-only.
 
-**Middlewares**. Middlewares are used to intercept client and server requests. Both calls and subscriptions can be
-intercepted. Middlewares can be attached on both client and server side. Middlewares receive context as the last
-arguments in the invocation. Middleware can modify context.
+**Middlewares**. Middlewares are used to intercept client requests, server requests implementations and client
+notifications. Both calls and subscriptions can be intercepted. Middlewares can be attached on both client and server
+side. Middleware can modify context and parameters and data.
+
+Request middleware is called with parameters (ctx, next, ...parameters)
+Client notifications middleware is called with parameters (ctx, next, data, parameters).
 
 **Throttling**. Used to limit number of notifications from the remote functions. With throttling enabled, not all
 triggers will result in new notifications. Throttling can be used with reducers to aggregate values supplied in

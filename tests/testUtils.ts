@@ -39,8 +39,8 @@ export async function createTestClient<S extends Services<S>>(
   if (!options) options = {}
   if (!options.middleware) options.middleware = []
   options.middleware = [logMiddleware, ...options.middleware]
-  if (!options.updatesMiddleware) options.updatesMiddleware = []
-  options.updatesMiddleware = [logUpdatesMiddleware, ...options.updatesMiddleware]
+  if (!options.notificationsMiddleware) options.notificationsMiddleware = []
+  options.notificationsMiddleware = [logUpdatesMiddleware, ...options.notificationsMiddleware]
 
   const r = await consumeServices<S>(`http://127.0.0.1:${TEST_PORT}/rpc`, options)
   testClient = r.client
