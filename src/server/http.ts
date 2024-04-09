@@ -10,7 +10,7 @@ export async function serveHttpRequest(
   res: ServerResponse,
   path: string,
   hooks: HttpServerHooks,
-  createConnectionContext: (req: IncomingMessage) => Promise<RpcConnectionContext>
+  createConnectionContext: (req: IncomingMessage) => Promise<RpcConnectionContext>,
 ) {
   // if port is in options - response 404 on other URLs
   // oherwise just handle request
@@ -65,7 +65,10 @@ export async function serveHttpRequest(
     } catch (e: any) {
       if (e.code) {
         res.statusCode = e.code
-        res.statusMessage = e.message
+
+        if (e.message) {
+          res.setHeader("X-Error", e["message"])
+        }
         const {code, message, stack, ...rest} = e
         if (Object.keys(rest).length > 0) {
           res.setHeader("Content-Type", "application/json")
@@ -77,7 +80,9 @@ export async function serveHttpRequest(
         log.warn(`Error in ${req.url}.`, e)
 
         res.statusCode = 500
-        res.statusMessage = e["message"] || "Internal Server Error"
+        if (e["message"]) {
+          res.setHeader("X-Error", e["message"])
+        }
         res.end()
         return
       }
@@ -107,11 +112,11 @@ export type HttpServerHooks = {
   subscribe(
     clientId: RpcConnectionContext,
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ): Promise<unknown>
   unsubscribe(
     clientId: RpcConnectionContext,
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ): Promise<unknown>
 }

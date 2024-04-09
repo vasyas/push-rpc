@@ -5,8 +5,9 @@ export class HttpClient {
   constructor(
     private url: string,
     private clientId: string,
-    private getHeaders: () => Promise<Record<string, string>>
-  ) {}
+    private getHeaders: () => Promise<Record<string, string>>,
+  ) {
+  }
 
   async call(itemName: string, params: unknown[], callTimeout: number): Promise<unknown> {
     return this.httpRequest("POST", itemName, params, callTimeout, await this.getHeaders())
@@ -29,7 +30,7 @@ export class HttpClient {
     itemName: string,
     params: unknown[],
     callTimeout: number,
-    headers: Record<string, string>
+    headers: Record<string, string>,
   ): Promise<unknown> {
     const itemUrl = this.getItemUrl(itemName)
 
@@ -61,7 +62,7 @@ export class HttpClient {
         contentType && contentType.includes("application/json") ? safeParseJson(text) : text
 
       if (response.status < 200 || response.status >= 300) {
-        const error = new Error(response.statusText)
+        const error = new Error(response.headers.get("x-error") ?? undefined)
 
         Object.assign(error, {code: response.status})
 
