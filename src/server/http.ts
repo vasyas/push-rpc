@@ -10,14 +10,14 @@ export async function serveHttpRequest(
   res: ServerResponse,
   path: string,
   hooks: HttpServerHooks,
-  createConnectionContext: (req: IncomingMessage) => Promise<RpcConnectionContext>,
+  createConnectionContext: (req: IncomingMessage, res: ServerResponse) => Promise<RpcConnectionContext>,
 ) {
   // if port is in options - response 404 on other URLs
   // oherwise just handle request
 
   if (req.url?.startsWith(path)) {
     try {
-      const ctx = await createConnectionContext(req)
+      const ctx = await createConnectionContext(req, res)
 
       const itemName = req.url.slice(path.length + 1)
 
