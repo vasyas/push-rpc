@@ -63,7 +63,7 @@ export async function serveHttpRequest(
       res.write(safeStringify(result))
       res.end()
     } catch (e: any) {
-      if (e.code) {
+      if (e.code && typeof e.code == "number" && e.code >= 100 && e.code < 600) {
         res.statusCode = e.code
 
         if (e.message) {
