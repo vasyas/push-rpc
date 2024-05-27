@@ -2,6 +2,7 @@ import {RpcContext, Services} from "../rpc.js"
 import {ServicesWithSubscriptions} from "./remote.js"
 import {RpcClientImpl} from "./RpcClientImpl.js"
 import {Middleware} from "../utils/middleware.js"
+import {ClientCache} from "./ClientCache"
 
 export type RpcClient = {
   readonly clientId: string
@@ -28,11 +29,12 @@ export type ConsumeServicesOptions = {
   onDisconnected: () => void
   getHeaders: () => Promise<Record<string, string>>
   getSubscriptionsUrl(url: string): string
+  cache: ClientCache | null
 }
 
 export async function consumeServices<S extends Services<S>>(
   url: string,
-  overrideOptions: Partial<ConsumeServicesOptions> = {}
+  overrideOptions: Partial<ConsumeServicesOptions> = {},
 ): Promise<{
   client: RpcClient
   remote: ServicesWithSubscriptions<S>
@@ -67,11 +69,14 @@ const defaultOptions: ConsumeServicesOptions = {
   middleware: [],
   notificationsMiddleware: [],
   connectOnCreate: false,
-  onConnected: () => {},
-  onDisconnected: () => {},
+  onConnected: () => {
+  },
+  onDisconnected: () => {
+  },
   getHeaders: async () => ({}),
 
   getSubscriptionsUrl(url: string): string {
     return url.replace(/^https(.*)/, "wss$1").replace(/^http(.*)/, "ws$1")
   },
+  cache: null,
 }

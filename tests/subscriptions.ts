@@ -38,7 +38,7 @@ describe("Subscriptions", () => {
       },
       {
         subscriptions: false,
-      }
+      },
     )
 
     const client = await createTestClient<typeof services>({
@@ -70,7 +70,8 @@ describe("Subscriptions", () => {
     const client = await createTestClient<typeof services>()
 
     try {
-      await client.item.subscribe(() => {})
+      await client.item.subscribe(() => {
+      })
       assert.fail("Error expected")
     } catch (e: any) {
       assert.equal(e.message, "AA")
@@ -89,7 +90,8 @@ describe("Subscriptions", () => {
     const remote = await createTestClient<typeof services>()
 
     remote.item
-      .subscribe(() => {})
+      .subscribe(() => {
+      })
       .catch((e: any) => {
         // ignored
       })
@@ -211,6 +213,60 @@ describe("Subscriptions", () => {
     assert.deepEqual(item2, item)
   })
 
+  // SWR
+  it("out-of-subscriptions cache", async () => {
+    const item = {r: "1"}
+
+    const server = {
+      test: {
+        item: async () => item,
+      },
+    }
+
+    await startTestServer(server)
+
+    const cache = new Map()
+
+    const client = await createTestClient<typeof server>({
+      cache: {
+        get(itemName: string, parameters: unknown[]): unknown {
+          return cache.get(`${itemName}-${JSON.stringify(parameters)}`)
+        },
+
+        put(itemName: string, parameters: unknown[], value: unknown) {
+          return cache.set(`${itemName}-${JSON.stringify(parameters)}`, value)
+        },
+      },
+    })
+
+    let item1
+    const consumer = (item: any) => {
+      item1 = item
+    }
+
+    await client.test.item.subscribe(consumer)
+
+    await adelay(50)
+    assert.deepEqual(item1, item)
+
+    await client.test.item.unsubscribe(consumer)
+
+    item.r = "2"
+
+    let item2
+    client.test.item.subscribe((item) => {
+      item2 = item
+    })
+
+    // cached version should be delivered
+    assert.deepEqual(item2, {r: "1"})
+
+    await adelay(50)
+
+    // and a new version after some time
+    assert.deepEqual(item2, item)
+  })
+
   it("unsubscribe topics on disconnect", async () => {
     const item = {r: "1"}
 
@@ -224,7 +280,8 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof server>()
 
-    await remote.testUnsub.item.subscribe(() => {})
+    await remote.testUnsub.item.subscribe(() => {
+    })
 
     assert.equal(1, testServer?._allSubscriptions().length)
 
@@ -283,8 +340,10 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub1 = () => {}
-    const sub2 = () => {}
+    const sub1 = () => {
+    }
+    const sub2 = () => {
+    }
 
     await remote.item.subscribe(sub1)
     await adelay(20)
@@ -316,7 +375,8 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub = () => {}
+    const sub = () => {
+    }
 
     await remote.item.subscribe(sub)
     await adelay(20)
@@ -342,8 +402,10 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub1 = () => {}
-    const sub2 = () => {}
+    const sub1 = () => {
+    }
+    const sub2 = () => {
+    }
 
     await remote.item.subscribe(sub1)
     await adelay(20)
@@ -377,7 +439,8 @@ describe("Subscriptions", () => {
       delivered = r
     }
 
-    const sub2 = () => {}
+    const sub2 = () => {
+    }
 
     await client.test.item.subscribe(sub1)
 
@@ -406,7 +469,8 @@ describe("Subscriptions", () => {
 
     const client = await createTestClient<typeof services>()
 
-    const sub = () => {}
+    const sub = () => {
+    }
     client.item.subscribe(sub)
 
     await adelay(10)
@@ -465,7 +529,8 @@ describe("Subscriptions", () => {
     })
 
     try {
-      await client.test.longOp.subscribe(() => {}, new CallOptions({timeout: callTimeout}))
+      await client.test.longOp.subscribe(() => {
+      }, new CallOptions({timeout: callTimeout}))
       assert.fail()
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)
@@ -621,7 +686,7 @@ describe("Subscriptions", () => {
             clientId: (Array.isArray(header) ? header[0] : header) || "anon",
           }
         },
-      }
+      },
     )
 
     const client = await createTestClient<typeof services>({
@@ -635,7 +700,7 @@ describe("Subscriptions", () => {
       (val) => {
         received1 = val
       },
-      {key: 1}
+      {key: 1},
     )
 
     await adelay(40)
@@ -644,7 +709,7 @@ describe("Subscriptions", () => {
       (val) => {
         received2 = val
       },
-      {key: 2}
+      {key: 2},
     )
 
     await adelay(1.5 * delay)

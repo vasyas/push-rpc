@@ -10,10 +10,10 @@ import {Middleware, withMiddlewares} from "../utils/middleware.js"
 export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   constructor(
     url: string,
-    private readonly options: ConsumeServicesOptions
+    private readonly options: ConsumeServicesOptions,
   ) {
     this.httpClient = new HttpClient(url, this.clientId, options.getHeaders)
-    this.remoteSubscriptions = new RemoteSubscriptions()
+    this.remoteSubscriptions = new RemoteSubscriptions(options.cache)
 
     this.connection = new WebSocketConnection(
       options.getSubscriptionsUrl(url),
@@ -39,7 +39,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
           this.options.notificationsMiddleware,
           next as any,
           data,
-          parameters
+          parameters,
         )
       },
       () => {
@@ -48,7 +48,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       },
       () => {
         options.onDisconnected()
-      }
+      },
     )
   }
 
@@ -101,7 +101,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   private call = (
     itemName: string,
     parameters: unknown[],
-    callOptions?: CallOptions
+    callOptions?: CallOptions,
   ): Promise<unknown> => {
     return this.invoke(
       itemName,
@@ -110,9 +110,9 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         this.httpClient.call(
           itemName,
           parameters,
-          callOptions?.timeout ?? this.options.callTimeout
+          callOptions?.timeout ?? this.options.callTimeout,
         ),
-      parameters
+      parameters,
     )
   }
 
@@ -120,7 +120,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void,
-    callOptions?: CallOptions
+    callOptions?: CallOptions,
   ): Promise<void> => {
     const cached = this.remoteSubscriptions.getCached(itemName, parameters)
 
@@ -143,9 +143,9 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
           this.httpClient.subscribe(
             itemName,
             parameters,
-            callOptions?.timeout ?? this.options.callTimeout
+            callOptions?.timeout ?? this.options.callTimeout,
           ),
-        parameters
+        parameters,
       )
 
       this.remoteSubscriptions.unpause(itemName, parameters)
@@ -163,7 +163,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void,
-    callOptions?: CallOptions
+    callOptions?: CallOptions,
   ) => {
     const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
 
@@ -175,9 +175,9 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
           this.httpClient.unsubscribe(
             itemName,
             parameters,
-            callOptions?.timeout ?? this.options.callTimeout
+            callOptions?.timeout ?? this.options.callTimeout,
           ),
-        parameters
+        parameters,
       )
     }
   }
@@ -201,7 +201,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     itemName: string,
     invocationType: InvocationType,
     next: (...params: unknown[]) => Promise<unknown>,
-    parameters: unknown[]
+    parameters: unknown[],
   ) {
     const ctx: RpcContext = {
       clientId: this.clientId,

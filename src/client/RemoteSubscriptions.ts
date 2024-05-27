@@ -1,6 +1,10 @@
 import {safeStringify} from "../utils/json.js"
+import {ClientCache} from "./ClientCache"
 
 export class RemoteSubscriptions {
+  constructor(private cache: ClientCache | null) {
+  }
+
   unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): boolean {
     const parametersKey = getParametersKey(parameters)
 
@@ -13,7 +17,7 @@ export class RemoteSubscriptions {
 
     const parametersKey = getParametersKey(parameters)
     const parameterSubscriptions: ParametersSubscription = itemSubscriptions.byParameters.get(
-      parametersKey
+      parametersKey,
     ) || {
       parameters,
       cached: null,
@@ -44,6 +48,7 @@ export class RemoteSubscriptions {
     if (!filterSubscriptions) return
 
     filterSubscriptions.queue.forEach((data) => {
+      if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
         consumer(data)
@@ -63,7 +68,7 @@ export class RemoteSubscriptions {
   private removeSubscription(
     itemName: string,
     parametersKey: string,
-    consumer: (d: unknown) => void
+    consumer: (d: unknown) => void,
   ): boolean {
     const itemSubscriptions = this.byItem.get(itemName)
     if (!itemSubscriptions) return false
@@ -91,7 +96,7 @@ export class RemoteSubscriptions {
 
   getCached(itemName: string, parameters: unknown[]): unknown | undefined {
     const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
-    if (!filterSubscriptions) return
+    if (!filterSubscriptions) return this.cache?.get(itemName, parameters)
 
     return filterSubscriptions.cached
   }
@@ -103,6 +108,7 @@ export class RemoteSubscriptions {
     if (filterSubscriptions.paused) {
       filterSubscriptions.queue.push(data)
     } else {
+      if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
         consumer(data)
@@ -126,7 +132,7 @@ export class RemoteSubscriptions {
 
   private getFilterSubscriptions(
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ): ParametersSubscription | undefined {
     const parametersKey = getParametersKey(parameters)
 
