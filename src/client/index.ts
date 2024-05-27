@@ -2,7 +2,6 @@ import {RpcContext, Services} from "../rpc.js"
 import {ServicesWithSubscriptions} from "./remote.js"
 import {RpcClientImpl} from "./RpcClientImpl.js"
 import {Middleware} from "../utils/middleware.js"
-import {ClientCache} from "./ClientCache"
 
 export type RpcClient = {
   readonly clientId: string
@@ -14,6 +13,11 @@ export type RpcClient = {
   // test-only
   _allSubscriptions(): Array<any[]>
   _webSocket(): WebSocket | null
+}
+
+export type ClientCache = {
+  put(itemName: string, parameters: unknown[], value: unknown): void
+  get(itemName: string, parameters: unknown[]): unknown | undefined
 }
 
 export type ConsumeServicesOptions = {

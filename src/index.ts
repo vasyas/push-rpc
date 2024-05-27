@@ -10,7 +10,7 @@ export {publishServices} from "./server/index.js"
 
 export type {ServicesWithTriggers} from "./server/local.js"
 
-export type {RpcClient, ConsumeServicesOptions} from "./client/index.js"
+export type {RpcClient, ConsumeServicesOptions, ClientCache} from "./client/index.js"
 export {consumeServices} from "./client/index.js"
 
 export type {ServicesWithSubscriptions} from "./client/remote.js"

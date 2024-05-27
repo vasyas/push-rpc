@@ -1,5 +1,6 @@
 import {safeStringify} from "../utils/json.js"
-import {ClientCache} from "./ClientCache"
+
+import {ClientCache} from "./index"
 
 export class RemoteSubscriptions {
   constructor(private cache: ClientCache | null) {
