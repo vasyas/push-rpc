@@ -2,7 +2,7 @@ import {CallOptions, Consumer, RemoteFunction, Services} from "../rpc.js"
 
 export function createRemote<S extends Services<S>>(
   hooks: RemoteHooks,
-  name = ""
+  name = "",
 ): ServicesWithSubscriptions<S> {
   // start with remote function
   const remoteItem = (...paramsWithCallOptions: unknown[]) => {
@@ -21,6 +21,7 @@ export function createRemote<S extends Services<S>>(
       const {params, callOptions} = extractCallOptions(paramsWithCallOptions)
       return hooks.unsubscribe(name, params, consumer, callOptions)
     },
+    itemName: name,
   }
 
   Object.assign(remoteItem, subscription)
@@ -83,13 +84,13 @@ export type RemoteHooks = {
     itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void,
-    callOptions?: CallOptions
+    callOptions?: CallOptions,
   ): Promise<void>
   unsubscribe(
     itemName: string,
     parameters: unknown[],
     consumer: (d: unknown) => void,
-    callOptions?: CallOptions
+    callOptions?: CallOptions,
   ): Promise<void>
 }
 
@@ -101,15 +102,15 @@ export type AddParameters<
 export type ServicesWithSubscriptions<T extends Services<T>> = {
   [K in keyof T]: T[K] extends RemoteFunction
     ? AddParameters<T[K], [CallOptions?]> & {
-        subscribe(
-          consumer: Consumer<T[K]>,
-          ...parameters: [...Parameters<T[K]>, CallOptions?]
-        ): Promise<void>
-        unsubscribe(
-          consumer: Consumer<T[K]>,
-          ...parameters: [...Parameters<T[K]>, CallOptions?]
-        ): Promise<void>
-      }
+    subscribe(
+      consumer: Consumer<T[K]>,
+      ...parameters: [...Parameters<T[K]>, CallOptions?]
+    ): Promise<void>
+    unsubscribe(
+      consumer: Consumer<T[K]>,
+      ...parameters: [...Parameters<T[K]>, CallOptions?]
+    ): Promise<void>
+  }
     : T[K] extends object
       ? ServicesWithSubscriptions<T[K]>
       : never
