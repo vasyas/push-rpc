@@ -4,6 +4,7 @@ import {adelay} from "../src/utils/promises.js"
 import {CallOptions, RpcConnectionContext, RpcErrors} from "../src/index.js"
 import {IncomingMessage} from "http"
 import {CLIENT_ID_HEADER} from "../src/rpc.js"
+import WebSocket from "ws"
 
 describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
@@ -70,8 +71,7 @@ describe("Subscriptions", () => {
     const client = await createTestClient<typeof services>()
 
     try {
-      await client.item.subscribe(() => {
-      })
+      await client.item.subscribe(() => {})
       assert.fail("Error expected")
     } catch (e: any) {
       assert.equal(e.message, "AA")
@@ -90,8 +90,7 @@ describe("Subscriptions", () => {
     const remote = await createTestClient<typeof services>()
 
     remote.item
-      .subscribe(() => {
-      })
+      .subscribe(() => {})
       .catch((e: any) => {
         // ignored
       })
@@ -280,8 +279,7 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof server>()
 
-    await remote.testUnsub.item.subscribe(() => {
-    })
+    await remote.testUnsub.item.subscribe(() => {})
 
     assert.equal(1, testServer?._allSubscriptions().length)
 
@@ -340,10 +338,8 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub1 = () => {
-    }
-    const sub2 = () => {
-    }
+    const sub1 = () => {}
+    const sub2 = () => {}
 
     await remote.item.subscribe(sub1)
     await adelay(20)
@@ -375,8 +371,7 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub = () => {
-    }
+    const sub = () => {}
 
     await remote.item.subscribe(sub)
     await adelay(20)
@@ -402,10 +397,8 @@ describe("Subscriptions", () => {
 
     const remote = await createTestClient<typeof services>()
 
-    const sub1 = () => {
-    }
-    const sub2 = () => {
-    }
+    const sub1 = () => {}
+    const sub2 = () => {}
 
     await remote.item.subscribe(sub1)
     await adelay(20)
@@ -439,8 +432,7 @@ describe("Subscriptions", () => {
       delivered = r
     }
 
-    const sub2 = () => {
-    }
+    const sub2 = () => {}
 
     await client.test.item.subscribe(sub1)
 
@@ -469,8 +461,7 @@ describe("Subscriptions", () => {
 
     const client = await createTestClient<typeof services>()
 
-    const sub = () => {
-    }
+    const sub = () => {}
     client.item.subscribe(sub)
 
     await adelay(10)
@@ -481,6 +472,49 @@ describe("Subscriptions", () => {
 
     assert.equal(testClient!._allSubscriptions().length, 0)
     assert.equal(testServer!._allSubscriptions().length, 0)
+  })
+
+  it("unsubscribe while disconnected bug", async () => {
+    const services = await startTestServer({
+      item: async () => {
+        return 1
+      },
+    })
+
+    // delay client connection open by 10ms
+    let oldAddEL: typeof WebSocket.prototype.addEventListener
+
+    oldAddEL = WebSocket.prototype.addEventListener
+    WebSocket.prototype.addEventListener = function (eventName: any, callback: any) {
+      if (eventName == "open") {
+        oldAddEL.apply(this, [
+          eventName,
+          () => {
+            setTimeout(callback, 10)
+          },
+        ])
+
+        return
+      }
+
+      return oldAddEL.apply(this, [eventName, callback])
+    }
+
+    const client = await createTestClient<typeof services>()
+
+    const sub = () => {}
+    client.item.subscribe(sub)
+
+    await adelay(10)
+
+    client.item.unsubscribe(sub)
+
+    await adelay(40)
+
+    assert.equal(testClient!._allSubscriptions().length, 0)
+    assert.equal(testServer!._allSubscriptions().length, 0)
+
+    WebSocket.prototype.addEventListener = oldAddEL
   })
 
   it("skip unchanged data", async () => {
@@ -529,8 +563,7 @@ describe("Subscriptions", () => {
     })
 
     try {
-      await client.test.longOp.subscribe(() => {
-      }, new CallOptions({timeout: callTimeout}))
+      await client.test.longOp.subscribe(() => {}, new CallOptions({timeout: callTimeout}))
       assert.fail()
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)

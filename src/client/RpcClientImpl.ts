@@ -5,7 +5,7 @@ import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
 import {createRemote, ServicesWithSubscriptions} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
-import {Middleware, withMiddlewares} from "../utils/middleware.js"
+import {withMiddlewares} from "../utils/middleware.js"
 
 export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   constructor(
@@ -128,12 +128,21 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
+    // add subscription in pending state to test later if it was unsubscribed during connection wait
+    this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
+
     // Needs to be awaited b/c resubscribe will make a 2nd request then.
     // Also, server needs the connection to be established before making a subscription
     await this.connection.connect()
 
     try {
-      this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
+      // check if already unsubscribed
+      const sub = this.remoteSubscriptions.getConsumerSubscription(itemName, parameters, consumer)
+      if (!sub) return
+
+      // mark as completed - will resubscribe on reconnects
+      sub.completed = true
+
       this.remoteSubscriptions.pause(itemName, parameters)
 
       const data = await this.invoke(

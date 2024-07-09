@@ -3,8 +3,7 @@ import {safeStringify} from "../utils/json.js"
 import {ClientCache} from "./index"
 
 export class RemoteSubscriptions {
-  constructor(private cache: ClientCache | null) {
-  }
+  constructor(private cache: ClientCache | null) {}
 
   unsubscribe(itemName: string, parameters: unknown[], consumer: (d: unknown) => void): boolean {
     const parametersKey = getParametersKey(parameters)
@@ -12,6 +11,7 @@ export class RemoteSubscriptions {
     return this.removeSubscription(itemName, parametersKey, consumer)
   }
 
+  /** Add subscription in pending state */
   addSubscription(itemName: string, parameters: unknown[], consumer: (d: unknown) => void) {
     const itemSubscriptions = this.byItem.get(itemName) || {byParameters: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
@@ -27,7 +27,10 @@ export class RemoteSubscriptions {
     }
 
     itemSubscriptions.byParameters.set(parametersKey, parameterSubscriptions)
-    parameterSubscriptions.consumers.push(consumer)
+    parameterSubscriptions.consumers.push({
+      consumer,
+      completed: false,
+    })
   }
 
   pause(itemName: string, parameters: unknown[]) {
@@ -52,7 +55,9 @@ export class RemoteSubscriptions {
       if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
-        consumer(data)
+        if (consumer.completed) {
+          consumer.consumer(data)
+        }
       })
     })
 
@@ -77,7 +82,7 @@ export class RemoteSubscriptions {
     const filterSubscriptions = itemSubscriptions.byParameters.get(parametersKey)
     if (!filterSubscriptions) return false
 
-    const index = filterSubscriptions.consumers.indexOf(consumer)
+    const index = filterSubscriptions.consumers.findIndex((c) => c.consumer == consumer)
     if (index == -1) return false
 
     filterSubscriptions.consumers.splice(index, 1)
@@ -112,9 +117,20 @@ export class RemoteSubscriptions {
       if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
-        consumer(data)
+        if (consumer.completed) {
+          consumer.consumer(data)
+        }
       })
     }
+  }
+
+  getConsumerSubscription(
+    itemName: string,
+    parameters: unknown[],
+    consumer: (d: unknown) => void,
+  ): ConsumerSubscription | undefined {
+    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
+    return (filterSubscriptions?.consumers || []).find((c) => c.consumer == consumer)
   }
 
   getAllSubscriptions(): Array<
@@ -124,7 +140,13 @@ export class RemoteSubscriptions {
 
     for (const [itemName, itemSubscriptions] of this.byItem) {
       for (const [, parameterSubscriptions] of itemSubscriptions.byParameters) {
-        result.push([itemName, parameterSubscriptions.parameters, parameterSubscriptions.consumers])
+        const consumers = parameterSubscriptions.consumers
+          .filter((c) => c.completed)
+          .map((c) => c.consumer)
+
+        if (consumers.length) {
+          result.push([itemName, parameterSubscriptions.parameters, consumers])
+        }
       }
     }
 
@@ -156,10 +178,15 @@ type ItemSubscription = {
 type ParametersSubscription = {
   parameters: unknown[]
   cached: unknown
-  consumers: Array<(d: unknown) => void>
+  consumers: ConsumerSubscription[]
 
   paused: boolean
   queue: unknown[]
+}
+
+type ConsumerSubscription = {
+  consumer: (d: unknown) => void
+  completed: boolean
 }
 
 function getParametersKey(parameters: unknown[]) {
