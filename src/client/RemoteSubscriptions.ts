@@ -21,7 +21,7 @@ export class RemoteSubscriptions {
       parametersKey,
     ) || {
       parameters,
-      cached: null,
+      cached: undefined,
       consumers: [],
       queue: [],
     }
