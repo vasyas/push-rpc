@@ -555,6 +555,8 @@ describe("Subscriptions", () => {
     assert.equal(received, 2)
   })
 
+  // Currently not working, b/c paused is boolean
+  // To implement it, need to replace it with counter
   it.skip("two concurrent subscribes and trigger", async () => {
     const delay = 50
 
@@ -668,6 +670,38 @@ describe("Subscriptions", () => {
     item.r = "2"
     services.test.item.trigger()
     await adelay(60)
+    assert.deepEqual(receivedItem, item)
+
+    cancelWebsocketConnectionDelay()
+  })
+
+  it("connect during subscribe", async () => {
+    const item = {r: "1"}
+
+    delayWebsocketConnection(30)
+
+    const services = await startTestServer({
+      test: {
+        item: async () => {
+          await adelay(50)
+          return item
+        },
+      },
+    })
+
+    const remote = await createTestClient<typeof services>()
+
+    let receivedItem
+    await remote.test.item.subscribe((item) => {
+      receivedItem = item
+    })
+
+    assert.deepEqual(receivedItem, item)
+
+    // trigger sends item
+    item.r = "2"
+    services.test.item.trigger()
+    await adelay(100)
     assert.deepEqual(receivedItem, item)
 
     cancelWebsocketConnectionDelay()

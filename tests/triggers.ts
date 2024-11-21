@@ -22,7 +22,9 @@ describe("Subscription triggers", () => {
       timeout: 0,
     })
 
-    const remote = await createTestClient<typeof services>()
+    const remote = await createTestClient<typeof services>({
+      connectOnCreate: true,
+    })
 
     let item1
     let item2

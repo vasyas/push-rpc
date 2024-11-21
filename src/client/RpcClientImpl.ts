@@ -128,24 +128,14 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
       consumer(cached)
     }
 
-    // add subscription in pending state to test later if it was unsubscribed during connection wait
+    // Add subscription before subscribing in case in will be unsubscribed while waiting for a server reply
+    // Subscription is added in pending state to not re-subscribe until subscribe response is completed
     this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
-
-    // TODO analyse this comment
-    // Needs to be awaited b/c resubscribe will make a 2nd request then.
-    // Also, server needs the connection to be established before making a subscription
 
     // Start connecting, if not already
     void this.connection.connect()
 
     try {
-      // check if already unsubscribed
-      const sub = this.remoteSubscriptions.getConsumerSubscription(itemName, parameters, consumer)
-      if (!sub) return
-
-      // mark as completed - will resubscribe on reconnects
-      sub.completed = true
-
       this.remoteSubscriptions.pause(itemName, parameters)
 
       const data = await this.invoke(
@@ -160,7 +150,15 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         parameters,
       )
 
+      // check if still subscribed
+      const sub = this.remoteSubscriptions.getConsumerSubscription(itemName, parameters, consumer)
+      if (sub) {
+        // mark as completed - will resubscribe on reconnects
+        sub.completed = true
+      }
+
       this.remoteSubscriptions.unpause(itemName, parameters)
+
       this.remoteSubscriptions.consume(itemName, parameters, data)
       this.remoteSubscriptions.flushQueue(itemName, parameters)
     } catch (e) {
