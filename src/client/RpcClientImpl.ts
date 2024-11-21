@@ -202,6 +202,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
           this.remoteSubscriptions.consume(itemName, params, data)
         })
         .catch((e) => {
+          // is it a good idea to unsubscribe on errors? What if those errors are network-related?
           for (const consumer of consumers) {
             this.remoteSubscriptions.unsubscribe(itemName, params, consumer)
           }

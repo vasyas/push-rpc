@@ -44,7 +44,7 @@ describe("middleware", () => {
             return next()
           },
         ],
-      }
+      },
     )
 
     const remote = await createTestClient<typeof services>()
@@ -128,6 +128,7 @@ describe("middleware", () => {
           return next((r as number) + 1)
         },
       ],
+      connectOnCreate: true,
     })
 
     let response
@@ -135,8 +136,11 @@ describe("middleware", () => {
       (r) => {
         response = r
       },
-      {param: 1}
+      {param: 1},
     )
+
+    assert.equal(response, 1)
+    assert.equal(count, 2)
 
     services.remote.trigger({param: 1})
 
@@ -172,6 +176,7 @@ describe("middleware", () => {
           throw new Error("Test error")
         },
       ],
+      connectOnCreate: true,
     })
 
     await client.remote.subscribe((r) => {
@@ -227,7 +232,7 @@ describe("middleware", () => {
             throw new Error("Error")
           },
         ],
-      }
+      },
     )
 
     const client = await createTestClient<typeof services>({})

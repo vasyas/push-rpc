@@ -68,7 +68,9 @@ describe("Subscription triggers", () => {
       timeout: throttleTimeout,
     })
 
-    const remote = await createTestClient<typeof services>()
+    const remote = await createTestClient<typeof services>({
+      connectOnCreate: true,
+    })
 
     let count = 0
     let item = null

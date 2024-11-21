@@ -536,6 +536,7 @@ describe("Subscriptions", () => {
 
     const client = await createTestClient<typeof services>({
       callTimeout: 2 * delay,
+      connectOnCreate: true,
     })
 
     let received = 0
