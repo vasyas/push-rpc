@@ -170,8 +170,9 @@ There are the types of messages that can be sent from client to server:
    [{"id": 1, text: "Buy groceries", status: "open"}]
    ```
 
-   Before subscribing, client would establish a WebSocket connection to the server. Server would then use established
-   connection to send subscription updates. Client ID is used to link WebSocket connection and HTTP requests.
+   Server accepts subscribe requests before WS connection is established. Server do not track client subscriptions.
+   On WS connection established, client should re-sent subscribe requests. In response, server will provide up-to-date
+   data.
 
 3. **Unsubscribe** - a request to unsubscribe from a remote function updates. Implemented as HTTP PATCH request. URL
    contains the remote function name. Body contains JSON-encoded list of arguments. Response is always empty.
@@ -205,7 +206,7 @@ topic name, remote function result and subscription parameters if any:
 ["todo/getTodos", [{"id": 1, text: "Buy groceries", status: "open"}], ...]
 ```
 
-Both client & server will try to connect broken connections by sending WS ping/pongs.
+Both client & server will try to detect broken connections by sending WS ping/pongs.
 
 ## Glossary
 

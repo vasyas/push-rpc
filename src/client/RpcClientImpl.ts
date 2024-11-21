@@ -131,9 +131,12 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     // add subscription in pending state to test later if it was unsubscribed during connection wait
     this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
 
+    // TODO analyse this comment
     // Needs to be awaited b/c resubscribe will make a 2nd request then.
     // Also, server needs the connection to be established before making a subscription
-    await this.connection.connect()
+
+    // Start connecting, if not already
+    void this.connection.connect()
 
     try {
       // check if already unsubscribed
