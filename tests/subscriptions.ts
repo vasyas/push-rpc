@@ -140,41 +140,6 @@ describe("Subscriptions", () => {
     assert.equal(testServer?._allSubscriptions()[0][0], "test/item")
   })
 
-  it("concurrent subscribe cache", async () => {
-    const item = {r: "1"}
-    let supplied = 0
-
-    const server = {
-      test: {
-        item: async () => {
-          await adelay(20)
-          supplied++
-          return item
-        },
-      },
-    }
-
-    await startTestServer(server)
-
-    const client = await createTestClient<typeof server>()
-
-    let item1
-    client.test.item.subscribe((item) => {
-      item1 = item
-    })
-
-    let item2
-    client.test.item.subscribe((item) => {
-      item2 = item
-    })
-
-    await adelay(50)
-    assert.deepEqual(item1, item)
-    assert.deepEqual(item2, item)
-
-    assert.equal(supplied, 1)
-  })
-
   it("subscribe use client cached value", async () => {
     const item = {r: "1"}
 
@@ -482,23 +447,7 @@ describe("Subscriptions", () => {
     })
 
     // delay client connection open by 10ms
-    let oldAddEL: typeof WebSocket.prototype.addEventListener
-
-    oldAddEL = WebSocket.prototype.addEventListener
-    WebSocket.prototype.addEventListener = function (eventName: any, callback: any) {
-      if (eventName == "open") {
-        oldAddEL.apply(this, [
-          eventName,
-          () => {
-            setTimeout(callback, 10)
-          },
-        ])
-
-        return
-      }
-
-      return oldAddEL.apply(this, [eventName, callback])
-    }
+    delayWebsocketConnection(10)
 
     const client = await createTestClient<typeof services>()
 
@@ -514,7 +463,7 @@ describe("Subscriptions", () => {
     assert.equal(testClient!._allSubscriptions().length, 0)
     assert.equal(testServer!._allSubscriptions().length, 0)
 
-    WebSocket.prototype.addEventListener = oldAddEL
+    cancelWebsocketConnectionDelay()
   })
 
   it("skip unchanged data", async () => {
@@ -587,6 +536,7 @@ describe("Subscriptions", () => {
 
     const client = await createTestClient<typeof services>({
       callTimeout: 2 * delay,
+      connectOnCreate: true,
     })
 
     let received = 0
@@ -605,6 +555,8 @@ describe("Subscriptions", () => {
     assert.equal(received, 2)
   })
 
+  // Currently not working, b/c paused is boolean
+  // To implement it, need to replace it with counter
   it.skip("two concurrent subscribes and trigger", async () => {
     const delay = 50
 
@@ -694,62 +646,82 @@ describe("Subscriptions", () => {
     assert.equal(received, 1)
   })
 
-  it("subscribe waits for connection", async () => {
-    const delay = 50
+  it("can subscribe while disconnected", async () => {
+    const item = {r: "1"}
 
-    let connectedClients = 0
-    let serverCalled = 0
+    delayWebsocketConnection(50)
 
-    const services = await startTestServer(
-      {
-        test: {
-          async op(params: {key: number}): Promise<number> {
-            serverCalled++
-            return 1
-          },
-        },
+    const services = await startTestServer({
+      test: {
+        item: async () => item,
       },
-      {
-        async createConnectionContext(req: IncomingMessage): Promise<RpcConnectionContext> {
-          const header = req.headers[CLIENT_ID_HEADER]
-
-          connectedClients++
-
-          return {
-            clientId: (Array.isArray(header) ? header[0] : header) || "anon",
-          }
-        },
-      },
-    )
-
-    const client = await createTestClient<typeof services>({
-      callTimeout: 2 * delay,
     })
 
-    let received1
-    let received2
+    const remote = await createTestClient<typeof services>()
 
-    client.test.op.subscribe(
-      (val) => {
-        received1 = val
+    let receivedItem
+    await remote.test.item.subscribe((item) => {
+      receivedItem = item
+    })
+
+    assert.deepEqual(receivedItem, item)
+
+    // trigger sends item
+    item.r = "2"
+    services.test.item.trigger()
+    await adelay(60)
+    assert.deepEqual(receivedItem, item)
+
+    cancelWebsocketConnectionDelay()
+  })
+
+  it("connect during subscribe", async () => {
+    const item = {r: "1"}
+
+    delayWebsocketConnection(30)
+
+    const services = await startTestServer({
+      test: {
+        item: async () => {
+          await adelay(50)
+          return item
+        },
       },
-      {key: 1},
-    )
+    })
 
-    await adelay(40)
+    const remote = await createTestClient<typeof services>()
 
-    client.test.op.subscribe(
-      (val) => {
-        received2 = val
-      },
-      {key: 2},
-    )
+    let receivedItem
+    await remote.test.item.subscribe((item) => {
+      receivedItem = item
+    })
 
-    await adelay(1.5 * delay)
+    assert.deepEqual(receivedItem, item)
 
-    assert.equal(received1, 1)
-    assert.equal(received2, 1)
-    assert.equal(serverCalled, 2)
-    assert.equal(testServer!._allSubscriptions().length, 2)
+    // trigger sends item
+    item.r = "2"
+    services.test.item.trigger()
+    await adelay(100)
+    assert.deepEqual(receivedItem, item)
+
+    cancelWebsocketConnectionDelay()
   })
 })
+
+let oldAddEL: typeof WebSocket.prototype.addEventListener
+
+function delayWebsocketConnection(ms: number) {
+  oldAddEL = WebSocket.prototype.addEventListener
+  WebSocket.prototype.addEventListener = function (eventName: any, callback: any) {
+    oldAddEL.apply(this, [
+      eventName,
+      (...args) => {
+        setTimeout(() => callback(...args), ms)
+      },
+    ])
+  }
+}
+
+function cancelWebsocketConnectionDelay() {
+  WebSocket.prototype.addEventListener = oldAddEL
+}

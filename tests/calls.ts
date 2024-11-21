@@ -1,6 +1,6 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer} from "./testUtils.js"
-import {CallOptions, RpcError, RpcErrors} from "../src/index.js"
+import {CallOptions, RpcErrors} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("calls", () => {
@@ -168,41 +168,6 @@ describe("calls", () => {
     const client = await createTestClient<typeof services>()
     const r = await client.obj.hello()
     assert.equal("yes", r)
-  })
-
-  it("concurrent call cache", async () => {
-    const item = {r: "1"}
-    let supplied = 0
-
-    const server = {
-      test: {
-        item: async () => {
-          await adelay(1)
-          supplied++
-          return item
-        },
-      },
-    }
-
-    await startTestServer(server)
-
-    const client = await createTestClient<typeof server>()
-
-    let item1
-    client.test.item().then((item) => {
-      item1 = item
-    })
-
-    let item2
-    client.test.item().then((item) => {
-      item2 = item
-    })
-
-    await adelay(50)
-    assert.deepEqual(item1, item)
-    assert.deepEqual(item2, item)
-
-    assert.equal(supplied, 1)
   })
 })
 

@@ -8,7 +8,7 @@ export class ConnectionsServer {
     server: http.Server,
     options: ConnectionsServerOptions,
     connectionClosed: (clientId: string) => void,
-    closeSocketsWithDifferentPath: boolean
+    closeSocketsWithDifferentPath: boolean,
   ) {
     this.wss = new WebSocketServer({noServer: true})
 

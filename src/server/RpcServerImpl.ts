@@ -2,7 +2,6 @@ import {PublishServicesOptions, RpcServer} from "./index.js"
 import {LocalSubscriptions} from "./LocalSubscriptions.js"
 import http from "http"
 import type {ConnectionsServer} from "./ConnectionsServer.js"
-import {PromiseCache} from "../utils/promises.js"
 import {serveHttpRequest} from "./http.js"
 import {
   InvocationType,
@@ -21,7 +20,7 @@ import {safeParseJson, safeStringify} from "../utils/json.js"
 export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implements RpcServer {
   constructor(
     private readonly services: S,
-    private readonly options: PublishServicesOptions<C>
+    private readonly options: PublishServicesOptions<C>,
   ) {
     if ("server" in this.options) {
       this.httpServer = this.options.server
@@ -50,7 +49,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         res,
         options.path,
         options.createServerHooks ? options.createServerHooks(hooks, req) : hooks,
-        options.createConnectionContext
+        options.createConnectionContext,
       ).catch((e) => {
         log.warn("Unhandled error serving HTTP request", e)
       })
@@ -66,7 +65,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       (clientId) => {
         this.localSubscriptions.unsubscribeAll(clientId)
       },
-      !("server" in this.options)
+      !("server" in this.options),
     )
   }
 
@@ -114,14 +113,13 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   }
 
   private readonly localSubscriptions = new LocalSubscriptions()
-  private readonly invocationCache = new PromiseCache()
   private connectionsServer: ConnectionsServer | null = null
   readonly httpServer
 
   private call = async (
     connectionContext: RpcConnectionContext,
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ): Promise<unknown> => {
     const item = this.getRemoteFunction(itemName)
 
@@ -135,7 +133,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         itemName,
         item,
         parameters,
-        InvocationType.Call
+        InvocationType.Call,
       )
     } catch (e) {
       log.error(`Cannot call item ${itemName}.`, e)
@@ -146,7 +144,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   private subscribe = async (
     connectionContext: RpcConnectionContext,
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ) => {
     const item = this.getRemoteFunction(itemName)
 
@@ -167,7 +165,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
                   itemName,
                   item,
                   parameters,
-                  InvocationType.Trigger
+                  InvocationType.Trigger,
                 )
 
           const newDataJson = safeStringify(newData)
@@ -178,7 +176,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
               connectionContext.clientId,
               itemName,
               parameters,
-              newData
+              newData,
             )
           }
         } catch (e) {
@@ -193,7 +191,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         itemName,
         item,
         parameters,
-        InvocationType.Subscribe
+        InvocationType.Subscribe,
       )
       lastDataJson = safeStringify(lastData)
 
@@ -209,7 +207,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
   private unsubscribe = async (
     connectionContext: RpcConnectionContext,
     itemName: string,
-    parameters: unknown[]
+    parameters: unknown[],
   ) => {
     try {
       this.localSubscriptions.unsubscribe(connectionContext.clientId, itemName, parameters)
@@ -221,7 +219,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
   private getRemoteFunction(
     itemName: string,
-    root: any = this.services
+    root: any = this.services,
   ): {function: RemoteFunction; container: any} | undefined {
     const parts = itemName.split("/")
 
@@ -248,22 +246,18 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     itemName: string,
     item: {function: RemoteFunction; container: any},
     parameters: unknown[],
-    invocationType: InvocationType
+    invocationType: InvocationType,
   ): Promise<unknown> {
-    return this.invocationCache.invoke(
-      {clientId: connectionContext.clientId, itemName, parameters},
-      () => {
-        const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
+    const parametersCopy: unknown[] = safeParseJson(safeStringify(parameters))
 
-        const ctx = safeParseJson(safeStringify(connectionContext)) as C
-        ctx.itemName = itemName
-        ctx.invocationType = invocationType
+    const ctx = safeParseJson(safeStringify(connectionContext)) as C
+    ctx.itemName = itemName
+    ctx.invocationType = invocationType
 
-        const invokeItem = (...params: unknown[]) => {
-          return item.function.call(item.container, ...params, ctx)
-        }
-        return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
-      }
-    )
+    const invokeItem = (...params: unknown[]) => {
+      return item.function.call(item.container, ...params, ctx)
+    }
+    
+    return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
   }
 }
