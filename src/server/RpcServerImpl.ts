@@ -184,7 +184,9 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         }
       })
 
-      this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
+      if (this.connectionsServer?.isClientSubscribed(connectionContext.clientId)) {
+        this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
+      }
 
       const lastData = await this.invokeLocalFunction(
         connectionContext,
@@ -257,7 +259,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     const invokeItem = (...params: unknown[]) => {
       return item.function.call(item.container, ...params, ctx)
     }
-    
+
     return withMiddlewares<C>(ctx, this.options.middleware, invokeItem, ...parametersCopy)
   }
 }

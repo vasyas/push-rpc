@@ -1,4 +1,4 @@
-import {createTestClient, startTestServer} from "./testUtils.js"
+import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {assert} from "chai"
 import {adelay} from "../src/utils/promises.js"
 import {RpcContext} from "../src/index.js"
@@ -41,7 +41,7 @@ describe("context", () => {
         async createConnectionContext() {
           return {clientId: "test", newKey: "bla"}
         },
-      }
+      },
     )
 
     const client = await createTestClient<typeof services>()
@@ -75,30 +75,25 @@ describe("context", () => {
   it("available in trigger", async () => {
     let ctx = null
 
-    const services = await startTestServer(
-      {
-        test: {
-          async call(passedCtx?: any) {
-            ctx = passedCtx
-          },
+    const services = await startTestServer({
+      test: {
+        async call(passedCtx?: any) {
+          ctx = passedCtx
         },
       },
-      {
-        async createConnectionContext() {
-          return {clientId: "test"}
-        },
-      }
-    )
+    })
 
-    const client = await createTestClient<typeof services>()
+    const client = await createTestClient<typeof services>({
+      connectOnCreate: true,
+    })
 
     await client.test.call.subscribe(() => {})
-    assert.equal(ctx!.clientId, "test")
+    assert.equal(ctx!.clientId, testClient?.clientId)
 
     ctx = null
     services.test.call.trigger()
     await adelay(20)
-    assert.equal(ctx!.clientId, "test")
+    assert.equal(ctx!.clientId, testClient?.clientId)
     assert.equal(ctx!.invocationType, InvocationType.Trigger)
   })
 
@@ -107,26 +102,19 @@ describe("context", () => {
 
     let count = 0
 
-    const services = await startTestServer(
-      {
-        test: {
-          async call(passedCtx?: any) {
-            ctx = passedCtx
+    const services = await startTestServer({
+      test: {
+        async call(passedCtx?: any) {
+          ctx = passedCtx
 
-            if (!count) {
-              ctx.modified = true
-            }
+          if (!count) {
+            ctx.modified = true
+          }
 
-            count++
-          },
+          count++
         },
       },
-      {
-        async createConnectionContext() {
-          return {clientId: "test"}
-        },
-      }
-    )
+    })
 
     const client = await createTestClient<typeof services>()
 
@@ -160,7 +148,7 @@ describe("context", () => {
             return next(ctx)
           },
         ],
-      }
+      },
     )
 
     const client = await createTestClient<typeof services>()

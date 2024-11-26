@@ -15,10 +15,10 @@ export class WebSocketConnection {
     private readonly consume: (
       itemName: string,
       parameters: unknown[],
-      data: unknown
+      data: unknown,
     ) => Promise<unknown>,
     private readonly onConnected: () => void,
-    private readonly onDisconnected: () => void
+    private readonly onDisconnected: () => void,
   ) {
     this.clientId = clientId
   }
@@ -69,7 +69,7 @@ export class WebSocketConnection {
 
             // recreate promise so new clients will wait for new connection
             this.waitConnectionPromise = new Promise(
-              (resolve) => (resolveConnectionPromise = resolve)
+              (resolve) => (resolveConnectionPromise = resolve),
             )
 
             resolve()
@@ -87,7 +87,7 @@ export class WebSocketConnection {
 
               // 2. ... unable to establish connection
               resolve()
-            }
+            },
           )
         })
 
@@ -122,6 +122,10 @@ export class WebSocketConnection {
   private async establishConnection(onDisconnected: () => void): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
+        if (testWebSocketConnectionDelay) {
+          await adelay(testWebSocketConnectionDelay)
+        }
+
         const socket = new WebSocket(this.url, this.clientId)
 
         let connected = false
@@ -208,4 +212,10 @@ export class WebSocketConnection {
   _webSocket() {
     return this.socket
   }
+}
+
+let testWebSocketConnectionDelay = 0
+
+export function setTestWebSocketConnectionDelay(ms: number) {
+  testWebSocketConnectionDelay = ms
 }

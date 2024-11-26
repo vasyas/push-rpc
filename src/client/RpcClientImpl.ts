@@ -150,13 +150,6 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         parameters,
       )
 
-      // check if still subscribed
-      const sub = this.remoteSubscriptions.getConsumerSubscription(itemName, parameters, consumer)
-      if (sub) {
-        // mark as completed - will resubscribe on reconnects
-        sub.completed = true
-      }
-
       this.remoteSubscriptions.unpause(itemName, parameters)
 
       this.remoteSubscriptions.consume(itemName, parameters, data)

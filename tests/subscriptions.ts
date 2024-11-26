@@ -1,10 +1,8 @@
 import {assert} from "chai"
 import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
-import {CallOptions, RpcConnectionContext, RpcErrors} from "../src/index.js"
-import {IncomingMessage} from "http"
-import {CLIENT_ID_HEADER} from "../src/rpc.js"
-import WebSocket from "ws"
+import {CallOptions, RpcErrors} from "../src/index.js"
+import {setTestWebSocketConnectionDelay} from "../src/client/WebSocketConnection.js"
 
 describe("Subscriptions", () => {
   it("subscribe delivers data", async () => {
@@ -706,22 +704,73 @@ describe("Subscriptions", () => {
 
     cancelWebsocketConnectionDelay()
   })
+
+  it("disconnect during subscribe", async () => {
+    const item = {r: "1"}
+
+    const services = await startTestServer({
+      test: {
+        item: async () => item,
+      },
+    })
+
+    const consume1 = await createTestClient<typeof services>({
+      connectOnCreate: true,
+    })
+
+    let received = null
+
+    // disconnect WS
+    testClient!._webSocket()!.close()
+
+    await consume1.test.item.subscribe((item) => {
+      received = item
+    })
+
+    assert.deepEqual(received, item)
+
+    item.r = "2"
+    services.test.item.trigger()
+    await adelay(100)
+
+    // still getting the update b/c on WS reconnect client will resubscribe
+    assert.deepEqual(received, item)
+  })
+
+  it("do not add subscriptions without connection", async () => {
+    const item = {r: "1"}
+
+    delayWebsocketConnection(100)
+
+    const services = await startTestServer({
+      test: {
+        item: async () => {
+          return item
+        },
+      },
+    })
+
+    const remote = await createTestClient<typeof services>()
+
+    let receivedItem
+    await remote.test.item.subscribe((item) => {
+      receivedItem = item
+    })
+
+    assert.deepEqual(receivedItem, item)
+
+    const length = testServer!._allSubscriptions().length
+
+    assert.equal(length, 0)
+
+    cancelWebsocketConnectionDelay()
+  })
 })
 
-let oldAddEL: typeof WebSocket.prototype.addEventListener
-
 function delayWebsocketConnection(ms: number) {
-  oldAddEL = WebSocket.prototype.addEventListener
-  WebSocket.prototype.addEventListener = function (eventName: any, callback: any) {
-    oldAddEL.apply(this, [
-      eventName,
-      (...args) => {
-        setTimeout(() => callback(...args), ms)
-      },
-    ])
-  }
+  setTestWebSocketConnectionDelay(ms)
 }
 
 function cancelWebsocketConnectionDelay() {
-  WebSocket.prototype.addEventListener = oldAddEL
+  setTestWebSocketConnectionDelay(0)
 }

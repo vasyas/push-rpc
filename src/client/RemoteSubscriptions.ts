@@ -29,7 +29,6 @@ export class RemoteSubscriptions {
     itemSubscriptions.byParameters.set(parametersKey, parameterSubscriptions)
     parameterSubscriptions.consumers.push({
       consumer,
-      completed: false,
     })
   }
 
@@ -55,9 +54,7 @@ export class RemoteSubscriptions {
       if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
-        if (consumer.completed) {
-          consumer.consumer(data)
-        }
+        consumer.consumer(data)
       })
     })
 
@@ -117,9 +114,7 @@ export class RemoteSubscriptions {
       if (this.cache) this.cache.put(itemName, parameters, data)
       filterSubscriptions.cached = data
       filterSubscriptions.consumers.forEach((consumer) => {
-        if (consumer.completed) {
-          consumer.consumer(data)
-        }
+        consumer.consumer(data)
       })
     }
   }
@@ -140,9 +135,7 @@ export class RemoteSubscriptions {
 
     for (const [itemName, itemSubscriptions] of this.byItem) {
       for (const [, parameterSubscriptions] of itemSubscriptions.byParameters) {
-        const consumers = parameterSubscriptions.consumers
-          .filter((c) => c.completed)
-          .map((c) => c.consumer)
+        const consumers = parameterSubscriptions.consumers.map((c) => c.consumer)
 
         if (consumers.length) {
           result.push([itemName, parameterSubscriptions.parameters, consumers])
@@ -186,7 +179,6 @@ type ParametersSubscription = {
 
 type ConsumerSubscription = {
   consumer: (d: unknown) => void
-  completed: boolean
 }
 
 function getParametersKey(parameters: unknown[]) {

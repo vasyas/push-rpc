@@ -72,6 +72,10 @@ export class ConnectionsServer {
     }
   }
 
+  isClientSubscribed(clientId: string): boolean {
+    return this.clientSockets.has(clientId)
+  }
+
   private wss: WebSocketServer
   private clientSockets = new Map<string, WebSocket & {alive: boolean}>()
 

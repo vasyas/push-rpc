@@ -7,7 +7,7 @@ export class LocalSubscriptions {
     clientId: string,
     itemName: string,
     parameters: unknown[],
-    update: (suppliedData?: unknown) => void
+    update: (suppliedData?: unknown) => void,
   ) {
     const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
@@ -35,7 +35,7 @@ export class LocalSubscriptions {
     if (!subscriptions) return
 
     subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
-      (subscription) => subscription.clientId != clientId
+      (subscription) => subscription.clientId != clientId,
     )
 
     if (!subscriptions.subscribedClients.length) {
@@ -51,7 +51,7 @@ export class LocalSubscriptions {
     for (const [itemName, itemSubscriptions] of this.byItem.entries()) {
       for (const [filterKey, subscriptions] of itemSubscriptions.byFilter.entries()) {
         subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
-          (subscription) => subscription.clientId != clientId
+          (subscription) => subscription.clientId != clientId,
         )
 
         if (!subscriptions.subscribedClients.length) {
@@ -129,7 +129,7 @@ type SubscribedClient = {
 
 function filterContains(
   triggerFilter: Record<string, unknown>,
-  subscriptionFilter: Record<string, unknown>
+  subscriptionFilter: Record<string, unknown>,
 ): boolean {
   if (subscriptionFilter == null) return true // subscribe to all data
   if (triggerFilter == null) return true // all data modified
