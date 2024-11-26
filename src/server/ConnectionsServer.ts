@@ -81,6 +81,8 @@ export class ConnectionsServer {
 
   async close() {
     return new Promise<void>((resolve, reject) => {
+      this.clientSockets.forEach((c) => c.terminate())
+
       this.wss.close((err) => {
         if (err) reject(err)
         else resolve()

@@ -20,7 +20,7 @@ export let testServer: RpcServer | null = null
 
 export async function startTestServer<S extends Services<S>, C extends RpcContext>(
   local: S,
-  options: Partial<PublishServicesOptions<C>> = {}
+  options: Partial<PublishServicesOptions<C>> = {},
 ): Promise<ServicesWithTriggers<S>> {
   const r = await publishServices<S, C>(local, {
     port: TEST_PORT,
@@ -34,7 +34,7 @@ export async function startTestServer<S extends Services<S>, C extends RpcContex
 export let testClient: RpcClient | null = null
 
 export async function createTestClient<S extends Services<S>>(
-  options?: Partial<ConsumeServicesOptions>
+  options?: Partial<ConsumeServicesOptions>,
 ): Promise<ServicesWithSubscriptions<S>> {
   if (!options) options = {}
   if (!options.middleware) options.middleware = []
