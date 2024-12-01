@@ -11,7 +11,7 @@
   "license": "MIT",
   "devDependencies": {
     "parcel": "^1.12.4",
-    "ws": "^7.2.0"
+    "ws": "^7.4.6"
   },
   "dependencies": {
     "@push-rpc/core": "^1.9.0",
