@@ -157,7 +157,12 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     } catch (e) {
       this.remoteSubscriptions.unpause(itemName, parameters)
       this.remoteSubscriptions.emptyQueue(itemName, parameters)
-      await this.unsubscribe(itemName, parameters, consumer)
+
+      // Do not unsubscribe on errors to improve UX
+      // If we unsubscribe on errors, this will break UX during internet connection issues.
+      // IE when offline, subscribe will fail. With unsubscribe, subscriptions are not stored, and later on WS connection
+      // client won't be resubscribed.
+
       throw e
     }
   }
@@ -186,17 +191,14 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   }
 
   private resubscribe = () => {
-    for (const [itemName, params, consumers] of this.remoteSubscriptions.getAllSubscriptions()) {
+    for (const [itemName, params] of this.remoteSubscriptions.getAllSubscriptions()) {
       this.httpClient
         .subscribe(itemName, params, this.options.callTimeout)
         .then((data) => {
           this.remoteSubscriptions.consume(itemName, params, data)
         })
-        .catch((e) => {
-          // is it a good idea to unsubscribe on errors? What if those errors are network-related?
-          for (const consumer of consumers) {
-            this.remoteSubscriptions.unsubscribe(itemName, params, consumer)
-          }
+        .catch(() => {
+          // Do not unsubscribe on error to improve UX, see comment in RpcClientImpl.subscribe
         })
     }
   }

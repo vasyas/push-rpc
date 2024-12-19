@@ -515,9 +515,6 @@ describe("Subscriptions", () => {
     } catch (e: any) {
       assert.equal(e.code, RpcErrors.Timeout)
     }
-
-    assert.equal(testClient!._allSubscriptions().length, 0)
-    assert.equal(testServer!._allSubscriptions().length, 0)
   }).timeout(5000)
 
   it("missing update in case of concurrent subscribe/trigger", async () => {
