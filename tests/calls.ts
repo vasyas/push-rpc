@@ -1,6 +1,6 @@
 import {assert} from "chai"
-import {createTestClient, startTestServer} from "./testUtils.js"
-import {CallOptions, RpcErrors} from "../src/index.js"
+import {createTestClient, startTestServer, TEST_PORT} from "./testUtils.js"
+import {CallOptions, RpcError, RpcErrors} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
 describe("calls", () => {
@@ -29,7 +29,7 @@ describe("calls", () => {
     assert.deepEqual(r, resp)
   })
 
-  it("error", async () => {
+  it("error transferred", async () => {
     const message = "bla"
 
     const services = await startTestServer({
@@ -46,9 +46,96 @@ describe("calls", () => {
       await client.test.getSomething()
       assert.fail()
     } catch (e: any) {
-      console.log(e)
       assert.equal(e.message, message)
     }
+  })
+
+  it("error with extra fields and status", async () => {
+    const services = await startTestServer({
+      test: {
+        async getSomething() {
+          const error: any = new RpcError(401, "Forbidden")
+          error["extra"] = "yes"
+          throw error
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    try {
+      await client.test.getSomething()
+      assert.fail()
+    } catch (e: any) {
+      assert.equal(e.message, "Forbidden")
+      assert.equal(e.code, 401)
+      assert.equal(e.extra, "yes")
+    }
+
+    // validate HTTP status
+    const response = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/test/getSomething`, {
+      method: "POST",
+    })
+
+    assert.equal(response.status, 401)
+  })
+
+  it("error with 200 status", async () => {
+    const services = await startTestServer({
+      test: {
+        async getSomething() {
+          // also, should not be logged
+          throw new RpcError(200, "Wrong!")
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    try {
+      await client.test.getSomething()
+      assert.fail("Expecting to fail")
+    } catch (e: any) {
+      assert.equal(e.message, "Wrong!")
+      assert.equal(e.code, 200)
+    }
+
+    // validate HTTP status
+    const response = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/test/getSomething`, {
+      method: "POST",
+    })
+
+    assert.equal(response.status, 200)
+  })
+
+  it("error with 200 status and empty message", async () => {
+    const services = await startTestServer({
+      test: {
+        async getSomething() {
+          const error: any = new RpcError(200)
+          error["extra"] = "yes"
+          throw error
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    try {
+      await client.test.getSomething()
+      assert.fail()
+    } catch (e: any) {
+      assert.isNotOk(e.message)
+      assert.equal(e.code, 200)
+      assert.equal(e.extra, "yes")
+    }
+
+    // validate HTTP status
+    const response = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/test/getSomething`, {
+      method: "POST",
+    })
+
+    assert.equal(response.status, 200)
   })
 
   it("timeout", async () => {

@@ -135,8 +135,10 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         parameters,
         InvocationType.Call,
       )
-    } catch (e) {
-      log.error(`Cannot call item ${itemName}.`, e)
+    } catch (e: any) {
+      if (e.code != 200) {
+        log.error(`Cannot call item ${itemName}.`, e)
+      }
       throw e
     }
   }

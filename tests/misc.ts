@@ -217,14 +217,14 @@ describe("Misc", () => {
       },
       {
         async createConnectionContext(
-          req: IncomingMessage
+          req: IncomingMessage,
         ): Promise<RpcConnectionContext & {userName: string}> {
           return {
             clientId: "test",
             userName: req.headers["x-user-name"] as string,
           }
         },
-      }
+      },
     )
 
     const remote = await createTestClient<typeof services>({

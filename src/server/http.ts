@@ -10,7 +10,10 @@ export async function serveHttpRequest(
   res: ServerResponse,
   path: string,
   hooks: HttpServerHooks,
-  createConnectionContext: (req: IncomingMessage, res: ServerResponse) => Promise<RpcConnectionContext>,
+  createConnectionContext: (
+    req: IncomingMessage,
+    res: ServerResponse,
+  ) => Promise<RpcConnectionContext>,
 ) {
   // if port is in options - response 404 on other URLs
   // oherwise just handle request
@@ -66,9 +69,7 @@ export async function serveHttpRequest(
       if (e.code && typeof e.code == "number" && e.code >= 100 && e.code < 600) {
         res.statusCode = e.code
 
-        if (e.message) {
-          res.setHeader("X-Error", e["message"])
-        }
+        res.setHeader("X-Error", e["message"] ?? "")
         const {code, message, stack, ...rest} = e
         if (Object.keys(rest).length > 0) {
           res.setHeader("Content-Type", "application/json")

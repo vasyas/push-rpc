@@ -6,8 +6,7 @@ export class HttpClient {
     private url: string,
     private clientId: string,
     private getHeaders: () => Promise<Record<string, string>>,
-  ) {
-  }
+  ) {}
 
   async call(itemName: string, params: unknown[], callTimeout: number): Promise<unknown> {
     return this.httpRequest("POST", itemName, params, callTimeout, await this.getHeaders())
@@ -50,7 +49,9 @@ export class HttpClient {
 
       finished()
 
-      if (response.status == 204) {
+      const hasError = response.headers.has("x-error")
+
+      if (!hasError && response.status == 204) {
         return
       }
 
@@ -61,7 +62,7 @@ export class HttpClient {
       const res =
         contentType && contentType.includes("application/json") ? safeParseJson(text) : text
 
-      if (response.status < 200 || response.status >= 300) {
+      if (hasError || response.status < 200 || response.status >= 300) {
         const error = new Error(response.headers.get("x-error") ?? undefined)
 
         Object.assign(error, {code: response.status})
@@ -75,8 +76,10 @@ export class HttpClient {
         return res
       }
     } catch (e: any) {
+      e.remoteUrl = itemUrl
+
       if (e.message == "Error" || !e.message) {
-        e.message = `Error ${e.code} while ${itemUrl}`
+        delete e.message
       }
 
       if (e.message == "fetch failed" && e.cause) {
