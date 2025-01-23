@@ -256,6 +256,24 @@ describe("calls", () => {
     const r = await client.obj.hello()
     assert.equal("yes", r)
   })
+
+  it("GET to call with no params", async () => {
+    let gotParams: unknown[]
+
+    await startTestServer({
+      obj: {
+        async hello(...params) {
+          gotParams = params
+          return "yes"
+        },
+      },
+    })
+
+    const r = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/obj/hello`)
+
+    assert.equal(gotParams!.length, 1) // context only
+    assert.equal(await r.text(), "yes")
+  })
 })
 
 abstract class A {

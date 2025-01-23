@@ -34,6 +34,7 @@ export async function serveHttpRequest(
 
       let result: unknown
       switch (req.method) {
+        case "GET":
         case "POST":
           result = await hooks.call(ctx, itemName, body)
           break

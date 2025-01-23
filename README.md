@@ -20,12 +20,6 @@ Extra:
 - Throttling for subscriptions.
 - Broken WS connection detection & auto-reconnecting.
 
-## History note!
-
-Initially this project supported WS-only communication akin to OCPP-J protocol for EV charging stations.
-Since that, library for OCPP-J was extracted to a separate project and this project was reworked to focus on generic
-client/server communication.
-
 ## Getting Started
 
 ```
@@ -153,6 +147,8 @@ There are the types of messages that can be sent from client to server:
 
    `X-Rpc-Client-Id` header is used to identify caller clients. In can be used for session tracking. Client ID is
    available at server side in the context.
+
+   In addition, GET method can be used to make a call without arguments.
 
 2. **Subscribe** - a request to subscribe to a remote function updates. Implemented as HTTP PUT request. URL contains
    the remote function name. Body contains JSON-encoded list of arguments. Response is JSON-encoded result of the
