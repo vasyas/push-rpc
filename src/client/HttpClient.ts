@@ -63,7 +63,11 @@ export class HttpClient {
         contentType && contentType.includes("application/json") ? safeParseJson(text) : text
 
       if (hasError || response.status < 200 || response.status >= 300) {
-        const error = new Error(response.headers.get("x-error") ?? undefined)
+        const error = new Error(
+          !!response.headers.get("x-error")
+            ? decodeURIComponent(response.headers.get("x-error")!!)
+            : undefined,
+        )
 
         Object.assign(error, {code: response.status})
 

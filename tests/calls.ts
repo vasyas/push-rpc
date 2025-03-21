@@ -50,6 +50,27 @@ describe("calls", () => {
     }
   })
 
+  it("error with non ascii message", async () => {
+    const message = "юяї"
+
+    const services = await startTestServer({
+      test: {
+        async getSomething() {
+          throw new Error(message)
+        },
+      },
+    })
+
+    const client = await createTestClient<typeof services>()
+
+    try {
+      await client.test.getSomething()
+      assert.fail()
+    } catch (e: any) {
+      assert.equal(e.message, message)
+    }
+  })
+
   it("error with extra fields and status", async () => {
     const services = await startTestServer({
       test: {
