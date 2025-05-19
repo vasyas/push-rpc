@@ -11,7 +11,7 @@ export type ThrottleSettings<D> = {
 export function withTriggers<T extends Services<T>>(
   localSubscriptions: LocalSubscriptions,
   services: T,
-  name = ""
+  name = "",
 ): ServicesWithTriggers<T> {
   const cachedItems: any = {}
   const skippedProps = ["length", "name", "prototype", "arguments", "caller"]
@@ -47,7 +47,7 @@ export function withTriggers<T extends Services<T>>(
         cachedItems[propName] = withTriggers(
           localSubscriptions,
           services[propName as keyof T] as any,
-          itemName
+          itemName,
         )
       }
 
@@ -70,7 +70,7 @@ export type ServicesWithTriggers<T extends Services<T>> = {
     ? T[K] & {
         trigger(
           filter?: Partial<Parameters<T[K]>[0]>,
-          suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>
+          suppliedData?: ExtractPromiseResult<ReturnType<T[K]>>,
         ): void
         throttle(settings: ThrottleSettings<ExtractPromiseResult<ReturnType<T[K]>>>): void
       }

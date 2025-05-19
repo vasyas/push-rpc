@@ -102,15 +102,16 @@ export type AddParameters<
 export type ServicesWithSubscriptions<T extends Services<T>> = {
   [K in keyof T]: T[K] extends RemoteFunction
     ? AddParameters<T[K], [CallOptions?]> & {
-    subscribe(
-      consumer: Consumer<T[K]>,
-      ...parameters: [...Parameters<T[K]>, CallOptions?]
-    ): Promise<void>
-    unsubscribe(
-      consumer: Consumer<T[K]>,
-      ...parameters: [...Parameters<T[K]>, CallOptions?]
-    ): Promise<void>
-  }
+        subscribe(
+          consumer: Consumer<T[K]>,
+          ...parameters: [...Parameters<T[K]>, CallOptions?]
+        ): Promise<void>
+        unsubscribe(
+          consumer: Consumer<T[K]>,
+          ...parameters: [...Parameters<T[K]>, CallOptions?]
+        ): Promise<void>
+        itemName: string
+      }
     : T[K] extends object
       ? ServicesWithSubscriptions<T[K]>
       : never
