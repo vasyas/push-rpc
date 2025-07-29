@@ -16,7 +16,7 @@ export async function serveHttpRequest(
   ) => Promise<RpcConnectionContext>,
 ) {
   // if port is in options - response 404 on other URLs
-  // oherwise just handle request
+  // otherwise simply handle request
 
   if (req.url?.startsWith(path)) {
     try {

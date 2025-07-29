@@ -1,14 +1,14 @@
 import {safeStringify} from "../utils/json.js"
 import {lastValueReducer, throttle} from "../utils/throttle.js"
-import {ThrottleSettings} from "./local.js"
+import {ThrottleSettings} from "./implementation.js"
 
-export class LocalSubscriptions {
+export class ServerSubscriptions {
   subscribe(
     clientId: string,
     itemName: string,
     parameters: unknown[],
     update: (suppliedData?: unknown) => void,
-  ) {
+  ): boolean {
     const itemSubscriptions = this.byItem.get(itemName) || {byFilter: new Map()}
     this.byItem.set(itemName, itemSubscriptions)
 
@@ -22,21 +22,29 @@ export class LocalSubscriptions {
 
     if (!subscriptions.subscribedClients.some((c) => c.clientId == clientId)) {
       subscriptions.subscribedClients.push({clientId, update})
+
+      return true
     }
+
+    return false
   }
 
-  unsubscribe(clientId: string, itemName: string, parameters: unknown[]) {
+  unsubscribe(clientId: string, itemName: string, parameters: unknown[]): boolean {
     const itemSubscriptions = this.byItem.get(itemName)
-    if (!itemSubscriptions) return
+    if (!itemSubscriptions) return false
 
     const filterKey = getFilterKey(parameters)
 
     const subscriptions = itemSubscriptions.byFilter.get(filterKey)
-    if (!subscriptions) return
+    if (!subscriptions) return false
+
+    const oldLength = subscriptions.subscribedClients.length
 
     subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
       (subscription) => subscription.clientId != clientId,
     )
+
+    const unsubscribed = oldLength != subscriptions.subscribedClients.length
 
     if (!subscriptions.subscribedClients.length) {
       itemSubscriptions.byFilter.delete(filterKey)
@@ -45,14 +53,28 @@ export class LocalSubscriptions {
         this.byItem.delete(itemName)
       }
     }
+
+    return unsubscribed
   }
 
-  unsubscribeAll(clientId: string) {
+  unsubscribeAll(clientId: string): Subscribed[] {
+    const r: Subscribed[] = []
+
     for (const [itemName, itemSubscriptions] of this.byItem.entries()) {
       for (const [filterKey, subscriptions] of itemSubscriptions.byFilter.entries()) {
-        subscriptions.subscribedClients = subscriptions.subscribedClients.filter(
-          (subscription) => subscription.clientId != clientId,
-        )
+        subscriptions.subscribedClients = subscriptions.subscribedClients.filter((subscription) => {
+          const evict = subscription.clientId == clientId
+
+          if (evict) {
+            r.push({
+              itemName,
+              parameters: [subscriptions.filter],
+              clientId: clientId,
+            })
+          }
+
+          return !evict
+        })
 
         if (!subscriptions.subscribedClients.length) {
           itemSubscriptions.byFilter.delete(filterKey)
@@ -63,6 +85,8 @@ export class LocalSubscriptions {
         this.byItem.delete(itemName)
       }
     }
+
+    return r
   }
 
   trigger(itemName: string, triggerFilter: Record<string, unknown> = {}, suppliedData?: unknown) {
@@ -152,4 +176,10 @@ function filterContains(
 
 function getFilterKey(parameters: unknown[]) {
   return safeStringify(parameters?.[0] ?? null)
+}
+
+type Subscribed = {
+  itemName: string
+  parameters: unknown[]
+  clientId: string
 }

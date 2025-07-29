@@ -1,5 +1,5 @@
 import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext, Services} from "../rpc.js"
-import {ServicesWithTriggers} from "./local.js"
+import {ServicesImplementation} from "./implementation.js"
 import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
 import http, {IncomingMessage, ServerResponse} from "http"
@@ -10,7 +10,7 @@ export async function publishServices<S extends Services<S>, C extends RpcContex
   overrideOptions: Partial<PublishServicesOptions<C>> & ({port: number} | {server: http.Server}),
 ): Promise<{
   server: RpcServer
-  services: ServicesWithTriggers<S>
+  services: ServicesImplementation<S>
   httpServer: http.Server
 }> {
   const options = {
@@ -23,7 +23,7 @@ export async function publishServices<S extends Services<S>, C extends RpcContex
   await rpcServer.start()
 
   return {
-    services: rpcServer.createServicesWithTriggers(),
+    services: rpcServer.implementation,
     server: rpcServer,
     httpServer: rpcServer.httpServer,
   }
@@ -45,13 +45,13 @@ export type PublishServicesOptions<C extends RpcContext> = {
   createServerHooks?(hooks: HttpServerHooks, req: IncomingMessage): HttpServerHooks
 } & (
   | {
-  server: http.Server
-}
+      server: http.Server
+    }
   | {
-  port: number
-}
+      port: number
+    }
   | {}
-  )
+)
 
 const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   path: "",
@@ -60,7 +60,10 @@ const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   pingInterval: 30 * 1000, // should be in-sync with client
   subscriptions: true,
 
-  async createConnectionContext(req: IncomingMessage, res: ServerResponse): Promise<RpcConnectionContext> {
+  async createConnectionContext(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<RpcConnectionContext> {
     const header = req.headers[CLIENT_ID_HEADER]
 
     return {

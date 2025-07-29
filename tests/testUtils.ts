@@ -8,7 +8,7 @@ import {
   RpcServer,
   Services,
   ServicesWithSubscriptions,
-  ServicesWithTriggers,
+  ServicesImplementation,
 } from "../src/index.js"
 import WebSocket from "ws"
 
@@ -21,7 +21,7 @@ export let testServer: RpcServer | null = null
 export async function startTestServer<S extends Services<S>, C extends RpcContext>(
   local: S,
   options: Partial<PublishServicesOptions<C>> = {},
-): Promise<ServicesWithTriggers<S>> {
+): Promise<ServicesImplementation<S>> {
   const r = await publishServices<S, C>(local, {
     port: TEST_PORT,
     path: "/rpc",

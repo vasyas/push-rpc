@@ -1,5 +1,5 @@
 import {PublishServicesOptions, RpcServer} from "./index.js"
-import {LocalSubscriptions} from "./LocalSubscriptions.js"
+import {ServerSubscriptions} from "./ServerSubscriptions.js"
 import http from "http"
 import type {ConnectionsServer} from "./ConnectionsServer.js"
 import {serveHttpRequest} from "./http.js"
@@ -14,14 +14,21 @@ import {
 } from "../rpc.js"
 import {log} from "../logger.js"
 import {withMiddlewares} from "../utils/middleware.js"
-import {ServicesWithTriggers, withTriggers} from "./local.js"
+import {
+  eventEmitterSymbol,
+  prepareImplementation,
+  ServicesImplementation,
+} from "./implementation.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
+import EventEmitter from "node:events"
 
 export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implements RpcServer {
   constructor(
     private readonly services: S,
     private readonly options: PublishServicesOptions<C>,
   ) {
+    this.implementation = prepareImplementation(this.localSubscriptions, services)
+
     if ("server" in this.options) {
       this.httpServer = this.options.server
     } else {
@@ -63,7 +70,19 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       this.httpServer,
       {pingInterval: this.options.pingInterval, path: this.options.path},
       (clientId) => {
-        this.localSubscriptions.unsubscribeAll(clientId)
+        const unsubscribed = this.localSubscriptions.unsubscribeAll(clientId)
+
+        for (const {itemName, parameters, clientId} of unsubscribed) {
+          const item = this.getRemoteFunction(itemName)
+
+          if (item) {
+            item.eventEmitter.emit("unsubscribe", {
+              itemName,
+              parameters,
+              clientId,
+            })
+          }
+        }
       },
       !("server" in this.options),
     )
@@ -104,17 +123,15 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     })
   }
 
-  createServicesWithTriggers(): ServicesWithTriggers<S> {
-    return withTriggers(this.localSubscriptions, this.services)
-  }
-
   _allSubscriptions() {
     return this.localSubscriptions._allSubscriptions()
   }
 
-  private readonly localSubscriptions = new LocalSubscriptions()
+  private readonly localSubscriptions = new ServerSubscriptions()
   private connectionsServer: ConnectionsServer | null = null
-  readonly httpServer
+
+  public readonly httpServer: http.Server
+  public readonly implementation: ServicesImplementation<S>
 
   private call = async (
     connectionContext: RpcConnectionContext,
@@ -187,7 +204,21 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       })
 
       if (this.connectionsServer?.isClientSubscribed(connectionContext.clientId)) {
-        this.localSubscriptions.subscribe(connectionContext.clientId, itemName, parameters, update)
+        const subscriptionAdded = this.localSubscriptions.subscribe(
+          connectionContext.clientId,
+          itemName,
+          parameters,
+          update,
+        )
+
+        if (subscriptionAdded) {
+          item.eventEmitter.emit("subscribe", {
+            itemName,
+            parameters,
+            clientId: connectionContext.clientId,
+            context: connectionContext,
+          })
+        }
       }
 
       const lastData = await this.invokeLocalFunction(
@@ -201,7 +232,19 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
       return lastData
     } catch (e) {
-      this.localSubscriptions.unsubscribe(connectionContext.clientId, itemName, parameters)
+      const unsubscribed = this.localSubscriptions.unsubscribe(
+        connectionContext.clientId,
+        itemName,
+        parameters,
+      )
+
+      if (unsubscribed) {
+        item.eventEmitter.emit("subscribe", {
+          itemName,
+          parameters,
+          clientId: connectionContext.clientId,
+        })
+      }
 
       log.error(`Failed to subscribe ${itemName}`, e)
       throw e
@@ -214,17 +257,34 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     parameters: unknown[],
   ) => {
     try {
-      this.localSubscriptions.unsubscribe(connectionContext.clientId, itemName, parameters)
+      const unsubscribed = this.localSubscriptions.unsubscribe(
+        connectionContext.clientId,
+        itemName,
+        parameters,
+      )
+      if (unsubscribed) {
+        const item = this.getRemoteFunction(itemName)
+
+        if (item) {
+          item.eventEmitter.emit("unsubscribe", {
+            itemName,
+            parameters,
+            clientId: connectionContext.clientId,
+          })
+        }
+      }
     } catch (e) {
       log.error(`Failed to unsubscribe ${itemName}`, e)
       throw e
     }
   }
 
+  // getRemoteFunction should only take functions from services, and not from implementation in
+  // order to not take .trigger and other implementation-specific details
   private getRemoteFunction(
     itemName: string,
     root: any = this.services,
-  ): {function: RemoteFunction; container: any} | undefined {
+  ): {function: RemoteFunction; eventEmitter: EventEmitter; container: any} | undefined {
     const parts = itemName.split("/")
 
     let item = root
@@ -239,8 +299,11 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
 
     if (!item) return undefined
 
+    item[eventEmitterSymbol] = item[eventEmitterSymbol] ?? new EventEmitter()
+
     return {
       function: item,
+      eventEmitter: item[eventEmitterSymbol],
       container: parent,
     }
   }
