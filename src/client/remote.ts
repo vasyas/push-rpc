@@ -3,7 +3,7 @@ import {CallOptions, Consumer, RemoteFunction, Services} from "../rpc.js"
 export function createRemote<S extends Services<S>>(
   hooks: RemoteHooks,
   name = "",
-): ServicesWithSubscriptions<S> {
+): ServicesClient<S> {
   // start with remote function
   const remoteItem = (...paramsWithCallOptions: unknown[]) => {
     const {params, callOptions} = extractCallOptions(paramsWithCallOptions)
@@ -99,21 +99,17 @@ export type AddParameters<
   TParameters extends [...args: any],
 > = (...args: [...Parameters<TFunction>, ...TParameters]) => ReturnType<TFunction>
 
-export type ServicesWithSubscriptions<T extends Services<T>> = {
+export type FunctionClient<F extends RemoteFunction> = {
+  subscribe(consumer: Consumer<F>, ...parameters: [...Parameters<F>, CallOptions?]): Promise<void>
+  unsubscribe(consumer: Consumer<F>, ...parameters: [...Parameters<F>, CallOptions?]): Promise<void>
+  itemName: string
+}
+
+export type ServicesClient<T extends Services<T>> = {
   [K in keyof T]: T[K] extends RemoteFunction
-    ? AddParameters<T[K], [CallOptions?]> & {
-        subscribe(
-          consumer: Consumer<T[K]>,
-          ...parameters: [...Parameters<T[K]>, CallOptions?]
-        ): Promise<void>
-        unsubscribe(
-          consumer: Consumer<T[K]>,
-          ...parameters: [...Parameters<T[K]>, CallOptions?]
-        ): Promise<void>
-        itemName: string
-      }
+    ? AddParameters<T[K], [CallOptions?]> & FunctionClient<T[K]>
     : T[K] extends object
-      ? ServicesWithSubscriptions<T[K]>
+      ? ServicesClient<T[K]>
       : never
 }
 

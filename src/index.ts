@@ -1,4 +1,11 @@
-export type {RemoteFunction, Services, Consumer, RpcContext, RpcConnectionContext} from "./rpc.js"
+import {ServicesClient} from "./client/remote"
+
+import type {Services} from "./rpc.js"
+import type {ServicesImplementation} from "./server/implementation.js"
+
+export {Services}
+
+export type {RemoteFunction, Consumer, RpcContext, RpcConnectionContext} from "./rpc.js"
 export {RpcError, RpcErrors, CallOptions} from "./rpc.js"
 
 export type {Middleware} from "./utils/middleware.js"
@@ -9,17 +16,21 @@ export type {HttpServerHooks} from "./server/http.js"
 export {publishServices} from "./server/index.js"
 
 export type {
-  ServicesImplementation,
+  FunctionImplementation,
   ThrottleSettings,
   SubscribeEvent,
   UnsubscribeEvent,
 } from "./server/implementation.js"
 
+export {ServicesImplementation}
+
 export type {RpcClient, ConsumeServicesOptions, ClientCache} from "./client/index.js"
 export {consumeServices} from "./client/index.js"
 
-export type {ServicesWithSubscriptions, AddParameters} from "./client/remote.js"
+export type {ServicesClient, FunctionClient, AddParameters} from "./client/remote.js"
 
 export {log, setLogger} from "./logger.js"
 export {safeStringify, safeParseJson} from "./utils/json.js"
 export type {ExtractPromiseResult} from "./utils/types.js"
+
+export type UnifiedServices<T extends Services<T>> = ServicesImplementation<T> & ServicesClient<T>

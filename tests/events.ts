@@ -21,7 +21,7 @@ describe("Events", () => {
 
     assert.deepEqual(event, {
       itemName: "test/item",
-      parameters: ["a"],
+      filter: "a",
       clientId: testClient!.clientId,
       context: {
         clientId: testClient!.clientId,
@@ -48,7 +48,7 @@ describe("Events", () => {
 
     assert.deepEqual(event, {
       itemName: "test/item",
-      parameters: ["a"],
+      filter: "a",
       clientId: testClient!.clientId,
     })
   })
@@ -75,7 +75,7 @@ describe("Events", () => {
 
     assert.deepEqual(event, {
       itemName: "test/item",
-      parameters: ["a"],
+      filter: "a",
       clientId: testClient!.clientId,
     })
   })

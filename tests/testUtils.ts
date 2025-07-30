@@ -7,7 +7,7 @@ import {
   RpcContext,
   RpcServer,
   Services,
-  ServicesWithSubscriptions,
+  ServicesClient,
   ServicesImplementation,
 } from "../src/index.js"
 import WebSocket from "ws"
@@ -35,7 +35,7 @@ export let testClient: RpcClient | null = null
 
 export async function createTestClient<S extends Services<S>>(
   options?: Partial<ConsumeServicesOptions>,
-): Promise<ServicesWithSubscriptions<S>> {
+): Promise<ServicesClient<S>> {
   if (!options) options = {}
   if (!options.middleware) options.middleware = []
   options.middleware = [logMiddleware, ...options.middleware]

@@ -1,5 +1,5 @@
 import {RpcContext, Services} from "../rpc.js"
-import {ServicesWithSubscriptions} from "./remote.js"
+import {ServicesClient} from "./remote.js"
 import {RpcClientImpl} from "./RpcClientImpl.js"
 import {Middleware} from "../utils/middleware.js"
 
@@ -41,7 +41,7 @@ export async function consumeServices<S extends Services<S>>(
   overrideOptions: Partial<ConsumeServicesOptions> = {},
 ): Promise<{
   client: RpcClient
-  remote: ServicesWithSubscriptions<S>
+  remote: ServicesClient<S>
 }> {
   if (url.endsWith("/")) {
     throw new Error("URL must not end with /")
@@ -73,10 +73,8 @@ const defaultOptions: ConsumeServicesOptions = {
   middleware: [],
   notificationsMiddleware: [],
   connectOnCreate: false,
-  onConnected: () => {
-  },
-  onDisconnected: () => {
-  },
+  onConnected: () => {},
+  onDisconnected: () => {},
   getHeaders: async () => ({}),
 
   getSubscriptionsUrl(url: string): string {

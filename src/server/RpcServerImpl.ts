@@ -78,7 +78,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
           if (item) {
             item.eventEmitter.emit("unsubscribe", {
               itemName,
-              parameters,
+              filter: parameters[0],
               clientId,
             })
           }
@@ -214,7 +214,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         if (subscriptionAdded) {
           item.eventEmitter.emit("subscribe", {
             itemName,
-            parameters,
+            filter: parameters[0],
             clientId: connectionContext.clientId,
             context: connectionContext,
           })
@@ -241,7 +241,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
       if (unsubscribed) {
         item.eventEmitter.emit("subscribe", {
           itemName,
-          parameters,
+          filter: parameters[0],
           clientId: connectionContext.clientId,
         })
       }
@@ -268,7 +268,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         if (item) {
           item.eventEmitter.emit("unsubscribe", {
             itemName,
-            parameters,
+            filter: parameters[0],
             clientId: connectionContext.clientId,
           })
         }

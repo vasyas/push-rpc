@@ -80,31 +80,31 @@ export function prepareImplementation<T extends Services<T>>(
   })
 }
 
-export type SubscribeEvent = {
+export type SubscribeEvent<F extends RemoteFunction> = {
   itemName: string
-  parameters: unknown[]
+  filter: Parameters<F>[0]
   clientId: string
   context: RpcConnectionContext
 }
 
 // UnsubscribeEVent cannot contain ctx b/c ctx won't be available in case of disconnecting entire client
-export type UnsubscribeEvent = {
+export type UnsubscribeEvent<F extends RemoteFunction> = {
   itemName: string
-  parameters: unknown[]
+  filter: Parameters<F>[0]
   clientId: string
 }
 
-export type FunctionImplementation<F extends () => Promise<unknown>> = {
+export type FunctionImplementation<F extends RemoteFunction> = {
   trigger(
     filter?: Partial<Parameters<F>[0]>,
     suppliedData?: ExtractPromiseResult<ReturnType<F>>,
   ): void
   throttle(settings: ThrottleSettings<ExtractPromiseResult<ReturnType<F>>>): void
 
-  addEventListener(event: "subscribe", listener: (event: SubscribeEvent) => void): void
-  addEventListener(event: "unsubscribe", listener: (event: UnsubscribeEvent) => void): void
-  removeEventListener(event: "subscribe", listener: (event: SubscribeEvent) => void): void
-  removeEventListener(event: "unsubscribe", listener: (event: UnsubscribeEvent) => void): void
+  addEventListener(event: "subscribe", listener: (event: SubscribeEvent<F>) => void): void
+  addEventListener(event: "unsubscribe", listener: (event: UnsubscribeEvent<F>) => void): void
+  removeEventListener(event: "subscribe", listener: (event: SubscribeEvent<F>) => void): void
+  removeEventListener(event: "unsubscribe", listener: (event: UnsubscribeEvent<F>) => void): void
 }
 
 export type ServicesImplementation<T extends Services<T>> = {

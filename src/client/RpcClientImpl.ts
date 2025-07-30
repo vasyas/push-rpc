@@ -3,7 +3,7 @@ import {HttpClient} from "./HttpClient.js"
 import {RemoteSubscriptions} from "./RemoteSubscriptions.js"
 import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
-import {createRemote, ServicesWithSubscriptions} from "./remote.js"
+import {createRemote, ServicesClient} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
 import {withMiddlewares} from "../utils/middleware.js"
 
@@ -86,7 +86,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     return this.connection._webSocket()
   }
 
-  createRemote(): ServicesWithSubscriptions<S> {
+  createRemote(): ServicesClient<S> {
     return createRemote<S>({
       call: this.call,
       subscribe: this.subscribe,
