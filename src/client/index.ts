@@ -24,6 +24,10 @@ export type ConsumeServicesOptions = {
   callTimeout: number
   reconnectDelay: number
   errorDelayMaxDuration: number
+  /**
+   * Milliseconds to wait before considering the connection stale and trying to reconnect.
+   * Should match the server pingInterval.
+   */
   pingInterval: number | null
   subscriptions: boolean
   middleware: Middleware<RpcContext>[]
