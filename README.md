@@ -237,3 +237,11 @@ triggers.
 # Limitations
 
 - Cookies are not been sent during HTTP & WS requests.
+
+# Project using Push-RPC
+
+- [General Bots](https://github.com/GeneralBots/BotServer). A strongly typed LLM conversational platform focused in
+  convention over configuration and code-less approaches.
+- [ECOFACTOR Network](https://ecofactortech.com/en/efn/). An EV Charge Point management system, leading the way in
+  smart charging and V2G technology.
+- [Jibo](https://robotsguide.com/robots/jibo). A friendly robo-assistant designed to become "part of the family."
