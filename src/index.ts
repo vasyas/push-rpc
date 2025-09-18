@@ -5,7 +5,14 @@ import type {ServicesImplementation} from "./server/implementation.js"
 
 export {Services}
 
-export type {RemoteFunction, Consumer, RpcContext, RpcConnectionContext} from "./rpc.js"
+export type {
+  RemoteFunction,
+  Consumer,
+  RpcContext,
+  RpcConnectionContext,
+  PING_MSG,
+  PONG_MSG,
+} from "./rpc.js"
 export {RpcError, RpcErrors, CallOptions} from "./rpc.js"
 
 export type {Middleware} from "./utils/middleware.js"
