@@ -219,16 +219,16 @@ Both client & server will try to detect broken connections by sending WS ping/po
 
 ### Detecting stale WebSockets <a name="stale-websockets"></a>
 
-Detecting stale WebSocket connections is very important for both server and client. For server it is important to know
-when to clean up resources associated with the client. For client it is important to know when to try to reconnect.
+Detecting stale WebSocket connections is crucial for both server and client. For server, it is important to know
+when to clean up resources associated with the client. For client, it is important to know when to try to reconnect.
 
 In Push-RPC, the client is detecting stale connections by measuring time between incoming messages. If no messages
-arrived for `pingTimeout * 1.5` milliseconds, connection is considered stale and reconnection is initiated. By default,
-stale connection detection is disabled.
+arrived for `pingInterval * 1.5` milliseconds, connection is considered stale and reconnection is initiated.
+Client option `pingInterval` is specified when consuming service. By default, stale connection detection is disabled.
 
 Server is detecting stale connections by sending WS ping messages every `pingInterval` milliseconds. If no pong
-response is received within `pingInterval * 2` milliseconds, connection is considered stale and closed. By default,
-`pingInterval` is 30 secs.
+response is received within `pingInterval * 2` milliseconds, connection is considered stale and closed. Server option
+`pingInterval` is specified when publishing services. It is 30 secs by default.
 
 Since WebSockets in React Native don't support listening for incoming native WS ping messages, it is impossible to
 use the native WS ping/pong mechanism for stale connection detection. Due to this limitation,
