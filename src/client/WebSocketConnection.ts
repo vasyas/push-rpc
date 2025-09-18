@@ -169,11 +169,12 @@ export class WebSocketConnection {
         })
 
         socket.addEventListener("message", (message) => {
+          this.heartbeat()
+
           if (message.data === PING_MSG) {
             socket.send(PONG_MSG)
+            return
           }
-
-          this.heartbeat()
 
           this.receiveSocketMessage(message.data)
         })

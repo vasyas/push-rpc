@@ -41,7 +41,8 @@ export class ConnectionsServer {
       })
 
       ws.on("message", () => {
-        // only PONG_MSG is really expected here
+        // receiving any message is considered a sign of life,
+        // but currently the client only sends PONG_MSG
         ws.alive = true
       })
     })
