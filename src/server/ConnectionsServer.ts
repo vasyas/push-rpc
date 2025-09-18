@@ -2,6 +2,7 @@ import {safeStringify} from "../utils/json.js"
 import WebSocket, {WebSocketServer} from "ws"
 import http from "http"
 import {log} from "../logger.js"
+import {PONG_MSG} from "../rpc.js"
 
 export class ConnectionsServer {
   constructor(
@@ -39,7 +40,9 @@ export class ConnectionsServer {
         connectionClosed(clientId)
       })
 
-      ws.on("pong", () => {
+      ws.on("message", () => {
+        // receiving any message is considered a sign of life,
+        // but currently the client only sends PONG_MSG
         ws.alive = true
       })
     })
@@ -53,7 +56,7 @@ export class ConnectionsServer {
         }
 
         ws.alive = false
-        ws.ping()
+        ws.send(PONG_MSG)
       })
     }, options.pingInterval)
 

@@ -10,7 +10,7 @@ export type Consumer<T extends RemoteFunction> = (data: ExtractPromiseResult<Ret
 export class RpcError extends Error {
   constructor(
     public readonly code: number,
-    message?: string
+    message?: string,
   ) {
     super(message)
   }
@@ -33,6 +33,10 @@ export class CallOptions {
 }
 
 export const CLIENT_ID_HEADER = "x-rpc-client-id"
+export const ERROR_HEADER = "x-error"
+
+export const PING_MSG = "PING"
+export const PONG_MSG = "PONG"
 
 export type RpcConnectionContext = {
   clientId: string

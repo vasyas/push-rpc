@@ -1,6 +1,6 @@
 import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
-import {RpcConnectionContext} from "../rpc.js"
+import {ERROR_HEADER, RpcConnectionContext} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 import {log} from "../logger.js"
 import {decompressRequest} from "../utils/server.js"
@@ -70,7 +70,7 @@ export async function serveHttpRequest(
       if (e.code && typeof e.code == "number" && e.code >= 100 && e.code < 600) {
         res.statusCode = e.code
 
-        res.setHeader("X-Error", encodeURIComponent(e["message"] ?? ""))
+        res.setHeader(ERROR_HEADER, encodeURIComponent(e["message"] ?? ""))
         const {code, message, stack, ...rest} = e
         if (Object.keys(rest).length > 0) {
           res.setHeader("Content-Type", "application/json")
@@ -83,7 +83,7 @@ export async function serveHttpRequest(
 
         res.statusCode = 500
         if (e["message"]) {
-          res.setHeader("X-Error", encodeURIComponent(e["message"]))
+          res.setHeader(ERROR_HEADER, encodeURIComponent(e["message"]))
         }
         res.end()
         return

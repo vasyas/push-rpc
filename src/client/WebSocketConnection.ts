@@ -1,6 +1,7 @@
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
+import {PING_MSG, PONG_MSG} from "../rpc.js"
 
 export class WebSocketConnection {
   constructor(
@@ -53,7 +54,7 @@ export class WebSocketConnection {
     // already started connecting
     if (this.waitConnectionPromise) return this.waitConnectionPromise
 
-    // start connection process
+    // start the connection process
 
     let resolveConnectionPromise: () => void
     let errorDelay = 0
@@ -62,12 +63,12 @@ export class WebSocketConnection {
       resolveConnectionPromise = resolve
 
       while (true) {
-        // connect, and wait for ...
+        // connect and wait for ...
         await new Promise<void>((resolve) => {
           const connectionPromise = this.establishConnection(() => {
             // 1. ...disconnected
 
-            // recreate promise so new clients will wait for new connection
+            // recreate promise so new clients will wait for the new connection
             this.waitConnectionPromise = new Promise(
               (resolve) => (resolveConnectionPromise = resolve),
             )
@@ -115,7 +116,7 @@ export class WebSocketConnection {
   }
 
   /**
-   * Connect this to server
+   * Connect this connection to the server
    *
    * Resolves on successful connection, rejects on connection error or connection timeout
    */
@@ -138,10 +139,6 @@ export class WebSocketConnection {
           this.heartbeat()
 
           this.onConnected()
-        })
-
-        socket.addEventListener("ping", () => {
-          this.heartbeat()
         })
 
         socket.addEventListener("close", () => {
@@ -172,6 +169,13 @@ export class WebSocketConnection {
         })
 
         socket.addEventListener("message", (message) => {
+          this.heartbeat()
+
+          if (message.data === PING_MSG) {
+            socket.send(PONG_MSG)
+            return
+          }
+
           this.receiveSocketMessage(message.data)
         })
       } catch (e) {

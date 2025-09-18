@@ -5,10 +5,7 @@ import {adelay} from "../src/utils/promises.js"
 
 describe("connection", () => {
   it("server close connection on ping timeout", async () => {
-    let oldPing: typeof WebSocket.prototype.ping
-
-    oldPing = WebSocket.prototype.ping
-    WebSocket.prototype.ping = () => {}
+    let oldSend: typeof WebSocket.prototype.send
 
     const pingInterval = 100
 
@@ -20,7 +17,7 @@ describe("connection", () => {
       },
       {
         pingInterval,
-      }
+      },
     )
 
     const remote = await createTestClient<typeof services>({
@@ -30,13 +27,16 @@ describe("connection", () => {
     await remote.test.call.subscribe(() => {})
     assert.equal(testServer?._allSubscriptions().length, 1)
 
+    oldSend = WebSocket.prototype.send
+    WebSocket.prototype.send = () => {}
+
     // wait for timeout
     await adelay(pingInterval * 2.5)
 
     // should be closed
     assert.equal(testServer?._allSubscriptions().length, 0)
 
-    WebSocket.prototype.ping = oldPing
+    WebSocket.prototype.send = oldSend
   }).timeout(5000)
 
   it("client close connection on ping timeout", async () => {
@@ -86,6 +86,36 @@ describe("connection", () => {
     await new Promise((r) => setTimeout(r, pingInterval * 2))
 
     // should be reconnected again
+    assert.equal(testClient!.isConnected(), true)
+  })
+
+  it("notifications considered as pings", async () => {
+    const pingInterval = 200 // less than server pings, so client will close connection first
+
+    const services = await startTestServer({
+      test: {
+        async call() {
+          return "1"
+        },
+      },
+    })
+
+    const remote = await createTestClient<typeof services>({
+      pingInterval,
+      reconnectDelay: pingInterval * 2, // will not reconnect right away
+    })
+
+    await remote.test.call.subscribe(() => {})
+
+    await adelay(pingInterval)
+    services.test.call.trigger(undefined, "2")
+
+    assert.equal(testClient!.isConnected(), true)
+
+    // wait for timeout
+    await adelay(pingInterval * 1.5)
+
+    // still connected, because got notification from trigger
     assert.equal(testClient!.isConnected(), true)
   })
 

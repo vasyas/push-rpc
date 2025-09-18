@@ -1,4 +1,4 @@
-import {CLIENT_ID_HEADER, RpcErrors} from "../rpc.js"
+import {CLIENT_ID_HEADER, ERROR_HEADER, RpcErrors} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 
 export class HttpClient {
@@ -49,7 +49,7 @@ export class HttpClient {
 
       finished()
 
-      const hasError = response.headers.has("x-error")
+      const hasError = response.headers.has(ERROR_HEADER)
 
       if (!hasError && response.status == 204) {
         return
@@ -64,8 +64,8 @@ export class HttpClient {
 
       if (hasError || response.status < 200 || response.status >= 300) {
         const error = new Error(
-          !!response.headers.get("x-error")
-            ? decodeURIComponent(response.headers.get("x-error")!!)
+          !!response.headers.get(ERROR_HEADER)
+            ? decodeURIComponent(response.headers.get(ERROR_HEADER)!!)
             : undefined,
         )
 
