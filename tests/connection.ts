@@ -39,6 +39,34 @@ describe("connection", () => {
     WebSocket.prototype.send = oldSend
   }).timeout(5000)
 
+  it("server keeps healthy client connected across ping cycles", async () => {
+    const pingInterval = 100
+
+    const services = await startTestServer(
+      {
+        test: {
+          async call() {},
+        },
+      },
+      {
+        pingInterval,
+      },
+    )
+
+    const remote = await createTestClient<typeof services>({
+      reconnectDelay: pingInterval * 4, // so a stray reconnect can't mask a dropped connection
+    })
+
+    await remote.test.call.subscribe(() => {})
+    assert.equal(testServer?._allSubscriptions().length, 1)
+
+    // the client is healthy and replies to each server PING with a PONG,
+    // so the server must keep it connected across multiple ping cycles
+    await adelay(pingInterval * 3.5)
+
+    assert.equal(testServer?._allSubscriptions().length, 1)
+  }).timeout(5000)
+
   it("client close connection on ping timeout", async () => {
     const pingInterval = 100 // less than server pings, so client will close connection first
 

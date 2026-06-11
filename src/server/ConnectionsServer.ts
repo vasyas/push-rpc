@@ -2,7 +2,7 @@ import {safeStringify} from "../utils/json.js"
 import WebSocket, {WebSocketServer} from "ws"
 import http from "http"
 import {log} from "../logger.js"
-import {PONG_MSG} from "../rpc.js"
+import {PING_MSG} from "../rpc.js"
 
 export class ConnectionsServer {
   constructor(
@@ -56,7 +56,7 @@ export class ConnectionsServer {
         }
 
         ws.alive = false
-        ws.send(PONG_MSG)
+        ws.send(PING_MSG)
       })
     }, options.pingInterval)
 
