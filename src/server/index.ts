@@ -1,9 +1,10 @@
-import {CLIENT_ID_HEADER, RpcConnectionContext, RpcContext, Services} from "../rpc.js"
+import {RpcConnectionContext, RpcContext, Services} from "../rpc.js"
 import {ServicesImplementation} from "./implementation.js"
 import {Middleware} from "../utils/middleware.js"
 import {RpcServerImpl} from "./RpcServerImpl.js"
 import http, {IncomingMessage, ServerResponse} from "http"
 import {HttpServerHooks} from "./http"
+import {getClientId} from "../utils/clientId.js"
 
 export async function publishServices<S extends Services<S>, C extends RpcContext>(
   services: S,
@@ -41,7 +42,9 @@ export type PublishServicesOptions<C extends RpcContext> = {
   middleware: Middleware<C>[]
   pingInterval: number
   subscriptions: boolean
-  createConnectionContext(req: IncomingMessage, res: ServerResponse): Promise<RpcConnectionContext>
+  // Called for both HTTP requests and WebSocket upgrades. `res` is undefined for WS upgrades.
+  // Throwing rejects the request (HTTP) or the WebSocket upgrade (responds 401 and closes the socket).
+  createConnectionContext(req: IncomingMessage, res?: ServerResponse): Promise<RpcConnectionContext>
   createServerHooks?(hooks: HttpServerHooks, req: IncomingMessage): HttpServerHooks
 } & (
   | {
@@ -62,12 +65,10 @@ const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
 
   async createConnectionContext(
     req: IncomingMessage,
-    res: ServerResponse,
+    res?: ServerResponse,
   ): Promise<RpcConnectionContext> {
-    const header = req.headers[CLIENT_ID_HEADER]
-
     return {
-      clientId: (Array.isArray(header) ? header[0] : header) || "anon",
+      clientId: getClientId(req) || "anon",
     }
   },
 }

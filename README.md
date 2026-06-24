@@ -10,6 +10,7 @@ Best used with monorepos using TypeScript. Can also be used with JavaScript and 
 - [Getting started](#getting-started)
 - [Implementation details](#implementation)
     - [Mapping to HTTP & WebSockets messages](#messages)
+    - [Authentication and client identity](#auth)
     - [Detecting stale WebSockets](#stale-websockets)
 - [Limitations](#limitations)
 - [Glossary](#glossary)
@@ -159,7 +160,8 @@ There are the types of messages that can be sent from client to server:
     ```
 
    `X-Rpc-Client-Id` header is used to identify caller clients. In can be used for session tracking. Client ID is
-   available at server side in the context.
+   available at server side in the context. Note that the client ID is asserted by the client and is not
+   authenticated by the library — see [Authentication and client identity](#auth).
 
    In addition, GET method can be used to make a call without arguments.
 
@@ -216,6 +218,42 @@ topic name, remote function result and subscription parameters if any:
 ```
 
 Both client & server will try to detect broken connections by sending WS ping/pongs.
+
+### Authentication and client identity <a name="auth"></a>
+
+The **client ID** identifies the connecting Push-RPC client (the party that opens the connection) — it is **not** an
+end-user identity, and Push-RPC performs no authentication of its own. By default the client ID is asserted by the
+client: it is read from the `X-Rpc-Client-Id` header for HTTP requests and from the `Sec-Websocket-Protocol` header
+for WebSocket connections. The server trusts whatever the client sends, so by default one client could connect using
+another client's ID and receive its push stream.
+
+Authentication and authorization are intentionally left to the application, since different projects approach them
+differently. The seam for this is `createConnectionContext`, which is called for **both** HTTP requests and WebSocket
+upgrades:
+
+- Throwing inside it rejects the request (HTTP) or the upgrade (the WebSocket handshake responds `401` and the socket
+  is closed). This is where you can reject unauthenticated connections.
+- Its return value becomes the connection context.
+
+The exported `getClientId(req)` helper reads the client ID from the `X-Rpc-Client-Id` header or the
+`Sec-Websocket-Protocol` header, so you can reuse the default behavior while adding your own checks:
+
+```ts
+import {getClientId, RpcError} from "@push-rpc/next"
+
+await publishServices(services, {
+  port: 8080,
+  path: "/rpc",
+  async createConnectionContext(req) {
+    const session = await validateSession(req) // your application's auth
+    if (!session) throw new RpcError(401, "Unauthorized")
+
+    return {clientId: getClientId(req) ?? "anon"}
+  },
+})
+```
+
+`res` is only provided for HTTP requests; it is `undefined` during a WebSocket upgrade.
 
 ### Detecting stale WebSockets <a name="stale-websockets"></a>
 

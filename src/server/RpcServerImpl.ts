@@ -85,6 +85,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         }
       },
       !("server" in this.options),
+      this.options.createConnectionContext,
     )
   }
 

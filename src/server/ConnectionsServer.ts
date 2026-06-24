@@ -2,7 +2,7 @@ import {safeStringify} from "../utils/json.js"
 import WebSocket, {WebSocketServer} from "ws"
 import http from "http"
 import {log} from "../logger.js"
-import {PING_MSG} from "../rpc.js"
+import {PING_MSG, RpcConnectionContext} from "../rpc.js"
 
 export class ConnectionsServer {
   constructor(
@@ -10,42 +10,59 @@ export class ConnectionsServer {
     options: ConnectionsServerOptions,
     connectionClosed: (clientId: string) => void,
     closeSocketsWithDifferentPath: boolean,
+    createConnectionContext: (req: http.IncomingMessage) => Promise<RpcConnectionContext>,
   ) {
     this.wss = new WebSocketServer({noServer: true})
 
     server.on("upgrade", (request, socket, head) => {
-      if (request.url?.startsWith(options.path)) {
-        this.wss.handleUpgrade(request, socket, head, (ws) => {
-          this.wss.emit("connection", ws, request)
-        })
-      } else {
+      if (!request.url?.startsWith(options.path)) {
         if (closeSocketsWithDifferentPath) {
           socket.destroy()
         }
+        return
       }
+
+      // Give the application a chance to authenticate/authorize the upgrade and
+      // establish the connection context. Throwing rejects the upgrade.
+      createConnectionContext(request).then(
+        (ctx) => {
+          this.wss.handleUpgrade(request, socket, head, (ws) => {
+            ;(ws as WebSocket & {rpcContext: RpcConnectionContext}).rpcContext = ctx
+            this.wss.emit("connection", ws, request)
+          })
+        },
+        (e) => {
+          log.warn("WebSocket upgrade rejected", e)
+          socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n")
+          socket.destroy()
+        },
+      )
     })
 
-    this.wss.on("connection", (ws: WebSocket & {alive: boolean}) => {
-      ws.alive = true
-
-      const clientId = ws.protocol || "anon"
-      this.clientSockets.set(clientId, ws)
-
-      ws.on("error", (e: unknown) => {
-        log.error("Error in WS", e)
-      })
-
-      ws.on("close", () => {
-        this.clientSockets.delete(clientId)
-        connectionClosed(clientId)
-      })
-
-      ws.on("message", () => {
-        // receiving any message is considered a sign of life,
-        // but currently the client only sends PONG_MSG
+    this.wss.on(
+      "connection",
+      (ws: WebSocket & {alive: boolean; rpcContext?: RpcConnectionContext}) => {
         ws.alive = true
-      })
-    })
+
+        const clientId = ws.rpcContext?.clientId || "anon"
+        this.clientSockets.set(clientId, ws)
+
+        ws.on("error", (e: unknown) => {
+          log.error("Error in WS", e)
+        })
+
+        ws.on("close", () => {
+          this.clientSockets.delete(clientId)
+          connectionClosed(clientId)
+        })
+
+        ws.on("message", () => {
+          // receiving any message is considered a sign of life,
+          // but currently the client only sends PONG_MSG
+          ws.alive = true
+        })
+      },
+    )
 
     const pingTimer = setInterval(() => {
       this.clientSockets.forEach((ws) => {

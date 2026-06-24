@@ -38,6 +38,7 @@ export type {ServicesClient, FunctionClient, AddParameters} from "./client/remot
 
 export {log, setLogger} from "./logger.js"
 export {safeStringify, safeParseJson} from "./utils/json.js"
+export {getClientId} from "./utils/clientId.js"
 export type {ExtractPromiseResult} from "./utils/types.js"
 
 export type UnifiedServices<T extends Services<T>> = ServicesImplementation<T> & ServicesClient<T>
