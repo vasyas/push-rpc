@@ -57,6 +57,7 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
         options.path,
         options.createServerHooks ? options.createServerHooks(hooks, req) : hooks,
         options.createConnectionContext,
+        options.maxRequestSize,
       ).catch((e) => {
         log.warn("Unhandled error serving HTTP request", e)
       })

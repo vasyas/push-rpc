@@ -18,6 +18,7 @@ export class RpcError extends Error {
 
 export enum RpcErrors {
   NotFound = 404,
+  PayloadTooLarge = 413,
   Timeout = 504,
 }
 

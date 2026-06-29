@@ -275,6 +275,9 @@ application ping/pongs are implemented instead.
 ## Limitations <a name="limitations"></a>
 
 - Cookies are not been sent during HTTP & WS requests.
+- Request bodies are limited to 1 MB by default, measured after decompression (so a small compressed body that
+  expands to a large one is rejected too). Over-limit requests get a `413` response. Change it with the
+  `maxRequestSize` option, or set it to `Infinity` to disable.
 
 ## Glossary <a name="glossary"></a>
 

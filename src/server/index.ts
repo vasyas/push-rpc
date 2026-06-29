@@ -42,6 +42,10 @@ export type PublishServicesOptions<C extends RpcContext> = {
   middleware: Middleware<C>[]
   pingInterval: number
   subscriptions: boolean
+  // Maximum size of a request body, in bytes, measured after decompression. Requests exceeding
+  // it are rejected with 413 before the body is fully buffered, bounding memory usage and
+  // protecting against decompression bombs. Set to Infinity to disable.
+  maxRequestSize: number
   // Called for both HTTP requests and WebSocket upgrades. `res` is undefined for WS upgrades.
   // Throwing rejects the request (HTTP) or the WebSocket upgrade (responds 401 and closes the socket).
   createConnectionContext(req: IncomingMessage, res?: ServerResponse): Promise<RpcConnectionContext>
@@ -62,6 +66,7 @@ const defaultOptions: Omit<PublishServicesOptions<RpcContext>, "port"> = {
   middleware: [],
   pingInterval: 30 * 1000, // should be in-sync with client
   subscriptions: true,
+  maxRequestSize: 1024 * 1024, // 1 MB
 
   async createConnectionContext(
     req: IncomingMessage,

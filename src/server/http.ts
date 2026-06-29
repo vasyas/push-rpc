@@ -1,6 +1,6 @@
 import * as http from "http"
 import {IncomingMessage, ServerResponse} from "http"
-import {ERROR_HEADER, RpcConnectionContext} from "../rpc.js"
+import {ERROR_HEADER, RpcConnectionContext, RpcError, RpcErrors} from "../rpc.js"
 import {safeParseJson, safeStringify} from "../utils/json.js"
 import {log} from "../logger.js"
 import {decompressRequest} from "../utils/server.js"
@@ -14,6 +14,7 @@ export async function serveHttpRequest(
     req: IncomingMessage,
     res: ServerResponse,
   ) => Promise<RpcConnectionContext>,
+  maxRequestSize: number,
 ) {
   // if port is in options - response 404 on other URLs
   // otherwise simply handle request
@@ -25,7 +26,7 @@ export async function serveHttpRequest(
       const itemName = req.url.slice(path.length + 1)
 
       const isJson = req.headers["content-type"]?.includes("application/json") ?? false
-      const textBody = await readBody(req)
+      const textBody = await readBody(req, maxRequestSize)
       let body = isJson && !!textBody ? safeParseJson(textBody) : []
 
       if (!Array.isArray(body)) {
@@ -92,18 +93,41 @@ export async function serveHttpRequest(
   }
 }
 
-function readBody(req: http.IncomingMessage) {
+function readBody(req: http.IncomingMessage, maxRequestSize: number): Promise<string> {
   const decompressed = decompressRequest(req)
 
   return new Promise<string>((resolve, reject) => {
-    let body = ""
+    const chunks: Buffer[] = []
+    let size = 0
+    let finished = false
+
     decompressed.on("data", (chunk: Buffer) => {
-      body += chunk.toString()
+      if (finished) return
+
+      // Measured after decompression, so a small compressed payload that expands to a huge
+      // body (decompression bomb) is stopped here instead of being buffered into memory.
+      size += chunk.length
+
+      if (size > maxRequestSize) {
+        finished = true
+        chunks.length = 0 // release what was buffered
+        req.pause() // stop reading from the socket to bound memory and CPU
+        reject(new RpcError(RpcErrors.PayloadTooLarge, "Request body too large"))
+        return
+      }
+
+      chunks.push(chunk)
     })
     decompressed.on("end", () => {
-      resolve(body)
+      if (finished) return
+      finished = true
+      // Concatenate as bytes and decode once, so multi-byte characters split across chunk
+      // boundaries are not corrupted.
+      resolve(Buffer.concat(chunks).toString("utf8"))
     })
     decompressed.on("error", (error: any) => {
+      if (finished) return
+      finished = true
       reject(error)
     })
   })
