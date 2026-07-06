@@ -3,6 +3,13 @@ import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
 import {PING_MSG, PONG_MSG} from "../rpc.js"
 
+// WHATWG WebSocket.close() starts a closing handshake, and the 'close' event fires
+// only after the peer replies or the TCP connection dies. On a half-open connection
+// neither happens, so a socket can stay CLOSING forever and the reconnection loop
+// would never resume. A socket that hasn't emitted 'close' this long after close()
+// is abandoned and treated as disconnected.
+const CLOSE_TIMEOUT = 10 * 1000
+
 export class WebSocketConnection {
   constructor(
     private readonly url: string,
@@ -30,12 +37,56 @@ export class WebSocketConnection {
     this.disconnectedMark = true
 
     if (this.socket) {
-      this.socket!.close()
+      this.closeSocket(true)
 
       return new Promise<void>((resolve, reject) => {
         this.resolveClose = resolve
       })
     }
+  }
+
+  /**
+   * Close the current socket, guaranteeing that disconnect handling eventually runs.
+   *
+   * Prefers terminate() when the socket provides it (`ws` package). The standard
+   * WHATWG WebSocket (browsers, Node's built-in implementation) only has close(),
+   * which may never complete on a dead connection — in that case the socket is
+   * abandoned after CLOSE_TIMEOUT.
+   *
+   * @param graceful attempt a closing handshake first even if terminate() is available
+   */
+  private closeSocket(graceful: boolean) {
+    const socket = this.socket
+
+    if (!socket) return
+
+    const abandon = this.abandonSocket
+    const terminate = (socket as unknown as {terminate?: () => void}).terminate?.bind(socket)
+
+    if (!graceful && terminate) {
+      terminate()
+      return
+    }
+
+    try {
+      socket.close()
+    } catch (e) {
+      // ignore
+    }
+
+    const timer = setTimeout(() => {
+      // 'close' already handled, nothing to do
+      if (this.socket !== socket) return
+
+      if (terminate) {
+        terminate()
+      } else {
+        abandon?.()
+      }
+    }, testCloseTimeout ?? CLOSE_TIMEOUT)
+
+    // don't keep the Node process alive because of the fallback timer
+    timer.unref?.()
   }
 
   private waitConnectionPromise: Promise<void> | undefined
@@ -130,19 +181,21 @@ export class WebSocketConnection {
         const socket = new WebSocket(this.url, this.clientId)
 
         let connected = false
+        let closed = false
 
-        socket.addEventListener("open", () => {
-          this.socket = socket
-          connected = true
-          resolve()
+        // invoked by the 'close' listener, or by closeSocket's fallback timer when
+        // the close event never arrives (abandoned socket)
+        const handleClosed = () => {
+          if (closed) return
+          closed = true
 
-          this.heartbeat()
+          if (this.socket === socket) {
+            this.socket = null
+          }
 
-          this.onConnected()
-        })
-
-        socket.addEventListener("close", () => {
-          this.socket = null
+          if (this.abandonSocket === handleClosed) {
+            this.abandonSocket = null
+          }
 
           if (connected) {
             onDisconnected()
@@ -154,7 +207,20 @@ export class WebSocketConnection {
           }
 
           this.resolveClose()
+        }
+
+        socket.addEventListener("open", () => {
+          this.socket = socket
+          this.abandonSocket = handleClosed
+          connected = true
+          resolve()
+
+          this.heartbeat()
+
+          this.onConnected()
         })
+
+        socket.addEventListener("close", handleClosed)
 
         socket.addEventListener("error", (e) => {
           if (!connected) {
@@ -169,6 +235,9 @@ export class WebSocketConnection {
         })
 
         socket.addEventListener("message", (message) => {
+          // late message from an abandoned socket
+          if (closed) return
+
           this.heartbeat()
 
           if (message.data === PING_MSG) {
@@ -185,6 +254,7 @@ export class WebSocketConnection {
   }
 
   private socket: WebSocket | null = null
+  private abandonSocket: (() => void) | null = null
   private disconnectedMark = false
   private pingTimeout: NodeJS.Timeout | null = null
 
@@ -195,7 +265,9 @@ export class WebSocketConnection {
 
     if (this.options.pingInterval) {
       this.pingTimeout = setTimeout(() => {
-        this.socket?.close()
+        // no pings from the server - the connection is considered dead,
+        // no point in a graceful closing handshake
+        this.closeSocket(false)
       }, this.options.pingInterval * 1.5)
     }
   }
@@ -222,4 +294,10 @@ let testWebSocketConnectionDelay = 0
 
 export function setTestWebSocketConnectionDelay(ms: number) {
   testWebSocketConnectionDelay = ms
+}
+
+let testCloseTimeout: number | null = null
+
+export function setTestCloseTimeout(ms: number | null) {
+  testCloseTimeout = ms
 }
