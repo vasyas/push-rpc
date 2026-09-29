@@ -45,6 +45,7 @@ export class ConnectionsServer {
         ws.alive = true
 
         const clientId = ws.rpcContext?.clientId || "anon"
+        const previousSocket = this.clientSockets.get(clientId)
         this.clientSockets.set(clientId, ws)
 
         ws.on("error", (e: unknown) => {
@@ -52,6 +53,9 @@ export class ConnectionsServer {
         })
 
         ws.on("close", () => {
+          // A reconnect can replace a half-open socket before its native close
+          // arrives. Only the current socket owns this client's subscriptions.
+          if (this.clientSockets.get(clientId) !== ws) return
           this.clientSockets.delete(clientId)
           connectionClosed(clientId)
         })
@@ -61,6 +65,10 @@ export class ConnectionsServer {
           // but currently the client only sends PONG_MSG
           ws.alive = true
         })
+
+        // Retire the old transport after transferring ownership. Its late close
+        // or heartbeat timeout must not remove the replacement or its consumers.
+        previousSocket?.terminate()
       },
     )
 
@@ -101,7 +109,8 @@ export class ConnectionsServer {
 
   async close() {
     return new Promise<void>((resolve, reject) => {
-      this.clientSockets.forEach((c) => c.terminate())
+      // Include superseded sockets whose native teardown is still pending.
+      this.wss.clients.forEach((c) => c.terminate())
 
       this.wss.close((err) => {
         if (err) reject(err)

@@ -39,6 +39,60 @@ export class RemoteSubscriptions {
     filterSubscriptions.paused = true
   }
 
+  /** A newer snapshot request supersedes pending replies for this subscription. */
+  beginRequest(itemName: string, parameters: unknown[]) {
+    const subscription = this.getFilterSubscriptions(itemName, parameters)
+    if (!subscription) {
+      return {
+        isCurrent: () => false,
+        hasPendingSnapshot: () => false,
+        finish: (_error?: unknown) => {},
+        wait: async () => {},
+      }
+    }
+
+    let resolveDone = () => {}
+    const done = new Promise<void>((resolve) => {
+      resolveDone = resolve
+    })
+    const request: SnapshotRequest = {
+      done,
+      pending: true,
+      finish: (error?: unknown) => {
+        if (!request.pending) return
+        request.pending = false
+        request.error = error
+        resolveDone()
+      },
+    }
+    const previous = subscription.request
+    subscription.request = request
+    previous?.finish()
+    subscription.paused = true
+    subscription.queue = []
+
+    return {
+      isCurrent: () =>
+        this.getFilterSubscriptions(itemName, parameters) === subscription &&
+        subscription.request === request,
+      hasPendingSnapshot: () =>
+        this.getFilterSubscriptions(itemName, parameters) === subscription &&
+        subscription.request?.pending === true,
+      finish: request.finish,
+      wait: async () => {
+        while (this.getFilterSubscriptions(itemName, parameters) === subscription) {
+          const current = subscription.request!
+          await current.done
+          if (this.getFilterSubscriptions(itemName, parameters) !== subscription) return
+          // Superseding a request wakes its waiters; they must follow the replacement.
+          if (subscription.request !== current) continue
+          if (current.error !== undefined) throw current.error
+          return
+        }
+      },
+    }
+  }
+
   unpause(itemName: string, parameters: unknown[]) {
     const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
     if (!filterSubscriptions) return
@@ -85,6 +139,7 @@ export class RemoteSubscriptions {
     filterSubscriptions.consumers.splice(index, 1)
 
     if (!filterSubscriptions.consumers.length) {
+      filterSubscriptions.request?.finish()
       itemSubscriptions.byParameters.delete(parametersKey)
 
       if (itemSubscriptions.byParameters.size == 0) {
@@ -169,6 +224,7 @@ type ItemSubscription = {
 }
 
 type ParametersSubscription = {
+  request?: SnapshotRequest
   parameters: unknown[]
   cached: unknown
   consumers: ConsumerSubscription[]
@@ -179,6 +235,13 @@ type ParametersSubscription = {
 
 type ConsumerSubscription = {
   consumer: (d: unknown) => void
+}
+
+type SnapshotRequest = {
+  done: Promise<void>
+  pending: boolean
+  finish: (error?: unknown) => void
+  error?: unknown
 }
 
 function getParametersKey(parameters: unknown[]) {

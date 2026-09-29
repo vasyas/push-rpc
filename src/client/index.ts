@@ -9,6 +9,10 @@ export type RpcClient = {
   connect(): Promise<void>
   isConnected(): boolean
   close(): Promise<void>
+  /** Replace a stale connection; immediate wakes backoff but reuses an opening handshake. */
+  reconnect(options?: {immediate?: boolean}): void
+  /** Refresh all active snapshots without replacing the WebSocket connection. */
+  resubscribe(): void
 
   // test-only
   _allSubscriptions(): Array<any[]>
@@ -20,9 +24,30 @@ export type ClientCache = {
   get(itemName: string, parameters: unknown[]): unknown | undefined
 }
 
+export type ReconnectPolicy = {
+  /** Optional delay for the first recovery after a stable connection; failures still back off. */
+  firstReconnectDelayMs?: number
+  /** Lower and upper bounds of a failed-attempt retry window, in milliseconds. */
+  minDelayMs: number
+  maxDelayMs: number
+  /** Widen the upper bound after each attempt, until maxBackoffMs. */
+  backoffFactor: number
+  maxBackoffMs: number
+  /** Only a connection that remains open this long resets the retry window. */
+  stableConnectionMs: number
+  /** Abandon an opening handshake that has not completed by this deadline. */
+  connectTimeoutMs: number
+  /** Also spread the very first connection. Defaults to false for fast startup. */
+  spreadInitialConnect?: boolean
+}
+
 export type ConsumeServicesOptions = {
   callTimeout: number
   reconnectDelay: number
+  /** Opt in to jittered recovery. Omit to retain the legacy reconnect timing. */
+  reconnectPolicy?: ReconnectPolicy
+  /** Maximum simultaneous recovery snapshots, including unfinished previous waves. */
+  resubscribeConcurrency?: number
   errorDelayMaxDuration: number
   /**
    * Milliseconds to wait before considering the connection stale and trying to reconnect.

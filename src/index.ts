@@ -31,7 +31,7 @@ export type {
 
 export {ServicesImplementation}
 
-export type {RpcClient, ConsumeServicesOptions, ClientCache} from "./client/index.js"
+export type {RpcClient, ConsumeServicesOptions, ClientCache, ReconnectPolicy} from "./client/index.js"
 export {consumeServices} from "./client/index.js"
 
 export type {ServicesClient, FunctionClient, AddParameters} from "./client/remote.js"

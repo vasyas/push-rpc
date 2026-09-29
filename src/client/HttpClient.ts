@@ -33,9 +33,8 @@ export class HttpClient {
   ): Promise<unknown> {
     const itemUrl = this.getItemUrl(itemName)
 
+    const {signal, finished} = timeoutSignal(callTimeout)
     try {
-      const {signal, finished} = timeoutSignal(callTimeout)
-
       const response = await fetch(itemUrl, {
         method,
         headers: {
@@ -46,8 +45,6 @@ export class HttpClient {
         body: safeStringify(params),
         signal,
       })
-
-      finished()
 
       const hasError = response.headers.has(ERROR_HEADER)
 
@@ -96,6 +93,10 @@ export class HttpClient {
         throw error
       }
       throw e
+    } finally {
+      // Receiving headers does not mean the snapshot is complete. A stalled body
+      // must time out too, otherwise it can occupy a recovery slot indefinitely.
+      finished()
     }
   }
 }

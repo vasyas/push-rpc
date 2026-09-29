@@ -9,9 +9,10 @@ Best used with monorepos using TypeScript. Can also be used with JavaScript and 
 - [Features](#features)
 - [Getting started](#getting-started)
 - [Implementation details](#implementation)
-    - [Mapping to HTTP & WebSockets messages](#messages)
-    - [Authentication and client identity](#auth)
-    - [Detecting stale WebSockets](#stale-websockets)
+  - [Mapping to HTTP & WebSockets messages](#messages)
+  - [Authentication and client identity](#auth)
+  - [Detecting stale WebSockets](#stale-websockets)
+  - [Recovering after network or application lifecycle changes](#recovery)
 - [Limitations](#limitations)
 - [Glossary](#glossary)
 - [Project using Push-RPC](#projects)
@@ -150,14 +151,14 @@ There are the types of messages that can be sent from client to server:
    POST /rpc/todo/addTodo HTTP/1.1
    Content-Type: application/json
    X-Rpc-Client-Id: GoQ_xVYcthSEqMxDGV212
-    
+
    [{"text": "Buy groceries"}]
-   
+
    ...
    HTTP/1.1 200 OK
    Content-Type: application/json
    {"id": "123"}
-    ```
+   ```
 
    `X-Rpc-Client-Id` header is used to identify caller clients. In can be used for session tracking. Client ID is
    available at server side in the context. Note that the client ID is asserted by the client and is not
@@ -172,9 +173,9 @@ There are the types of messages that can be sent from client to server:
    ```
    PUT /rpc/todo/getTodos HTTP/1.1
    Content-Type: application/json
-    
+
    []
-   
+
    ...
    HTTP/1.1 200 OK
    Content-Type: application/json
@@ -191,9 +192,9 @@ There are the types of messages that can be sent from client to server:
    ```
    PATCH /rpc/todo/getTodos HTTP/1.1
    Content-Type: application/json
-    
+
    []
-   
+
    ...
    HTTP/1.1 204 No Content
    ```
@@ -271,6 +272,84 @@ response is received within `pingInterval * 2` milliseconds, connection is consi
 Since WebSockets in React Native don't support listening for incoming native WS ping messages, it is impossible to
 use the native WS ping/pong mechanism for stale connection detection. Due to this limitation,
 application ping/pongs are implemented instead.
+
+### Recovering after network or application lifecycle changes <a name="recovery"></a>
+
+Use `client.reconnect({immediate: true})` when confirmed connectivity or an application resume
+requires a fresh connection without waiting for an existing retry delay. The client ID, consumers
+and cached data are preserved; opening the replacement refreshes active subscriptions.
+
+Recovery depends on whether the client has a `reconnectPolicy`:
+
+| Call                                                     | Behavior                                                                                                                      |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `reconnect()` without a policy                           | Immediately abandons the old socket, including an opening handshake, and wakes a pending legacy retry delay.                  |
+| `reconnect()` with a policy                              | Abandons a stale socket and follows the policy's delay. Duplicate calls during a scheduled or opening recovery are coalesced. |
+| `reconnect({immediate: true})` with either configuration | Wakes a pending retry or replaces the active socket immediately. An already opening handshake is reused.                      |
+
+Abandonment disconnects the old socket logically before asking the native WebSocket to close,
+so a missing `close` event cannot block recovery. An immediate request that starts or wakes a
+recovery resets policy backoff to its base window. If a handshake is already opening, its existing
+deadline **and retry history** are kept; repeated signals cannot restart the handshake timeout.
+
+The application should coalesce duplicate foreground/network events for the same outage and skip
+signals already satisfied by an automatic reconnect. The library does not know the application's
+lifecycle; another signal after recovery completes can otherwise replace a healthy connection.
+
+For a fast first recovery with randomized backoff after failures:
+
+```ts
+const {client, remote} = await consumeServices<Services>(url, {
+  reconnectPolicy: {
+    firstReconnectDelayMs: 0,
+    minDelayMs: 1000,
+    maxDelayMs: 5000,
+    backoffFactor: 2,
+    maxBackoffMs: 30000,
+    stableConnectionMs: 30000,
+    connectTimeoutMs: 10000,
+  },
+  resubscribeConcurrency: 2,
+})
+
+// In the application's confirmed connectivity/resume handler:
+client.reconnect({immediate: true})
+```
+
+With this configuration, the first connection attempt has no intentional delay. After a connection
+remains stable for 30 seconds, its first automatic recovery also has no intentional delay. Failed
+attempts then use randomized windows of 1–5, 1–10, 1–20 and finally 1–30 seconds. A cold-start failure
+uses the base retry window too; a brief successful opening does not reset existing retry history.
+Omitting `firstReconnectDelayMs` makes even recovery after a stable connection use the randomized
+window. Set `spreadInitialConnect: true` to apply that window to the very first connection as well.
+Without `reconnectPolicy`, legacy retry timing is unchanged.
+
+The 10-second handshake deadline in this example applies to immediate attempts too. If JavaScript
+timers fire substantially late after suspension, a retry is rescheduled within the same window,
+and the stability timer starts another full stability period. An explicit immediate request can
+still wake the pending retry. The SDK itself does not subscribe to native lifecycle/network events.
+
+This configuration spreads failed retries, **not the first wave** after a regional outage. The
+`resubscribeConcurrency` limit applies per client, not across the server. It limits recovery HTTP
+snapshots and counts unfinished work from earlier waves; superseded queued work is discarded.
+Initial subscription requests remain eager and can exceed this limit, but occupy slots until their
+HTTP work finishes, so recovery waits for capacity. Regular RPC calls are not throttled. Omitting
+`resubscribeConcurrency` retains unlimited recovery concurrency.
+
+Use `client.resubscribe()` to refresh active snapshots without replacing the socket. If requests
+for the same topic and parameters overlap, only the newest request can update its data or queue.
+Late failures or responses from an earlier request cannot discard or overwrite the recovered data.
+A superseded `subscribe()` follows the replacement snapshot and propagates its failure. An explicit
+`CallOptions.timeout` still bounds that replacement wait from the original subscription call.
+The HTTP request timeout starts after `getHeaders()` resolves and remains active until the response
+body has been read. Unsubscribing the last consumer ends that subscription's lifetime; a later
+subscription with identical parameters is independent of its old replies.
+
+`client.close()` permanently stops the client and is intended for disposal. Neither `connect()` nor
+`reconnect()` revives it. A closing handshake that hangs is abandoned or terminated after 10 seconds.
+Without a reconnect policy, heartbeat recovery uses that fallback when the WebSocket implementation
+has no `terminate()` method. With a policy, heartbeat recovery abandons the socket immediately and
+then follows the policy's recovery delay.
 
 ## Limitations <a name="limitations"></a>
 

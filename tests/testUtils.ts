@@ -24,6 +24,7 @@ export async function startTestServer<S extends Services<S>, C extends RpcContex
 ): Promise<ServicesImplementation<S>> {
   const r = await publishServices<S, C>(local, {
     port: TEST_PORT,
+    host: "127.0.0.1",
     path: "/rpc",
     ...options,
   })
