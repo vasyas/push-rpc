@@ -48,6 +48,8 @@ export type ConsumeServicesOptions = {
   reconnectPolicy?: ReconnectPolicy
   /** Maximum simultaneous recovery snapshots, including unfinished previous waves. */
   resubscribeConcurrency?: number
+  /** Requires a backend implementing lifetime protocol v1; omitted preserves legacy behavior. */
+  subscriptionLifetimes?: boolean
   errorDelayMaxDuration: number
   /**
    * Milliseconds to wait before considering the connection stale and trying to reconnect.

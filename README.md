@@ -341,9 +341,48 @@ for the same topic and parameters overlap, only the newest request can update it
 Late failures or responses from an earlier request cannot discard or overwrite the recovered data.
 A superseded `subscribe()` follows the replacement snapshot and propagates its failure. An explicit
 `CallOptions.timeout` still bounds that replacement wait from the original subscription call.
-The HTTP request timeout starts after `getHeaders()` resolves and remains active until the response
+By default, the HTTP request timeout starts after `getHeaders()` resolves and remains active until the response
 body has been read. Unsubscribing the last consumer ends that subscription's lifetime; a later
 subscription with identical parameters is independent of its old replies.
+
+### Optional subscription lifetime protocol
+
+`subscriptionLifetimes: true` enables lifetime protocol v1 for a backend that explicitly supports it.
+It is off by default. The built-in `publishServices` server does not implement this optional protocol;
+use the default mode with that server. Upgrade the entire target backend before enabling this option.
+
+One lifetime identifies a local topic/parameters registration from its first consumer until its last
+consumer unsubscribes. Extra consumers, snapshot retries and reconnect refreshes retain the lifetime;
+subscribing again after final removal allocates a larger lifetime number. Every physical WebSocket
+gets a fresh epoch. The wire metadata is separate from service arguments:
+
+- WebSocket query: `rpcSubscriptionVersion=1` and `rpcSubscriptionEpoch=<epoch>`; the existing
+  client-id subprotocol is unchanged.
+- PUT/PATCH headers: `x-rpc-subscription-epoch` and `x-rpc-subscription-lifetime`.
+- PUT/PATCH response acknowledgement: `x-rpc-subscription-version: 1`, including error responses.
+
+A supporting backend binds the epoch to the WebSocket, counts accepted snapshot attempts within
+that lifetime, and distinguishes failed-snapshot cleanup from final unsubscribe. A failed snapshot
+removes one attempt; final unsubscribe closes the matching lifetime completely. Older lifetimes and
+closed-lifetime PUTs must be fenced, including delayed requests that arrive after PATCH or reconnect.
+The backend must bound fence memory without silently forgetting closed lifetimes. This contract needs
+coordinated backend implementation; sending the headers alone does not provide server-side safety.
+
+In this mode, initial snapshots wait for WebSocket OPEN. The subscription deadline (`callTimeout` or
+`CallOptions.timeout`) covers waiting for OPEN, middleware, `getHeaders()` and the complete HTTP body.
+A superseded initial call remains bounded while following its replacement. A final PATCH captures the
+removed registration's epoch before asynchronous work and never attaches itself to a replacement
+socket. Unsubscribe before any registration was dispatched sends no PATCH. Parameters are serialized
+before asynchronous headers, so later application mutation cannot change that request's wire key.
+Modern recovery runs subscription middleware, preserving stable parameter mappings across retries.
+
+A successful response missing its protocol acknowledgement rejects the operation and permanently
+closes this opted-in client; there is no automatic fallback into legacy accounting. Application errors
+such as 429 or 503 reject normally and keep the client available for recovery. Unacknowledged error
+responses from a gateway (for example 502/503/504 during an outage) also remain recoverable; they cannot
+prove that the backend protocol is unsupported. Server socket closure uses the
+configured reconnect timing. Ordinary RPC calls and clients omitting this option retain their
+existing transport behavior. Lifetime mode requires `subscriptions: true`.
 
 `client.close()` permanently stops the client and is intended for disposal. Neither `connect()` nor
 `reconnect()` revives it. A closing handshake that hangs is abandoned or terminated after 10 seconds.

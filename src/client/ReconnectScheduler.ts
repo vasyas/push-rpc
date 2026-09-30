@@ -44,22 +44,23 @@ export class ReconnectScheduler {
       firstDelay !== undefined &&
       (!Number.isFinite(firstDelay) || firstDelay < 0 || firstDelay > MAX_TIMER_DELAY_MS)
     ) {
-      throw new Error("Invalid reconnectPolicy delay bounds")
+      throw new Error("Invalid reconnectPolicy.firstReconnectDelayMs")
     }
-    for (const key of ["maxBackoffMs", "connectTimeoutMs", "stableConnectionMs"] as const) {
-      if (policy[key] > MAX_TIMER_DELAY_MS) {
-        throw new Error("Invalid reconnectPolicy delay bounds")
-      }
+    // Every window must be positive, representable as a timer, and ordered
+    // minDelayMs <= maxDelayMs <= maxBackoffMs.
+    const invalid = (key: keyof ReconnectPolicy) => new Error(`Invalid reconnectPolicy.${key}`)
+
+    if (policy.maxDelayMs <= 0) throw invalid("maxDelayMs")
+    if (policy.connectTimeoutMs <= 0 || policy.connectTimeoutMs > MAX_TIMER_DELAY_MS) {
+      throw invalid("connectTimeoutMs")
     }
-    if (
-      policy.maxDelayMs <= 0 ||
-      policy.maxDelayMs < policy.minDelayMs ||
-      policy.maxBackoffMs < policy.maxDelayMs ||
-      policy.backoffFactor < 1 ||
-      policy.connectTimeoutMs <= 0 ||
-      policy.stableConnectionMs <= 0
-    ) {
-      throw new Error("Invalid reconnectPolicy delay bounds")
+    if (policy.stableConnectionMs <= 0 || policy.stableConnectionMs > MAX_TIMER_DELAY_MS) {
+      throw invalid("stableConnectionMs")
+    }
+    if (policy.backoffFactor < 1) throw invalid("backoffFactor")
+    if (policy.maxDelayMs < policy.minDelayMs) throw invalid("minDelayMs")
+    if (policy.maxBackoffMs < policy.maxDelayMs || policy.maxBackoffMs > MAX_TIMER_DELAY_MS) {
+      throw invalid("maxBackoffMs")
     }
   }
 
@@ -83,21 +84,15 @@ export class ReconnectScheduler {
       finish = resolve
     })
     this.pending = {promise, finish}
-    const schedule = () => {
-      const delay =
+    // Suspension is not another failed attempt, so an overdue timer re-draws from
+    // the same retry window rather than widening it.
+    this.scheduleOverdueAware(
+      () =>
         firstDelay ??
-        this.policy.minDelayMs + this.clock.random() * (ceiling - this.policy.minDelayMs)
-      const due = this.clock.now() + delay
-      this.timer = this.clock.setTimeout(() => {
-        if (this.clock.now() - due > OVERDUE_TOLERANCE_MS) {
-          // Use the same retry window. Suspension is not another failed attempt.
-          schedule()
-          return
-        }
-        this.finishWait(true)
-      }, delay)
-    }
-    schedule()
+        this.policy.minDelayMs + this.clock.random() * (ceiling - this.policy.minDelayMs),
+      (timer) => (this.timer = timer),
+      () => this.finishWait(true),
+    )
     return promise
   }
 
@@ -111,18 +106,40 @@ export class ReconnectScheduler {
 
   connected() {
     this.disconnected()
-    const schedule = () => {
-      const due = this.clock.now() + this.policy.stableConnectionMs
-      this.stableTimer = this.clock.setTimeout(() => {
-        // Time spent suspended does not demonstrate a stable connection.
-        if (this.clock.now() - due > OVERDUE_TOLERANCE_MS) {
-          schedule()
-          return
-        }
+    // Time spent suspended does not demonstrate a stable connection.
+    this.scheduleOverdueAware(
+      () => this.policy.stableConnectionMs,
+      (timer) => (this.stableTimer = timer),
+      () => {
         this.stableTimer = null
         this.attempt = 0
         this.useFirstReconnectDelay = this.policy.firstReconnectDelayMs !== undefined
-      }, this.policy.stableConnectionMs)
+      },
+    )
+  }
+
+  /**
+   * Run `onDue` once the delay has genuinely elapsed. A callback that arrives
+   * substantially late means the application was suspended, so the wait restarts
+   * instead of firing; both timers in this class need that same treatment.
+   */
+  private scheduleOverdueAware(
+    getDelay: () => number,
+    assign: (timer: Timer) => void,
+    onDue: () => void,
+  ) {
+    const schedule = () => {
+      const delay = getDelay()
+      const due = this.clock.now() + delay
+      assign(
+        this.clock.setTimeout(() => {
+          if (this.clock.now() - due > OVERDUE_TOLERANCE_MS) {
+            schedule()
+            return
+          }
+          onDue()
+        }, delay),
+      )
     }
     schedule()
   }

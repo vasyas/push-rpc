@@ -1,10 +1,10 @@
 import {assert} from "chai"
 import {CallOptions, RpcErrors} from "../src/rpc.js"
 import {adelay} from "../src/utils/promises.js"
-import {recoveryFixture, reply, until} from "./recoveryUtils.js"
+import {RecoveryFixture, recoveryFixture, reply, until} from "./recoveryUtils.js"
 
 describe("subscription snapshot recovery", () => {
-  let fixture: Awaited<ReturnType<typeof recoveryFixture>>
+  let fixture: RecoveryFixture
 
   beforeEach(async () => {
     fixture = await recoveryFixture()

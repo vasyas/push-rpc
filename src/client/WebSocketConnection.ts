@@ -1,3 +1,4 @@
+import {nanoid} from "nanoid"
 import {log} from "../logger.js"
 import {safeParseJson} from "../utils/json.js"
 import {adelay} from "../utils/promises.js"
@@ -7,6 +8,20 @@ import {ReconnectScheduler} from "./ReconnectScheduler.js"
 
 // A dead peer may never acknowledge close(); stop waiting for that handshake.
 const CLOSE_TIMEOUT = 10 * 1000
+
+/** ws exposes a non-standard terminate(); browsers and React Native only have close(). */
+function terminateOf(socket: WebSocket): (() => void) | undefined {
+  return (socket as WebSocket & {terminate?: () => void}).terminate?.bind(socket)
+}
+
+/** Closing an already-dead socket throws; the caller has stopped listening to it anyway. */
+function closeQuietly(socket: WebSocket) {
+  try {
+    socket.close()
+  } catch {
+    // ignore
+  }
+}
 
 export class WebSocketConnection {
   constructor(
@@ -18,6 +33,7 @@ export class WebSocketConnection {
       errorDelayMaxDuration: number
       pingInterval: number | null
       reconnectPolicy?: ReconnectPolicy
+      subscriptionLifetimes?: boolean
     },
     private readonly consume: (
       itemName: string,
@@ -27,7 +43,6 @@ export class WebSocketConnection {
     private readonly onConnected: () => void,
     private readonly onDisconnected: () => void,
   ) {
-    this.clientId = clientId
     this.reconnectScheduler = options.reconnectPolicy
       ? new ReconnectScheduler(options.reconnectPolicy)
       : null
@@ -82,8 +97,8 @@ export class WebSocketConnection {
   private abortSocket(socket: WebSocket, onClosed: (() => void) | null) {
     onClosed?.()
     try {
-      const terminate = (socket as WebSocket & {terminate?: () => void}).terminate
-      if (terminate) terminate.call(socket)
+      const terminate = terminateOf(socket)
+      if (terminate) terminate()
       else socket.close()
     } catch {
       // The socket is already abandoned; its late callbacks are ignored.
@@ -97,18 +112,14 @@ export class WebSocketConnection {
     if (!socket) return
 
     const abandon = this.abandonSocket
-    const terminate = (socket as WebSocket & {terminate?: () => void}).terminate?.bind(socket)
+    const terminate = terminateOf(socket)
 
     if (!graceful && terminate) {
       terminate()
       return
     }
 
-    try {
-      socket.close()
-    } catch (e) {
-      // ignore
-    }
+    closeQuietly(socket)
 
     const timer = setTimeout(() => {
       // 'close' already handled, nothing to do
@@ -144,8 +155,7 @@ export class WebSocketConnection {
       this.reconnectScheduler &&
       (this.options.reconnectPolicy?.spreadInitialConnect || this.recoveryPending)
     ) {
-      this.recoveryPending = true
-      if (!this.reconnectRequested && !(await this.reconnectScheduler.wait())) return
+      if (!(await this.waitForScheduledRetry())) return
     }
     this.reconnectRequested = false
 
@@ -182,18 +192,9 @@ export class WebSocketConnection {
       }
 
       if (this.reconnectScheduler) {
-        this.recoveryPending = true
-        if (!this.reconnectRequested && !(await this.reconnectScheduler.wait())) return
+        if (!(await this.waitForScheduledRetry())) return
       } else if (!this.reconnectRequested) {
-        await new Promise<void>((resolve) => {
-          const finish = () => {
-            clearTimeout(timer)
-            this.cancelReconnectDelay = null
-            resolve()
-          }
-          const timer = setTimeout(finish, this.options.reconnectDelay + errorDelay)
-          this.cancelReconnectDelay = finish
-        })
+        await this.waitReconnectDelay(errorDelay)
       }
       this.reconnectRequested = false
 
@@ -205,8 +206,31 @@ export class WebSocketConnection {
     }
   }
 
+  /** Wait out the scheduled recovery window. @returns false when close() cancelled it. */
+  private async waitForScheduledRetry(): Promise<boolean> {
+    this.recoveryPending = true
+    return this.reconnectRequested || (await this.reconnectScheduler!.wait())
+  }
+
+  /** Legacy timing: a fixed delay plus jitter, interruptible by an explicit reconnect. */
+  private waitReconnectDelay(errorDelay: number) {
+    return new Promise<void>((resolve) => {
+      const finish = () => {
+        clearTimeout(timer)
+        this.cancelReconnectDelay = null
+        resolve()
+      }
+      const timer = setTimeout(finish, this.options.reconnectDelay + errorDelay)
+      this.cancelReconnectDelay = finish
+    })
+  }
+
   public isConnected() {
     return this.socket !== null
+  }
+
+  getConnectionEpoch() {
+    return this.socket ? this.connectionEpoch : undefined
   }
 
   /** Open one socket; reject if it closes, errors, or times out before OPEN. */
@@ -215,7 +239,15 @@ export class WebSocketConnection {
     if (this.disconnectedMark) throw new Error("Connection closed")
 
     return new Promise((resolve, reject) => {
-      const socket = new WebSocket(this.url, this.clientId)
+      const epoch = this.options.subscriptionLifetimes ? nanoid() : undefined
+      let url = this.url
+      if (epoch) {
+        const address = new URL(url)
+        address.searchParams.set("rpcSubscriptionEpoch", epoch)
+        address.searchParams.set("rpcSubscriptionVersion", "1")
+        url = address.toString()
+      }
+      const socket = new WebSocket(url, this.clientId)
       this.pendingSocket = socket
 
       let connected = false
@@ -231,6 +263,7 @@ export class WebSocketConnection {
 
         if (this.socket === socket) {
           this.socket = null
+          this.connectionEpoch = undefined
         }
         if (this.pendingSocket === socket) {
           this.pendingSocket = null
@@ -260,6 +293,7 @@ export class WebSocketConnection {
         if (closed) return
         this.pendingSocket = null
         this.socket = socket
+        this.connectionEpoch = epoch
         connected = true
         clearTimeout(connectTimer)
         this.recoveryPending = false
@@ -278,11 +312,7 @@ export class WebSocketConnection {
         if (!connected) reject(e)
         handleClosed()
 
-        try {
-          socket.close()
-        } catch (e) {
-          // ignore
-        }
+        closeQuietly(socket)
       })
 
       if (this.options.reconnectPolicy) {
@@ -307,6 +337,7 @@ export class WebSocketConnection {
     })
   }
 
+  private connectionEpoch: string | undefined
   private socket: WebSocket | null = null
   private pendingSocket: WebSocket | null = null
   private abandonSocket: (() => void) | null = null

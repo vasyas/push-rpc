@@ -1,9 +1,9 @@
 import {assert} from "chai"
 import {adelay} from "../src/utils/promises.js"
-import {recoveryFixture, reply, until} from "./recoveryUtils.js"
+import {RecoveryFixture, recoveryFixture, reply, until} from "./recoveryUtils.js"
 
 describe("bounded recovery snapshots", () => {
-  let fixture: Awaited<ReturnType<typeof recoveryFixture>>
+  let fixture: RecoveryFixture
   afterEach(async () => {
     await fixture?.close()
   })

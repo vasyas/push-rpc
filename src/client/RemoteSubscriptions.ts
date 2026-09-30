@@ -1,5 +1,7 @@
 import {safeStringify} from "../utils/json.js"
 
+import type {SubscriptionOwnership} from "../rpc.js"
+
 import {ClientCache} from "./index"
 
 export class RemoteSubscriptions {
@@ -21,6 +23,7 @@ export class RemoteSubscriptions {
       parametersKey,
     ) || {
       parameters,
+      lifetime: ++this.lifetimeSequence,
       cached: undefined,
       consumers: [],
       queue: [],
@@ -32,20 +35,15 @@ export class RemoteSubscriptions {
     })
   }
 
-  pause(itemName: string, parameters: unknown[]) {
-    const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
-    if (!filterSubscriptions) return
-
-    filterSubscriptions.paused = true
-  }
-
   /** A newer snapshot request supersedes pending replies for this subscription. */
   beginRequest(itemName: string, parameters: unknown[]) {
     const subscription = this.getFilterSubscriptions(itemName, parameters)
     if (!subscription) {
       return {
+        bindConnection: (_epoch: string): SubscriptionOwnership | undefined => undefined,
         isCurrent: () => false,
         hasPendingSnapshot: () => false,
+        deliver: (_data: unknown) => false,
         finish: (_error?: unknown) => {},
         wait: async () => {},
       }
@@ -71,13 +69,41 @@ export class RemoteSubscriptions {
     subscription.paused = true
     subscription.queue = []
 
+    // `parameters` is the caller's array and may hold objects the application mutates,
+    // so ownership is only ever true for the registration these parameters resolve to
+    // right now. Re-checked before every write, never cached across a consumer callback.
+    const owns = () =>
+      this.getFilterSubscriptions(itemName, parameters) === subscription &&
+      subscription.request === request
+
     return {
-      isCurrent: () =>
-        this.getFilterSubscriptions(itemName, parameters) === subscription &&
-        subscription.request === request,
+      bindConnection: (epoch: string): SubscriptionOwnership | undefined => {
+        if (!owns()) return
+        subscription.connectionEpoch = epoch
+        return {epoch, lifetime: subscription.lifetime}
+      },
+      isCurrent: owns,
       hasPendingSnapshot: () =>
         this.getFilterSubscriptions(itemName, parameters) === subscription &&
         subscription.request?.pending === true,
+      /**
+       * Apply a snapshot, and report whether it was applied.
+       *
+       * publish() runs consumer callbacks, which may unsubscribe, mutate the
+       * parameters object, or start a newer request. Ownership is therefore
+       * rechecked before each queued item: nothing is written under a key that now
+       * resolves elsewhere, and a newer request keeps the queue it just started.
+       */
+      deliver: (data: unknown) => {
+        if (!owns()) return false
+
+        subscription.paused = false
+        this.publish(itemName, parameters, subscription, data)
+        while (owns() && subscription.queue.length) {
+          this.publish(itemName, parameters, subscription, subscription.queue.shift()!)
+        }
+        return true
+      },
       finish: request.finish,
       wait: async () => {
         while (this.getFilterSubscriptions(itemName, parameters) === subscription) {
@@ -104,13 +130,9 @@ export class RemoteSubscriptions {
     const filterSubscriptions = this.getFilterSubscriptions(itemName, parameters)
     if (!filterSubscriptions) return
 
-    filterSubscriptions.queue.forEach((data) => {
-      if (this.cache) this.cache.put(itemName, parameters, data)
-      filterSubscriptions.cached = data
-      filterSubscriptions.consumers.forEach((consumer) => {
-        consumer.consumer(data)
-      })
-    })
+    filterSubscriptions.queue.forEach((data) =>
+      this.publish(itemName, parameters, filterSubscriptions, data),
+    )
 
     filterSubscriptions.queue = []
   }
@@ -140,6 +162,10 @@ export class RemoteSubscriptions {
 
     if (!filterSubscriptions.consumers.length) {
       filterSubscriptions.request?.finish()
+      // Queued recovery tasks and request handles still reference this object;
+      // release the payloads it holds so they are not retained until those settle.
+      filterSubscriptions.cached = undefined
+      filterSubscriptions.queue = []
       itemSubscriptions.byParameters.delete(parametersKey)
 
       if (itemSubscriptions.byParameters.size == 0) {
@@ -150,6 +176,12 @@ export class RemoteSubscriptions {
     }
 
     return false
+  }
+
+  getOwnership(itemName: string, parameters: unknown[]): SubscriptionOwnership | undefined {
+    const subscription = this.getFilterSubscriptions(itemName, parameters)
+    if (!subscription?.connectionEpoch) return
+    return {epoch: subscription.connectionEpoch, lifetime: subscription.lifetime}
   }
 
   getCached(itemName: string, parameters: unknown[]): unknown | undefined {
@@ -166,12 +198,22 @@ export class RemoteSubscriptions {
     if (filterSubscriptions.paused) {
       filterSubscriptions.queue.push(data)
     } else {
-      if (this.cache) this.cache.put(itemName, parameters, data)
-      filterSubscriptions.cached = data
-      filterSubscriptions.consumers.forEach((consumer) => {
-        consumer.consumer(data)
-      })
+      this.publish(itemName, parameters, filterSubscriptions, data)
     }
+  }
+
+  /** Cache and hand one value to the consumers of an already-resolved subscription. */
+  private publish(
+    itemName: string,
+    parameters: unknown[],
+    subscription: ParametersSubscription,
+    data: unknown,
+  ) {
+    if (this.cache) this.cache.put(itemName, parameters, data)
+    subscription.cached = data
+    subscription.consumers.forEach((consumer) => {
+      consumer.consumer(data)
+    })
   }
 
   getConsumerSubscription(
@@ -201,6 +243,21 @@ export class RemoteSubscriptions {
     return result
   }
 
+  /** Recovery only needs the keys; skip building the consumer arrays. */
+  getSubscriptionKeys(): Array<[itemName: string, parameters: unknown[]]> {
+    const result: Array<[string, unknown[]]> = []
+
+    for (const [itemName, itemSubscriptions] of this.byItem) {
+      for (const [, parameterSubscriptions] of itemSubscriptions.byParameters) {
+        if (parameterSubscriptions.consumers.length) {
+          result.push([itemName, parameterSubscriptions.parameters])
+        }
+      }
+    }
+
+    return result
+  }
+
   private getFilterSubscriptions(
     itemName: string,
     parameters: unknown[],
@@ -216,6 +273,7 @@ export class RemoteSubscriptions {
     return filterSubscriptions
   }
 
+  private lifetimeSequence = 0
   private byItem: Map<string, ItemSubscription> = new Map()
 }
 
@@ -224,6 +282,8 @@ type ItemSubscription = {
 }
 
 type ParametersSubscription = {
+  lifetime: number
+  connectionEpoch?: string
   request?: SnapshotRequest
   parameters: unknown[]
   cached: unknown

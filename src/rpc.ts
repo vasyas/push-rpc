@@ -35,6 +35,11 @@ export class CallOptions {
 
 export const CLIENT_ID_HEADER = "x-rpc-client-id"
 export const ERROR_HEADER = "x-error"
+export const SUBSCRIPTION_EPOCH_HEADER = "x-rpc-subscription-epoch"
+export const SUBSCRIPTION_LIFETIME_HEADER = "x-rpc-subscription-lifetime"
+export const SUBSCRIPTION_VERSION_HEADER = "x-rpc-subscription-version"
+
+export type SubscriptionOwnership = {epoch: string; lifetime: number}
 
 export const PING_MSG = "PING"
 export const PONG_MSG = "PONG"

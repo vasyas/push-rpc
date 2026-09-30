@@ -1,10 +1,10 @@
 import {assert} from "chai"
 import {adelay} from "../src/utils/promises.js"
 import {setTestCloseTimeout} from "../src/client/WebSocketConnection.js"
-import {recoveryFixture, until} from "./recoveryUtils.js"
+import {RecoveryFixture, recoveryFixture, until} from "./recoveryUtils.js"
 
 describe("explicit reconnect", () => {
-  let fixture: Awaited<ReturnType<typeof recoveryFixture>>
+  let fixture: RecoveryFixture
 
   afterEach(async () => {
     await fixture?.close()

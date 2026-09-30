@@ -3,6 +3,7 @@ import {createServer, ServerResponse} from "node:http"
 import {AddressInfo, Socket} from "node:net"
 import WebSocket, {WebSocketServer} from "ws"
 import {consumeServices, ConsumeServicesOptions} from "../src/client/index.js"
+import {getClientId} from "../src/index.js"
 import {adelay} from "../src/utils/promises.js"
 
 export async function until(predicate: () => boolean, description: string, timeout = 1000) {
@@ -46,7 +47,7 @@ export async function recoveryFixture(options: Partial<ConsumeServicesOptions> =
     let body = ""
     for await (const chunk of req) body += chunk
     const parameters = JSON.parse(body || "[]") as unknown[]
-    const clientId = req.headers["x-rpc-client-id"] as string
+    const clientId = getClientId(req) ?? ""
     const itemName = req.url!.replace("/rpc/", "")
     if (req.method === "PUT") {
       requests.push({itemName, parameters})
@@ -70,7 +71,7 @@ export async function recoveryFixture(options: Partial<ConsumeServicesOptions> =
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req))
   })
   wss.on("connection", (ws, req) => {
-    const clientId = req.headers["sec-websocket-protocol"] as string
+    const clientId = getClientId(req) ?? ""
     sessions.set(clientId, {ws, topics: new Map()})
     connections.push(ws)
     ws.on("close", () => {
@@ -109,6 +110,8 @@ export async function recoveryFixture(options: Partial<ConsumeServicesOptions> =
     },
   }
 }
+
+export type RecoveryFixture = Awaited<ReturnType<typeof recoveryFixture>>
 
 export function reply(response: ServerResponse, value: string, status = 200) {
   response.statusCode = status

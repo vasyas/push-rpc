@@ -2,7 +2,7 @@ import {assert} from "chai"
 import {ReconnectScheduler, ReconnectRuntime} from "../src/client/ReconnectScheduler.js"
 import {ReconnectPolicy} from "../src/client/index.js"
 import {adelay} from "../src/utils/promises.js"
-import {recoveryFixture, until} from "./recoveryUtils.js"
+import {RecoveryFixture, recoveryFixture, until} from "./recoveryUtils.js"
 
 const policy: ReconnectPolicy = {
   minDelayMs: 1000,
@@ -204,7 +204,7 @@ describe("reconnect storm scheduling", () => {
 })
 
 describe("reconnect policy on a real loopback transport", () => {
-  let fixture: Awaited<ReturnType<typeof recoveryFixture>>
+  let fixture: RecoveryFixture
   const quick: ReconnectPolicy = {
     minDelayMs: 50,
     maxDelayMs: 50,

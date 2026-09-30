@@ -2,6 +2,7 @@ import {assert} from "chai"
 import {createTestClient, startTestServer, testClient, testServer} from "./testUtils.js"
 import {adelay} from "../src/utils/promises.js"
 import {CallOptions, RpcErrors} from "../src/index.js"
+import {until} from "./recoveryUtils.js"
 import {setTestWebSocketConnectionDelay} from "../src/client/WebSocketConnection.js"
 
 describe("Subscriptions", () => {
@@ -591,54 +592,61 @@ describe("Subscriptions", () => {
   })
 
   it("clear queue on subscription failure", async () => {
-    const delay = 50
-
-    let invocation = 0
-    const services = await startTestServer({
-      test: {
-        async longOp(): Promise<number> {
-          await adelay(delay)
-          if (invocation++ == 1) {
-            throw new Error("AA")
-          }
-
-          return 1
-        },
+    let holdNext = false
+    let rejectSnapshot: ((error: Error) => void) | undefined
+    const services = await startTestServer(
+      {test: {longOp: async () => 1}},
+      {
+        createServerHooks: (hooks) => ({
+          ...hooks,
+          subscribe: async (...args) => {
+            const snapshot = await hooks.subscribe(...args)
+            if (!holdNext) return snapshot
+            holdNext = false
+            return new Promise((_resolve, reject) => {
+              rejectSnapshot = reject
+            })
+          },
+        }),
       },
-    })
+    )
+    services.test.longOp.throttle({timeout: 0})
 
+    const notifications: unknown[] = []
     const client = await createTestClient<typeof services>({
-      callTimeout: 2 * delay,
+      // Keep initial connection recovery separate from the failure under test.
+      connectOnCreate: true,
+      callTimeout: 1000,
+      notificationsMiddleware: [
+        async (_ctx, next, value) => {
+          await next()
+          notifications.push(value)
+        },
+      ],
     })
+    const received: number[] = []
+    await client.test.longOp.subscribe((value) => received.push(value))
 
-    let received = 0
+    holdNext = true
+    const failed = client.test.longOp
+      .subscribe(() => {})
+      .then(
+        () => assert.fail("The failed snapshot must reject subscribe"),
+        (error) => assert.equal(error.message, "AA"),
+      )
+    await until(() => !!rejectSnapshot, "subscription response held after registration")
+    services.test.longOp.trigger(undefined, 2)
+    await until(() => notifications.includes(2), "push reaches the paused subscription")
+    assert.deepEqual(received, [1])
 
-    client.test.longOp.subscribe((val) => {
-      received = val
-    })
+    rejectSnapshot!(new Error("AA"))
+    await failed
+    assert.deepEqual(received, [1], "failed initial snapshot discards queued pushes")
 
-    await adelay(1.5 * delay)
-
-    client.test.longOp
-      .subscribe((val) => {
-        received = val
-      })
-      .catch((e) => {
-        // ok
-      })
-
-    await adelay(20)
-    services.test.longOp.trigger(undefined, 2) // this should be skipped
-
-    await adelay(1.5 * delay - 20)
-
-    client.test.longOp.subscribe((val) => {
-      received = val
-    })
-
-    await adelay(1.5 * delay)
-
-    assert.equal(received, 1)
+    await client.test.longOp.subscribe(() => {})
+    services.test.longOp.trigger(undefined, 3)
+    await until(() => received.includes(3), "later subscribe and live push still work")
+    assert.deepEqual(received, [1, 1, 3], "discarded data cannot leak into a later snapshot")
   })
 
   it("can subscribe while disconnected", async () => {

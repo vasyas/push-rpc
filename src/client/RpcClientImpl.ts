@@ -1,10 +1,19 @@
-import {CallOptions, InvocationType, RpcContext, RpcError, RpcErrors, Services} from "../rpc.js"
-import {HttpClient} from "./HttpClient.js"
+import {
+  CallOptions,
+  InvocationType,
+  RpcContext,
+  RpcError,
+  RpcErrors,
+  Services,
+  SubscriptionOwnership,
+} from "../rpc.js"
+import {HttpClient, UnsupportedSubscriptionProtocol} from "./HttpClient.js"
 import {RemoteSubscriptions} from "./RemoteSubscriptions.js"
 import {WebSocketConnection} from "./WebSocketConnection.js"
 import {nanoid} from "nanoid"
 import {createRemote, ServicesClient} from "./remote.js"
 import {ConsumeServicesOptions, RpcClient} from "./index.js"
+import {withDeadline} from "../utils/promises.js"
 import {withMiddlewares} from "../utils/middleware.js"
 
 export class RpcClientImpl<S extends Services<S>> implements RpcClient {
@@ -12,8 +21,14 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     url: string,
     private readonly options: ConsumeServicesOptions,
   ) {
-    const concurrency = options.resubscribeConcurrency ?? Infinity
-    if (concurrency !== Infinity && (!Number.isInteger(concurrency) || concurrency < 1)) {
+    if (options.subscriptionLifetimes && !options.subscriptions) {
+      throw new Error("subscriptionLifetimes requires subscriptions")
+    }
+    this.resubscribeConcurrency = options.resubscribeConcurrency ?? Infinity
+    if (
+      this.resubscribeConcurrency !== Infinity &&
+      (!Number.isInteger(this.resubscribeConcurrency) || this.resubscribeConcurrency < 1)
+    ) {
       throw new Error("resubscribeConcurrency must be a positive integer or Infinity")
     }
     this.httpClient = new HttpClient(url, this.clientId, options.getHeaders)
@@ -28,6 +43,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
         reconnectDelay: options.reconnectDelay,
         pingInterval: options.pingInterval,
         reconnectPolicy: options.reconnectPolicy,
+        subscriptionLifetimes: options.subscriptionLifetimes,
       },
       (itemName, parameters, data) => {
         const ctx: RpcContext = {
@@ -58,6 +74,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   }
 
   public readonly clientId = nanoid()
+  private readonly resubscribeConcurrency: number
   private readonly httpClient: HttpClient
   private readonly remoteSubscriptions: RemoteSubscriptions
   private readonly connection: WebSocketConnection
@@ -145,42 +162,33 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     this.remoteSubscriptions.addSubscription(itemName, parameters, consumer)
 
     const request = this.remoteSubscriptions.beginRequest(itemName, parameters)
-    const deadline = callOptions?.timeout == null ? undefined : Date.now() + callOptions.timeout
+    const timeout = callOptions?.timeout ?? this.options.callTimeout
+    const deadline =
+      this.options.subscriptionLifetimes || callOptions?.timeout != null
+        ? Date.now() + timeout
+        : undefined
 
     // Start connecting, if not already
     void this.connection.connect()
 
-    this.snapshotsInFlight++
     try {
-      const data = await this.invoke(
-        itemName,
-        InvocationType.Subscribe,
-        (...parameters) =>
-          this.httpClient.subscribe(
-            itemName,
-            parameters,
-            callOptions?.timeout ?? this.options.callTimeout,
-          ),
-        parameters,
-      ).finally(() => {
-        // Count transport work, not a caller waiting for a newer generation.
-        this.snapshotsInFlight--
-        this.drainResubscriptions()
-      })
+      // The slot covers transport work only, not a caller waiting for a newer generation.
+      const data = await this.withSnapshotSlot(() =>
+        this.requestSnapshot(itemName, parameters, request, timeout, deadline),
+      )
 
-      if (!request.isCurrent()) {
+      // deliver() re-checks ownership itself, so the snapshot is never applied to a
+      // registration this request no longer owns.
+      if (!request.deliver(data)) {
         await this.waitForCurrentSnapshot(request, deadline)
         return
       }
-      this.remoteSubscriptions.unpause(itemName, parameters)
-
-      this.remoteSubscriptions.consume(itemName, parameters, data)
-      this.remoteSubscriptions.flushQueue(itemName, parameters)
     } catch (e) {
+      if (e instanceof UnsupportedSubscriptionProtocol) void this.close()
       if (!request.isCurrent()) {
         // A caller's explicit deadline still applies until a replacement delivers data.
         if (
-          callOptions?.timeout != null &&
+          deadline !== undefined &&
           (e as {code?: number}).code === RpcErrors.Timeout &&
           request.hasPendingSnapshot()
         ) {
@@ -223,20 +231,29 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     consumer: (d: unknown) => void,
     callOptions?: CallOptions,
   ) => {
+    // Capture before removal/awaits: an old PATCH must never adopt a replacement socket's epoch.
+    const ownership = this.options.subscriptionLifetimes
+      ? this.remoteSubscriptions.getOwnership(itemName, parameters)
+      : undefined
     const noSubscriptionsLeft = this.remoteSubscriptions.unsubscribe(itemName, parameters, consumer)
+    const timeout = callOptions?.timeout ?? this.options.callTimeout
+    const deadline = Date.now() + timeout
 
-    if (noSubscriptionsLeft) {
-      await this.invoke(
-        itemName,
-        InvocationType.Unsubscribe,
-        (...parameters) =>
-          this.httpClient.unsubscribe(
-            itemName,
-            parameters,
-            callOptions?.timeout ?? this.options.callTimeout,
-          ),
-        parameters,
-      )
+    if (noSubscriptionsLeft && (!this.options.subscriptionLifetimes || ownership)) {
+      try {
+        const work = this.invoke(
+          itemName,
+          InvocationType.Unsubscribe,
+          (...parameters) =>
+            this.httpClient.unsubscribe(itemName, parameters, timeout, ownership, deadline),
+          parameters,
+        )
+        if (ownership) await withDeadline(work, deadline)
+        else await work
+      } catch (error) {
+        if (error instanceof UnsupportedSubscriptionProtocol) void this.close()
+        throw error
+      }
     }
   }
 
@@ -250,7 +267,7 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     // cannot win while the replacement snapshot is still waiting in the queue.
     const previous = this.resubscribeQueue
     this.resubscribeQueue = this.remoteSubscriptions
-      .getAllSubscriptions()
+      .getSubscriptionKeys()
       .map(([itemName, params]) => ({
         itemName,
         params,
@@ -261,8 +278,11 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
   }
 
   private drainResubscriptions() {
-    const limit = this.options.resubscribeConcurrency ?? Infinity
-    while (!this.closed && this.snapshotsInFlight < limit && this.resubscribeQueue.length) {
+    while (
+      !this.closed &&
+      this.snapshotsInFlight < this.resubscribeConcurrency &&
+      this.resubscribeQueue.length
+    ) {
       const task = this.resubscribeQueue.shift()!
       // A later wave, unsubscribe, or a new initial request superseded this work.
       if (!task.request.isCurrent()) {
@@ -273,22 +293,73 @@ export class RpcClientImpl<S extends Services<S>> implements RpcClient {
     }
   }
 
-  private async restoreSubscription({itemName, params, request}: Resubscription) {
+  private restoreSubscription({itemName, params, request}: Resubscription) {
+    return this.withSnapshotSlot(async () => {
+      try {
+        const data = await this.requestSnapshot(
+          itemName,
+          params,
+          request,
+          this.options.callTimeout,
+          this.options.subscriptionLifetimes ? Date.now() + this.options.callTimeout : undefined,
+          this.options.subscriptionLifetimes === true,
+        )
+        request.deliver(data)
+      } catch (error) {
+        if (error instanceof UnsupportedSubscriptionProtocol) void this.close()
+        if (!request.isCurrent()) return
+        request.finish(error)
+        this.remoteSubscriptions.unpause(itemName, params)
+        this.remoteSubscriptions.flushQueue(itemName, params)
+        // Keep the consumers for the next recovery attempt.
+      } finally {
+        request.finish()
+      }
+    })
+  }
+
+  private async requestSnapshot(
+    itemName: string,
+    parameters: unknown[],
+    request: SnapshotRequest,
+    timeout: number,
+    deadline?: number,
+    useMiddleware = true,
+  ) {
+    let ownership: SubscriptionOwnership | undefined
+    if (this.options.subscriptionLifetimes) {
+      await withDeadline(this.connection.connect(), deadline!)
+      if (!request.isCurrent()) return
+      const epoch = this.connection.getConnectionEpoch()
+      if (!epoch) throw new Error("Subscription connection is closed")
+      ownership = request.bindConnection(epoch)
+      if (!ownership) return
+    }
+    // Ownership is fixed before asynchronous middleware/headers; a late request
+    // must never register itself on a replacement socket or another local lifetime.
+    const send = (...nextParameters: unknown[]) => {
+      if (ownership && !request.isCurrent()) return Promise.resolve(undefined)
+      return this.httpClient.subscribe(
+        itemName,
+        nextParameters,
+        timeout,
+        ownership,
+        deadline,
+        ownership ? request.isCurrent : undefined,
+      )
+    }
+    const work = useMiddleware
+      ? this.invoke(itemName, InvocationType.Subscribe, send, parameters)
+      : send(...parameters)
+    return ownership ? withDeadline(work, deadline!) : work
+  }
+
+  /** Hold one recovery slot for the duration of the transport call, then let the queue advance. */
+  private async withSnapshotSlot<T>(work: () => Promise<T>): Promise<T> {
     this.snapshotsInFlight++
     try {
-      const data = await this.httpClient.subscribe(itemName, params, this.options.callTimeout)
-      if (!request.isCurrent()) return
-      this.remoteSubscriptions.unpause(itemName, params)
-      this.remoteSubscriptions.consume(itemName, params, data)
-      this.remoteSubscriptions.flushQueue(itemName, params)
-    } catch (error) {
-      if (!request.isCurrent()) return
-      request.finish(error)
-      this.remoteSubscriptions.unpause(itemName, params)
-      this.remoteSubscriptions.flushQueue(itemName, params)
-      // Keep the consumers for the next recovery attempt.
+      return await work()
     } finally {
-      request.finish()
       this.snapshotsInFlight--
       this.drainResubscriptions()
     }
