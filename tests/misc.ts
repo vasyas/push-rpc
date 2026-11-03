@@ -171,6 +171,74 @@ describe("Misc", () => {
     }
   })
 
+  it("Object.prototype members and non-functions are not found", async () => {
+    await startTestServer({
+      async hello1() {
+        return "yes1"
+      },
+
+      nested: {
+        async hello2() {
+          return "yes2"
+        },
+      },
+    })
+
+    for (const itemName of [
+      "__proto__/toString",
+      "constructor",
+      "nested/hasOwnProperty",
+      "nested/__defineGetter__",
+      "hello1/call",
+      "nested",
+    ]) {
+      const response = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/${itemName}`, {
+        method: "POST",
+      })
+
+      assert.equal(response.status, RpcErrors.NotFound, itemName)
+    }
+  })
+
+  it("isRemoteItem limits remote items", async () => {
+    let helperInvoked = false
+
+    class Service {
+      async hello() {
+        return "yes"
+      }
+
+      async helper() {
+        helperInvoked = true
+        return "helper"
+      }
+    }
+
+    await startTestServer(
+      {service: new Service()},
+      {isRemoteItem: (itemName) => itemName == "service/hello"},
+    )
+
+    const remote: any = await createTestClient<any>()
+
+    assert.equal(await remote.service.hello(), "yes")
+
+    try {
+      await remote.service.helper()
+      assert.fail("Error expected")
+    } catch (e: any) {
+      assert.equal(e.code, RpcErrors.NotFound)
+    }
+
+    // subscribe goes through the same lookup
+    const response = await fetch(`http://127.0.0.1:${TEST_PORT}/rpc/service/helper`, {
+      method: "PUT",
+    })
+    assert.equal(response.status, RpcErrors.NotFound)
+
+    assert.isFalse(helperInvoked)
+  })
+
   it("invoke with empty body", async () => {
     await startTestServer({
       async hello1() {

@@ -255,6 +255,26 @@ await publishServices(services, {
 
 `res` is only provided for HTTP requests; it is `undefined` during a WebSocket upgrade.
 
+### Limiting remote items <a name="remote-items"></a>
+
+The server resolves an item name by walking the services object, so every function reachable by path is
+callable remotely — including helper methods of service classes. TypeScript `private` and `protected` modifiers
+don't exist at runtime and don't hide them. Members of `Object.prototype` (`__proto__`, `constructor` etc.) and
+non-function values are never resolved.
+
+Pass `isRemoteItem` to limit remote items, eg to the ones declared in the services interface. Rejected items get
+the same `404` as missing ones:
+
+```ts
+const declaredItems = new Set(["todo/getTodos", "todo/addTodo"])
+
+await publishServices(services, {
+  port: 8080,
+  path: "/rpc",
+  isRemoteItem: (itemName) => declaredItems.has(itemName),
+})
+```
+
 ### Detecting stale WebSockets <a name="stale-websockets"></a>
 
 Detecting stale WebSocket connections is crucial for both server and client. For server, it is important to know

@@ -50,6 +50,10 @@ export type PublishServicesOptions<C extends RpcContext> = {
   // Throwing rejects the request (HTTP) or the WebSocket upgrade (responds 401 and closes the socket).
   createConnectionContext(req: IncomingMessage, res?: ServerResponse): Promise<RpcConnectionContext>
   createServerHooks?(hooks: HttpServerHooks, req: IncomingMessage): HttpServerHooks
+  // Limits which items can be invoked remotely, eg to the ones declared in the services interface.
+  // Rejected items get the same NotFound error as missing ones. Without it, every function
+  // reachable by path in the services object is callable, including helper methods.
+  isRemoteItem?(itemName: string): boolean
 } & (
   | {
       server: http.Server

@@ -287,19 +287,23 @@ export class RpcServerImpl<S extends Services<S>, C extends RpcContext> implemen
     itemName: string,
     root: any = this.services,
   ): {function: RemoteFunction; eventEmitter: EventEmitter; container: any} | undefined {
+    if (this.options.isRemoteItem && !this.options.isRemoteItem(itemName)) return undefined
+
     const parts = itemName.split("/")
 
     let item = root
     let parent
 
     for (const part of parts) {
-      if (!item) return undefined
+      // Only services objects are traversed, never functions or Object.prototype members
+      // (__proto__, constructor, hasOwnProperty etc) - those aren't remote functions
+      if (!item || typeof item != "object" || part in Object.prototype) return undefined
 
       parent = item
       item = item[part]
     }
 
-    if (!item) return undefined
+    if (typeof item != "function") return undefined
 
     item[eventEmitterSymbol] = item[eventEmitterSymbol] ?? new EventEmitter()
 
